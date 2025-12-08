@@ -77,7 +77,7 @@ export function Header() {
               <NotificationBell />
             )}
             
-            <Button variant="nav" size="icon" className="hidden sm:flex">
+            <Button variant="nav" size="icon" className="hidden sm:flex" onClick={() => navigate("/settings")}>
               <Settings className="h-4 w-4" />
             </Button>
             <Button variant="nav" size="icon" onClick={toggleTheme}>
