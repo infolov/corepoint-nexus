@@ -1,8 +1,17 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Menu, X, Search, User, Sun, Moon, Settings, CloudSun } from "lucide-react";
+import { Menu, X, Search, User, Sun, Moon, Settings, CloudSun, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const categories = [
   { name: "Wiadomości", href: "/news" },
@@ -16,6 +25,7 @@ const categories = [
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDark, setIsDark] = useState(false);
+  const { user, signOut, loading } = useAuth();
 
   const toggleTheme = () => {
     setIsDark(!isDark);
@@ -60,18 +70,57 @@ export function Header() {
               <CloudSun className="h-4 w-4 text-weather-sunny" />
               <span className="font-medium">22°C</span>
             </div>
+            
+            {/* Notification Bell - only for logged in users */}
+            {user && !loading && (
+              <NotificationBell />
+            )}
+            
             <Button variant="nav" size="icon" className="hidden sm:flex">
               <Settings className="h-4 w-4" />
             </Button>
             <Button variant="nav" size="icon" onClick={toggleTheme}>
               {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
-            <Link to="/login">
-              <Button variant="gradient" size="sm" className="hidden sm:flex">
-                <User className="h-4 w-4 mr-1" />
-                Zaloguj
-              </Button>
-            </Link>
+            
+            {/* Auth buttons */}
+            {!loading && (
+              user ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="nav" size="sm" className="hidden sm:flex gap-2">
+                      <User className="h-4 w-4" />
+                      <span className="max-w-24 truncate">
+                        {user.user_metadata?.full_name || user.email?.split('@')[0]}
+                      </span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem>
+                      <User className="h-4 w-4 mr-2" />
+                      Mój profil
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <Settings className="h-4 w-4 mr-2" />
+                      Ustawienia
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => signOut()}>
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Wyloguj się
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Link to="/login">
+                  <Button variant="gradient" size="sm" className="hidden sm:flex">
+                    <User className="h-4 w-4 mr-1" />
+                    Zaloguj
+                  </Button>
+                </Link>
+              )
+            )}
+            
             <Button
               variant="nav"
               size="icon"
@@ -102,12 +151,28 @@ export function Header() {
               {cat.name}
             </Link>
           ))}
-          <Link to="/login" className="mt-2">
-            <Button variant="gradient" className="w-full">
-              <User className="h-4 w-4 mr-2" />
-              Zaloguj się
-            </Button>
-          </Link>
+          {!loading && (
+            user ? (
+              <Button 
+                variant="outline" 
+                className="w-full mt-2"
+                onClick={() => {
+                  signOut();
+                  setIsMenuOpen(false);
+                }}
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Wyloguj się
+              </Button>
+            ) : (
+              <Link to="/login" className="mt-2" onClick={() => setIsMenuOpen(false)}>
+                <Button variant="gradient" className="w-full">
+                  <User className="h-4 w-4 mr-2" />
+                  Zaloguj się
+                </Button>
+              </Link>
+            )
+          )}
         </nav>
       </div>
 
