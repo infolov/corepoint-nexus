@@ -17,8 +17,8 @@ interface NewsSectionProps {
 }
 
 export function NewsSection({ title, category, articles }: NewsSectionProps) {
-  const mainArticle = articles[0];
-  const sideArticles = articles.slice(1, 4);
+  // Show max 5 articles
+  const displayArticles = articles.slice(0, 5);
 
   return (
     <section className="mb-10">
@@ -33,33 +33,20 @@ export function NewsSection({ title, category, articles }: NewsSectionProps) {
         </Link>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Main Article */}
-        {mainArticle && (
+      {/* Grid: 5 columns on desktop, 1 column on mobile */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        {displayArticles.map((article) => (
           <NewsCard
-            title={mainArticle.title}
-            excerpt={mainArticle.excerpt}
-            category={mainArticle.category}
-            image={mainArticle.image}
-            timestamp={mainArticle.timestamp}
-            badge={mainArticle.badge}
+            key={article.id}
+            title={article.title}
+            category={article.category}
+            image={article.image}
+            timestamp={article.timestamp}
+            badge={article.badge}
+            variant="default"
+            className="h-full"
           />
-        )}
-
-        {/* Side Articles */}
-        <div className="space-y-4">
-          {sideArticles.map((article) => (
-            <NewsCard
-              key={article.id}
-              title={article.title}
-              category={article.category}
-              image={article.image}
-              timestamp={article.timestamp}
-              badge={article.badge}
-              variant="horizontal"
-            />
-          ))}
-        </div>
+        ))}
       </div>
     </section>
   );
