@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useUserRole";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { PersonalizeDialog } from "@/components/personalization/PersonalizeDialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -138,20 +139,25 @@ export function Header() {
         </div>
 
         {/* Category Tabs - MSN Style */}
-        <nav className="hidden md:flex items-center gap-1 py-2 overflow-x-auto">
-          {categories.map((cat) => (
-            <Link
-              key={cat.name}
-              to={cat.href}
-              className={cn(
-                "nav-tab whitespace-nowrap",
-                activeTab === cat.name && "nav-tab-active"
-              )}
-              onClick={() => setActiveTab(cat.name)}
-            >
-              {cat.name}
-            </Link>
-          ))}
+        <nav className="hidden md:flex items-center justify-between py-2">
+          <div className="flex items-center gap-1 overflow-x-auto">
+            {categories.map((cat) => (
+              <Link
+                key={cat.name}
+                to={cat.href}
+                className={cn(
+                  "nav-tab whitespace-nowrap",
+                  activeTab === cat.name && "nav-tab-active"
+                )}
+                onClick={() => setActiveTab(cat.name)}
+              >
+                {cat.name}
+              </Link>
+            ))}
+          </div>
+          <div className="flex items-center gap-2 ml-4">
+            <PersonalizeDialog />
+          </div>
         </nav>
       </div>
 
