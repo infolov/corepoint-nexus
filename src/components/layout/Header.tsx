@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Menu, X, Search, User, Sun, Moon, Bell, CloudSun } from "lucide-react";
+import { Menu, X, Search, User, Sun, Moon, Settings, CloudSun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -61,7 +61,7 @@ export function Header() {
               <span className="font-medium">22°C</span>
             </div>
             <Button variant="nav" size="icon" className="hidden sm:flex">
-              <Bell className="h-4 w-4" />
+              <Settings className="h-4 w-4" />
             </Button>
             <Button variant="nav" size="icon" onClick={toggleTheme}>
               {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
