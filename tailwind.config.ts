@@ -55,7 +55,14 @@ export default {
         nav: {
           DEFAULT: "hsl(var(--nav-bg))",
           foreground: "hsl(var(--nav-foreground))",
+          border: "hsl(var(--nav-border))",
         },
+        tab: {
+          active: "hsl(var(--tab-active))",
+          hover: "hsl(var(--tab-hover))",
+        },
+        engagement: "hsl(var(--engagement))",
+        source: "hsl(var(--source))",
         badge: {
           hot: "hsl(var(--badge-hot))",
           trending: "hsl(var(--badge-trending))",
