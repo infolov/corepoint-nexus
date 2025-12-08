@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Menu, X, Search, User, Sun, Moon, Settings, Cloud, LogOut, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,10 +29,18 @@ const categories = [
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDark, setIsDark] = useState(false);
-  const [activeTab, setActiveTab] = useState("Odkryj");
   const { user, signOut, loading } = useAuth();
   const { isAdmin } = useIsAdmin();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const getActiveTab = () => {
+    const path = location.pathname;
+    const category = categories.find(cat => cat.href === path);
+    return category?.name || "Odkryj";
+  };
+
+  const activeTab = getActiveTab();
 
   const toggleTheme = () => {
     setIsDark(!isDark);
@@ -149,7 +157,6 @@ export function Header() {
                   "nav-tab whitespace-nowrap",
                   activeTab === cat.name && "nav-tab-active"
                 )}
-                onClick={() => setActiveTab(cat.name)}
               >
                 {cat.name}
               </Link>

@@ -8,6 +8,8 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Settings from "./pages/Settings";
 import Article from "./pages/Article";
+import Category from "./pages/Category";
+import Weather from "./pages/Weather";
 import AdminArticles from "./pages/admin/AdminArticles";
 import NotFound from "./pages/NotFound";
 
@@ -25,6 +27,12 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/article/:id" element={<Article />} />
+            <Route path="/news" element={<Category />} />
+            <Route path="/sport" element={<Category />} />
+            <Route path="/business" element={<Category />} />
+            <Route path="/entertainment" element={<Category />} />
+            <Route path="/tech" element={<Category />} />
+            <Route path="/weather" element={<Weather />} />
             <Route path="/admin/articles" element={<AdminArticles />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
