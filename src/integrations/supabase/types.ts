@@ -272,6 +272,66 @@ export type Database = {
         }
         Relationships: []
       }
+      user_notification_preferences: {
+        Row: {
+          categories: string[] | null
+          created_at: string
+          id: string
+          tags: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          categories?: string[] | null
+          created_at?: string
+          id?: string
+          tags?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          categories?: string[] | null
+          created_at?: string
+          id?: string
+          tags?: string[] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_notifications: {
+        Row: {
+          article_url: string | null
+          category: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_read: boolean
+          title: string
+          user_id: string
+        }
+        Insert: {
+          article_url?: string | null
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_read?: boolean
+          title: string
+          user_id: string
+        }
+        Update: {
+          article_url?: string | null
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_read?: boolean
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
