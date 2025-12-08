@@ -71,6 +71,7 @@ export default function Settings() {
   });
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [loadingPreferences, setLoadingPreferences] = useState(true);
+  const [loadingSiteSettings, setLoadingSiteSettings] = useState(true);
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingPreferences, setSavingPreferences] = useState(false);
   const [savingSiteSettings, setSavingSiteSettings] = useState(false);
@@ -141,6 +142,91 @@ export default function Settings() {
 
     fetchPreferences();
   }, [user]);
+
+  // Fetch site settings
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchSiteSettings = async () => {
+      setLoadingSiteSettings(true);
+      const { data, error } = await supabase
+        .from("user_site_settings")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (!error && data) {
+        setSiteSettings({
+          region: data.region || "polska",
+          voivodeship: data.voivodeship || "",
+          county: data.county || "",
+          city: data.city || "",
+          locality: data.locality || "",
+          language: data.language || "pl",
+        });
+      }
+      setLoadingSiteSettings(false);
+    };
+
+    fetchSiteSettings();
+  }, [user]);
+
+  const handleSaveSiteSettings = async () => {
+    if (!user) return;
+
+    setSavingSiteSettings(true);
+
+    // Check if settings exist
+    const { data: existing } = await supabase
+      .from("user_site_settings")
+      .select("id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    let error;
+    if (existing) {
+      const result = await supabase
+        .from("user_site_settings")
+        .update({
+          region: siteSettings.region,
+          voivodeship: siteSettings.voivodeship || null,
+          county: siteSettings.county || null,
+          city: siteSettings.city || null,
+          locality: siteSettings.locality || null,
+          language: siteSettings.language,
+        })
+        .eq("user_id", user.id);
+      error = result.error;
+    } else {
+      const result = await supabase
+        .from("user_site_settings")
+        .insert({
+          user_id: user.id,
+          region: siteSettings.region,
+          voivodeship: siteSettings.voivodeship || null,
+          county: siteSettings.county || null,
+          city: siteSettings.city || null,
+          locality: siteSettings.locality || null,
+          language: siteSettings.language,
+        });
+      error = result.error;
+    }
+
+    setSavingSiteSettings(false);
+
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Błąd zapisu",
+        description: "Nie udało się zapisać ustawień. Spróbuj ponownie.",
+      });
+    } else {
+      toast({
+        title: "Zapisano",
+        description: "Ustawienia strony zostały zaktualizowane.",
+      });
+    }
+  };
 
   const handleSaveProfile = async () => {
     if (!user) return;
@@ -410,6 +496,11 @@ export default function Settings() {
                   Dostosuj lokalizację i język wyświetlania treści.
                 </p>
 
+                {loadingSiteSettings ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : (
                 <div className="space-y-4">
                   {/* Language */}
                   <div>
@@ -525,18 +616,7 @@ export default function Settings() {
                   </div>
 
                   <Button
-                    onClick={() => {
-                      setSavingSiteSettings(true);
-                      // Save to localStorage for now
-                      localStorage.setItem("siteSettings", JSON.stringify(siteSettings));
-                      setTimeout(() => {
-                        setSavingSiteSettings(false);
-                        toast({
-                          title: "Zapisano",
-                          description: "Ustawienia strony zostały zaktualizowane.",
-                        });
-                      }, 500);
-                    }}
+                    onClick={handleSaveSiteSettings}
                     disabled={savingSiteSettings}
                     className="w-full"
                     variant="gradient"
@@ -549,6 +629,7 @@ export default function Settings() {
                     Zapisz ustawienia
                   </Button>
                 </div>
+                )}
               </div>
             </TabsContent>
           </Tabs>

@@ -353,6 +353,45 @@ export type Database = {
         }
         Relationships: []
       }
+      user_site_settings: {
+        Row: {
+          city: string | null
+          county: string | null
+          created_at: string
+          id: string
+          language: string | null
+          locality: string | null
+          region: string | null
+          updated_at: string
+          user_id: string
+          voivodeship: string | null
+        }
+        Insert: {
+          city?: string | null
+          county?: string | null
+          created_at?: string
+          id?: string
+          language?: string | null
+          locality?: string | null
+          region?: string | null
+          updated_at?: string
+          user_id: string
+          voivodeship?: string | null
+        }
+        Update: {
+          city?: string | null
+          county?: string | null
+          created_at?: string
+          id?: string
+          language?: string | null
+          locality?: string | null
+          region?: string | null
+          updated_at?: string
+          user_id?: string
+          voivodeship?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
