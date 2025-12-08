@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -107,9 +108,11 @@ export function HeroSlider() {
                     <Clock className="h-4 w-4" />
                     {article.timestamp}
                   </span>
-                  <Button variant="gradient" size="sm">
-                    Czytaj więcej
-                  </Button>
+                  <Link to={`/article/${article.id}`}>
+                    <Button variant="gradient" size="sm">
+                      Czytaj więcej
+                    </Button>
+                  </Link>
                 </div>
               </div>
             </div>
