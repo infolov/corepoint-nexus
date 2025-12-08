@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useUserRole";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { PersonalizeDialog } from "@/components/personalization/PersonalizeDialog";
+import { QuickLinks } from "@/components/layout/QuickLinks";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,6 +49,7 @@ export function Header() {
   };
 
   return (
+    <>
     <header className="sticky top-0 z-50 w-full bg-nav border-b border-border">
       {/* Top Bar */}
       <div className="container">
@@ -223,5 +225,7 @@ export function Header() {
         </div>
       </div>
     </header>
+    <QuickLinks />
+    </>
   );
 }
