@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, Mail, Building, Phone, Save, Bell, Loader2 } from "lucide-react";
+import { User, Mail, Building, Phone, Save, Bell, Loader2, MapPin, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { PreferencesSelector } from "@/components/notifications/PreferencesSelector";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +24,27 @@ interface NotificationPreferences {
   tags: string[];
 }
 
+interface SiteSettings {
+  region: string;
+  voivodeship: string;
+  county: string;
+  city: string;
+  locality: string;
+  language: string;
+}
+
+const voivodeships = [
+  "dolnośląskie", "kujawsko-pomorskie", "lubelskie", "lubuskie",
+  "łódzkie", "małopolskie", "mazowieckie", "opolskie", "podkarpackie",
+  "podlaskie", "pomorskie", "śląskie", "świętokrzyskie", "warmińsko-mazurskie",
+  "wielkopolskie", "zachodniopomorskie"
+];
+
+const languages = [
+  { value: "pl", label: "Polski" },
+  { value: "en", label: "English" },
+];
+
 export default function Settings() {
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
@@ -39,10 +61,19 @@ export default function Settings() {
     categories: [],
     tags: [],
   });
+  const [siteSettings, setSiteSettings] = useState<SiteSettings>({
+    region: "polska",
+    voivodeship: "",
+    county: "",
+    city: "",
+    locality: "",
+    language: "pl",
+  });
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [loadingPreferences, setLoadingPreferences] = useState(true);
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingPreferences, setSavingPreferences] = useState(false);
+  const [savingSiteSettings, setSavingSiteSettings] = useState(false);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -225,7 +256,7 @@ export default function Settings() {
           </p>
 
           <Tabs defaultValue="profile" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="profile" className="gap-2">
                 <User className="h-4 w-4" />
                 Profil
@@ -233,6 +264,10 @@ export default function Settings() {
               <TabsTrigger value="notifications" className="gap-2">
                 <Bell className="h-4 w-4" />
                 Powiadomienia
+              </TabsTrigger>
+              <TabsTrigger value="site" className="gap-2">
+                <MapPin className="h-4 w-4" />
+                Strona
               </TabsTrigger>
             </TabsList>
 
@@ -364,6 +399,156 @@ export default function Settings() {
                     </Button>
                   </>
                 )}
+              </div>
+            </TabsContent>
+
+            {/* Site Settings Tab */}
+            <TabsContent value="site">
+              <div className="bg-card rounded-xl p-6 shadow-sm border">
+                <h2 className="text-lg font-semibold mb-2">Ustawienia strony</h2>
+                <p className="text-sm text-muted-foreground mb-6">
+                  Dostosuj lokalizację i język wyświetlania treści.
+                </p>
+
+                <div className="space-y-4">
+                  {/* Language */}
+                  <div>
+                    <label className="text-sm font-medium mb-2 flex items-center gap-2">
+                      <Globe className="h-4 w-4" />
+                      Język
+                    </label>
+                    <Select
+                      value={siteSettings.language}
+                      onValueChange={(value) =>
+                        setSiteSettings({ ...siteSettings, language: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Wybierz język" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {languages.map((lang) => (
+                          <SelectItem key={lang.value} value={lang.value}>
+                            {lang.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Region */}
+                  <div>
+                    <label className="text-sm font-medium mb-2 flex items-center gap-2">
+                      <MapPin className="h-4 w-4" />
+                      Region
+                    </label>
+                    <Select
+                      value={siteSettings.region}
+                      onValueChange={(value) =>
+                        setSiteSettings({ ...siteSettings, region: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Wybierz region" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="polska">Polska</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Voivodeship */}
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Województwo</label>
+                    <Select
+                      value={siteSettings.voivodeship}
+                      onValueChange={(value) =>
+                        setSiteSettings({ ...siteSettings, voivodeship: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Wybierz województwo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {voivodeships.map((v) => (
+                          <SelectItem key={v} value={v}>
+                            {v.charAt(0).toUpperCase() + v.slice(1)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* County (Gmina) */}
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Gmina</label>
+                    <input
+                      type="text"
+                      placeholder="Wpisz gminę"
+                      value={siteSettings.county}
+                      onChange={(e) =>
+                        setSiteSettings({ ...siteSettings, county: e.target.value })
+                      }
+                      maxLength={100}
+                      className="w-full px-4 py-3 rounded-lg bg-background border border-input focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                    />
+                  </div>
+
+                  {/* City */}
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Miasto</label>
+                    <input
+                      type="text"
+                      placeholder="Wpisz miasto"
+                      value={siteSettings.city}
+                      onChange={(e) =>
+                        setSiteSettings({ ...siteSettings, city: e.target.value })
+                      }
+                      maxLength={100}
+                      className="w-full px-4 py-3 rounded-lg bg-background border border-input focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                    />
+                  </div>
+
+                  {/* Locality */}
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Miejscowość</label>
+                    <input
+                      type="text"
+                      placeholder="Wpisz miejscowość"
+                      value={siteSettings.locality}
+                      onChange={(e) =>
+                        setSiteSettings({ ...siteSettings, locality: e.target.value })
+                      }
+                      maxLength={100}
+                      className="w-full px-4 py-3 rounded-lg bg-background border border-input focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                    />
+                  </div>
+
+                  <Button
+                    onClick={() => {
+                      setSavingSiteSettings(true);
+                      // Save to localStorage for now
+                      localStorage.setItem("siteSettings", JSON.stringify(siteSettings));
+                      setTimeout(() => {
+                        setSavingSiteSettings(false);
+                        toast({
+                          title: "Zapisano",
+                          description: "Ustawienia strony zostały zaktualizowane.",
+                        });
+                      }, 500);
+                    }}
+                    disabled={savingSiteSettings}
+                    className="w-full"
+                    variant="gradient"
+                  >
+                    {savingSiteSettings ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Save className="h-4 w-4 mr-2" />
+                    )}
+                    Zapisz ustawienia
+                  </Button>
+                </div>
               </div>
             </TabsContent>
           </Tabs>
