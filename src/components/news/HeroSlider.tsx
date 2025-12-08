@@ -3,65 +3,44 @@ import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-
-interface HeroArticle {
-  id: string;
-  title: string;
-  excerpt: string;
-  category: string;
-  image: string;
-  timestamp: string;
-  badge?: "hot" | "trending" | "new";
-}
-
-const heroArticles: HeroArticle[] = [
-  {
-    id: "1",
-    title: "Przełomowa decyzja UE w sprawie regulacji sztucznej inteligencji",
-    excerpt: "Unia Europejska przyjęła nowe przepisy dotyczące AI, które zmienią sposób działania technologicznych gigantów na kontynencie.",
-    category: "Technologia",
-    image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1200&h=600&fit=crop",
-    timestamp: "2 godz. temu",
-    badge: "hot",
-  },
-  {
-    id: "2",
-    title: "Rekordowe wzrosty na giełdach światowych",
-    excerpt: "Indeksy giełdowe biją kolejne rekordy. Eksperci analizują przyczyny i prognozy na kolejne miesiące.",
-    category: "Biznes",
-    image: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1200&h=600&fit=crop",
-    timestamp: "4 godz. temu",
-    badge: "trending",
-  },
-  {
-    id: "3",
-    title: "Reprezentacja Polski w drodze do finału mistrzostw",
-    excerpt: "Polscy sportowcy pokazali klasę w półfinałowych zmaganiach. Przed nami wielki finał.",
-    category: "Sport",
-    image: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1200&h=600&fit=crop",
-    timestamp: "6 godz. temu",
-    badge: "new",
-  },
-];
+import { useFeaturedArticles } from "@/hooks/useArticles";
 
 export function HeroSlider() {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const { data: heroArticles = [], isLoading } = useFeaturedArticles();
 
   useEffect(() => {
+    if (heroArticles.length === 0) return;
+    
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % heroArticles.length);
     }, 6000);
     return () => clearInterval(timer);
-  }, []);
+  }, [heroArticles.length]);
 
   const nextSlide = () => {
+    if (heroArticles.length === 0) return;
     setCurrentSlide((prev) => (prev + 1) % heroArticles.length);
   };
 
   const prevSlide = () => {
+    if (heroArticles.length === 0) return;
     setCurrentSlide((prev) => (prev - 1 + heroArticles.length) % heroArticles.length);
   };
+
+  if (isLoading) {
+    return (
+      <section className="relative overflow-hidden rounded-xl bg-card shadow-lg">
+        <Skeleton className="h-[400px] md:h-[500px] w-full" />
+      </section>
+    );
+  }
+
+  if (heroArticles.length === 0) {
+    return null;
+  }
 
   return (
     <section className="relative overflow-hidden rounded-xl bg-card shadow-lg">
@@ -90,7 +69,7 @@ export function HeroSlider() {
                 <div className="flex items-center gap-3 mb-4">
                   <Badge variant="category">{article.category}</Badge>
                   {article.badge && (
-                    <Badge variant={article.badge}>
+                    <Badge variant={article.badge as "hot" | "trending" | "new"}>
                       {article.badge === "hot" && "🔥 Gorące"}
                       {article.badge === "trending" && "📈 Trending"}
                       {article.badge === "new" && "✨ Nowe"}

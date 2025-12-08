@@ -1,19 +1,12 @@
 import { NewsCard } from "@/components/news/NewsCard";
 import { ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Article } from "@/hooks/useArticles";
 
 interface NewsSectionProps {
   title: string;
   category: string;
-  articles: Array<{
-    id: string;
-    title: string;
-    excerpt?: string;
-    category: string;
-    image: string;
-    timestamp: string;
-    badge?: "hot" | "trending" | "new";
-  }>;
+  articles: Article[];
 }
 
 export function NewsSection({ title, category, articles }: NewsSectionProps) {
@@ -43,7 +36,7 @@ export function NewsSection({ title, category, articles }: NewsSectionProps) {
             category={article.category}
             image={article.image}
             timestamp={article.timestamp}
-            badge={article.badge}
+            badge={article.badge || undefined}
             variant="default"
             className="h-full"
           />

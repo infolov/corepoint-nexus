@@ -6,16 +6,19 @@ import { NewsCard } from "@/components/news/NewsCard";
 import { WeatherWidget } from "@/components/widgets/WeatherWidget";
 import { TrendingWidget } from "@/components/widgets/TrendingWidget";
 import { AdBanner } from "@/components/widgets/AdBanner";
-import {
-  newsArticles,
-  businessArticles,
-  sportArticles,
-  techArticles,
-  lifestyleArticles,
-  recommendedArticles,
-} from "@/data/mockNews";
+import { useArticles, Article } from "@/hooks/useArticles";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Index = () => {
+  const { data: newsArticles = [], isLoading: newsLoading } = useArticles("Wiadomości");
+  const { data: businessArticles = [], isLoading: businessLoading } = useArticles("Biznes");
+  const { data: sportArticles = [], isLoading: sportLoading } = useArticles("Sport");
+  const { data: techArticles = [], isLoading: techLoading } = useArticles("Technologia");
+  const { data: lifestyleArticles = [], isLoading: lifestyleLoading } = useArticles("Lifestyle");
+  const { data: allArticles = [] } = useArticles();
+
+  const recommendedArticles = allArticles.slice(0, 4);
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -35,35 +38,55 @@ const Index = () => {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Left/Main Column - News */}
           <div className="lg:col-span-2 space-y-8">
-            <NewsSection
-              title="Najnowsze wiadomości"
-              category="news"
-              articles={newsArticles}
-            />
+            {newsLoading ? (
+              <NewsSectionSkeleton />
+            ) : (
+              <NewsSection
+                title="Najnowsze wiadomości"
+                category="news"
+                articles={newsArticles}
+              />
+            )}
 
-            <NewsSection
-              title="Biznes i finanse"
-              category="business"
-              articles={businessArticles}
-            />
+            {businessLoading ? (
+              <NewsSectionSkeleton />
+            ) : (
+              <NewsSection
+                title="Biznes i finanse"
+                category="business"
+                articles={businessArticles}
+              />
+            )}
 
-            <NewsSection
-              title="Sport"
-              category="sport"
-              articles={sportArticles}
-            />
+            {sportLoading ? (
+              <NewsSectionSkeleton />
+            ) : (
+              <NewsSection
+                title="Sport"
+                category="sport"
+                articles={sportArticles}
+              />
+            )}
 
-            <NewsSection
-              title="Technologia"
-              category="tech"
-              articles={techArticles}
-            />
+            {techLoading ? (
+              <NewsSectionSkeleton />
+            ) : (
+              <NewsSection
+                title="Technologia"
+                category="tech"
+                articles={techArticles}
+              />
+            )}
 
-            <NewsSection
-              title="Lifestyle"
-              category="lifestyle"
-              articles={lifestyleArticles}
-            />
+            {lifestyleLoading ? (
+              <NewsSectionSkeleton />
+            ) : (
+              <NewsSection
+                title="Lifestyle"
+                category="lifestyle"
+                articles={lifestyleArticles}
+              />
+            )}
           </div>
 
           {/* Right Sidebar */}
@@ -105,5 +128,25 @@ const Index = () => {
     </div>
   );
 };
+
+function NewsSectionSkeleton() {
+  return (
+    <section className="mb-10">
+      <Skeleton className="h-8 w-48 mb-5" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="bg-card rounded-xl overflow-hidden shadow-sm">
+            <Skeleton className="aspect-[16/10]" />
+            <div className="p-4">
+              <Skeleton className="h-5 w-full mb-2" />
+              <Skeleton className="h-4 w-3/4 mb-3" />
+              <Skeleton className="h-3 w-20" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 export default Index;

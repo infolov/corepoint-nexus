@@ -4,25 +4,9 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { NewsCard } from "@/components/news/NewsCard";
-import {
-  newsArticles,
-  businessArticles,
-  sportArticles,
-  techArticles,
-  lifestyleArticles,
-  recommendedArticles,
-  Article as ArticleType,
-} from "@/data/mockNews";
-
-const allArticles = [
-  ...newsArticles,
-  ...businessArticles,
-  ...sportArticles,
-  ...techArticles,
-  ...lifestyleArticles,
-  ...recommendedArticles,
-];
+import { useArticle, useRelatedArticles } from "@/hooks/useArticles";
 
 const categoryDescriptions: Record<string, { description: string; icon: string }> = {
   "Wiadomości": {
@@ -61,9 +45,35 @@ const categoryDescriptions: Record<string, { description: string; icon: string }
 
 export default function Article() {
   const { id } = useParams<{ id: string }>();
-  
-  const article = allArticles.find((a) => a.id === id);
-  
+  const { data: article, isLoading } = useArticle(id || "");
+  const { data: relatedArticles = [] } = useRelatedArticles(
+    article?.category || "",
+    id || ""
+  );
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <Header />
+        <main className="flex-1">
+          <Skeleton className="h-[300px] md:h-[400px] lg:h-[500px] w-full" />
+          <div className="container mx-auto px-4 -mt-32 relative z-10">
+            <div className="max-w-4xl mx-auto">
+              <Skeleton className="h-8 w-24 mb-6" />
+              <div className="bg-card rounded-2xl shadow-lg p-6 md:p-8 mb-8">
+                <Skeleton className="h-6 w-32 mb-4" />
+                <Skeleton className="h-10 w-full mb-4" />
+                <Skeleton className="h-20 w-full mb-6" />
+                <Skeleton className="h-4 w-40" />
+              </div>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   if (!article) {
     return (
       <div className="min-h-screen bg-background flex flex-col">
@@ -81,25 +91,10 @@ export default function Article() {
     );
   }
 
-  const relatedArticles = allArticles
-    .filter((a) => a.category === article.category && a.id !== article.id)
-    .slice(0, 4);
-
   const categoryInfo = categoryDescriptions[article.category] || {
     description: "Odkrywaj więcej artykułów z tej kategorii.",
     icon: "📄",
   };
-
-  // Mock article content
-  const articleContent = `
-    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-
-    Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-
-    Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.
-
-    Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.
-  `;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -134,7 +129,7 @@ export default function Article() {
                   {categoryInfo.icon} {article.category}
                 </Badge>
                 {article.badge && (
-                  <Badge variant={article.badge}>
+                  <Badge variant={article.badge as "hot" | "trending" | "new"}>
                     {article.badge === "hot" && "🔥 Gorące"}
                     {article.badge === "trending" && "📈 Trending"}
                     {article.badge === "new" && "✨ Nowe"}
@@ -173,11 +168,15 @@ export default function Article() {
             {/* Article Content */}
             <div className="bg-card rounded-2xl shadow-lg p-6 md:p-8 mb-8">
               <div className="prose prose-lg max-w-none dark:prose-invert">
-                {articleContent.split("\n\n").map((paragraph, index) => (
+                {article.content?.split("\n\n").map((paragraph, index) => (
                   <p key={index} className="text-foreground/90 leading-relaxed mb-4">
                     {paragraph.trim()}
                   </p>
-                ))}
+                )) || (
+                  <p className="text-foreground/90 leading-relaxed">
+                    Treść artykułu jest w przygotowaniu.
+                  </p>
+                )}
               </div>
             </div>
 
@@ -209,15 +208,15 @@ export default function Article() {
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   {relatedArticles.map((related) => (
-                    <Link key={related.id} to={`/article/${related.id}`}>
-                      <NewsCard
-                        title={related.title}
-                        category={related.category}
-                        image={related.image}
-                        timestamp={related.timestamp}
-                        badge={related.badge}
-                      />
-                    </Link>
+                    <NewsCard
+                      key={related.id}
+                      id={related.id}
+                      title={related.title}
+                      category={related.category}
+                      image={related.image}
+                      timestamp={related.timestamp}
+                      badge={related.badge || undefined}
+                    />
                   ))}
                 </div>
               </div>
