@@ -182,7 +182,7 @@ export default function Login() {
                   }`}
                   onClick={() => handleModeChange("advertiser")}
                 >
-                  Reklama
+                  Partner
                 </button>
               </div>
             )}
@@ -196,7 +196,7 @@ export default function Login() {
                       <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                       <input
                         type="text"
-                        placeholder="Imię i nazwisko"
+                        placeholder="Imię"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         required
