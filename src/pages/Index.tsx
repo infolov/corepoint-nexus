@@ -1,110 +1,54 @@
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { HeroSlider } from "@/components/news/HeroSlider";
-import { NewsSection } from "@/components/sections/NewsSection";
 import { NewsCard } from "@/components/news/NewsCard";
-import { WeatherWidget } from "@/components/widgets/WeatherWidget";
 import { TrendingWidget } from "@/components/widgets/TrendingWidget";
-import { AdBanner } from "@/components/widgets/AdBanner";
-import { useArticles, Article } from "@/hooks/useArticles";
+import { WeatherWidget } from "@/components/widgets/WeatherWidget";
+import { useArticles } from "@/hooks/useArticles";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TrendingUp, Flame } from "lucide-react";
 
 const Index = () => {
-  const { data: newsArticles = [], isLoading: newsLoading } = useArticles("Wiadomości");
-  const { data: businessArticles = [], isLoading: businessLoading } = useArticles("Biznes");
-  const { data: sportArticles = [], isLoading: sportLoading } = useArticles("Sport");
-  const { data: techArticles = [], isLoading: techLoading } = useArticles("Technologia");
-  const { data: lifestyleArticles = [], isLoading: lifestyleLoading } = useArticles("Lifestyle");
-  const { data: allArticles = [] } = useArticles();
+  const { data: allArticles = [], isLoading } = useArticles();
+  const { data: newsArticles = [] } = useArticles("Wiadomości");
+  const { data: sportArticles = [] } = useArticles("Sport");
+  const { data: techArticles = [] } = useArticles("Technologia");
 
-  const recommendedArticles = allArticles.slice(0, 4);
+  // Get articles for different sections
+  const gridArticles = allArticles.slice(0, 6);
+  const topStories = allArticles.slice(0, 5);
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
 
-      <main className="container py-6">
-        {/* Hero Section */}
-        <section className="mb-8">
+      <main className="container py-4">
+        {/* Hero Section - MSN Grid Style */}
+        <section className="mb-6">
           <HeroSlider />
         </section>
 
-        {/* Ad Banner */}
-        <div className="mb-8">
-          <AdBanner variant="horizontal" className="w-full" />
-        </div>
-
         {/* Main Content Grid */}
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Left/Main Column - News */}
-          <div className="lg:col-span-2 space-y-8">
-            {newsLoading ? (
-              <NewsSectionSkeleton />
+        <div className="grid lg:grid-cols-4 gap-6">
+          {/* Main Content - 3 columns */}
+          <div className="lg:col-span-3 space-y-6">
+            {/* News Grid - MSN Style */}
+            {isLoading ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="bg-card rounded-lg overflow-hidden">
+                    <Skeleton className="aspect-[16/10]" />
+                    <div className="p-3">
+                      <Skeleton className="h-3 w-20 mb-2" />
+                      <Skeleton className="h-4 w-full mb-1" />
+                      <Skeleton className="h-4 w-3/4" />
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : (
-              <NewsSection
-                title="Najnowsze wiadomości"
-                category="news"
-                articles={newsArticles}
-              />
-            )}
-
-            {businessLoading ? (
-              <NewsSectionSkeleton />
-            ) : (
-              <NewsSection
-                title="Biznes i finanse"
-                category="business"
-                articles={businessArticles}
-              />
-            )}
-
-            {sportLoading ? (
-              <NewsSectionSkeleton />
-            ) : (
-              <NewsSection
-                title="Sport"
-                category="sport"
-                articles={sportArticles}
-              />
-            )}
-
-            {techLoading ? (
-              <NewsSectionSkeleton />
-            ) : (
-              <NewsSection
-                title="Technologia"
-                category="tech"
-                articles={techArticles}
-              />
-            )}
-
-            {lifestyleLoading ? (
-              <NewsSectionSkeleton />
-            ) : (
-              <NewsSection
-                title="Lifestyle"
-                category="lifestyle"
-                articles={lifestyleArticles}
-              />
-            )}
-          </div>
-
-          {/* Right Sidebar */}
-          <aside className="space-y-6">
-            {/* Weather */}
-            <WeatherWidget />
-
-            {/* Ad */}
-            <AdBanner variant="square" />
-
-            {/* Trending */}
-            <TrendingWidget />
-
-            {/* Recommended */}
-            <div className="bg-card rounded-xl p-5 shadow-sm">
-              <h3 className="font-bold text-lg mb-4">Polecane dla Ciebie</h3>
-              <div className="space-y-1">
-                {recommendedArticles.map((article) => (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {gridArticles.map((article, index) => (
                   <NewsCard
                     key={article.id}
                     id={article.id}
@@ -112,14 +56,105 @@ const Index = () => {
                     category={article.category}
                     image={article.image}
                     timestamp={article.timestamp}
-                    variant="compact"
+                    badge={index === 0 ? "trending" : undefined}
+                    variant="medium"
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* News Section */}
+            {newsArticles.length > 0 && (
+              <section>
+                <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                  <Flame className="h-5 w-5 text-orange-500" />
+                  Wiadomości
+                </h2>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {newsArticles.slice(0, 4).map((article) => (
+                    <NewsCard
+                      key={article.id}
+                      id={article.id}
+                      title={article.title}
+                      category={article.category}
+                      image={article.image}
+                      timestamp={article.timestamp}
+                      variant="small"
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Sport Section */}
+            {sportArticles.length > 0 && (
+              <section>
+                <h2 className="text-lg font-semibold mb-3">Sport</h2>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {sportArticles.slice(0, 4).map((article) => (
+                    <NewsCard
+                      key={article.id}
+                      id={article.id}
+                      title={article.title}
+                      category={article.category}
+                      image={article.image}
+                      timestamp={article.timestamp}
+                      variant="small"
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Tech Section */}
+            {techArticles.length > 0 && (
+              <section>
+                <h2 className="text-lg font-semibold mb-3">Technologia</h2>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {techArticles.slice(0, 4).map((article) => (
+                    <NewsCard
+                      key={article.id}
+                      id={article.id}
+                      title={article.title}
+                      category={article.category}
+                      image={article.image}
+                      timestamp={article.timestamp}
+                      variant="small"
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
+
+          {/* Sidebar - 1 column */}
+          <aside className="space-y-4">
+            {/* Top Stories Widget */}
+            <div className="bg-card rounded-lg p-4">
+              <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-primary" />
+                Top stories
+              </h3>
+              <div className="divide-y divide-border">
+                {topStories.map((article) => (
+                  <NewsCard
+                    key={article.id}
+                    id={article.id}
+                    title={article.title}
+                    category={article.category}
+                    image={article.image}
+                    timestamp={article.timestamp}
+                    variant="list"
                   />
                 ))}
               </div>
             </div>
 
-            {/* Vertical Ad */}
-            <AdBanner variant="vertical" />
+            {/* Weather Widget */}
+            <WeatherWidget />
+
+            {/* Trending Widget */}
+            <TrendingWidget />
           </aside>
         </div>
       </main>
@@ -128,25 +163,5 @@ const Index = () => {
     </div>
   );
 };
-
-function NewsSectionSkeleton() {
-  return (
-    <section className="mb-10">
-      <Skeleton className="h-8 w-48 mb-5" />
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        {[...Array(5)].map((_, i) => (
-          <div key={i} className="bg-card rounded-xl overflow-hidden shadow-sm">
-            <Skeleton className="aspect-[16/10]" />
-            <div className="p-4">
-              <Skeleton className="h-5 w-full mb-2" />
-              <Skeleton className="h-4 w-3/4 mb-3" />
-              <Skeleton className="h-3 w-20" />
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
 
 export default Index;

@@ -1,47 +1,11 @@
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Clock, Share2, Bookmark, Tag } from "lucide-react";
+import { ArrowLeft, Clock, Share2, Bookmark, ThumbsUp, MessageCircle } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { NewsCard } from "@/components/news/NewsCard";
 import { useArticle, useRelatedArticles } from "@/hooks/useArticles";
-
-const categoryDescriptions: Record<string, { description: string; icon: string }> = {
-  "Wiadomości": {
-    description: "Najważniejsze wydarzenia z kraju i świata. Bądź na bieżąco z aktualnymi informacjami.",
-    icon: "📰",
-  },
-  "Biznes": {
-    description: "Gospodarka, finanse, giełda i świat przedsiębiorczości. Wszystko co potrzebujesz wiedzieć o biznesie.",
-    icon: "💼",
-  },
-  "Sport": {
-    description: "Wyniki, relacje i komentarze ze świata sportu. Piłka nożna, tenis, F1 i więcej.",
-    icon: "⚽",
-  },
-  "Technologia": {
-    description: "Najnowsze innowacje, gadżety i trendy technologiczne. Przyszłość zaczyna się tutaj.",
-    icon: "💻",
-  },
-  "Lifestyle": {
-    description: "Styl życia, zdrowie, podróże i inspiracje na co dzień.",
-    icon: "🌟",
-  },
-  "Analiza": {
-    description: "Dogłębne analizy i ekspertyzy na ważne tematy.",
-    icon: "📊",
-  },
-  "Kultura": {
-    description: "Książki, filmy, muzyka i sztuka. Odkrywaj kulturę.",
-    icon: "🎭",
-  },
-  "Poradnik": {
-    description: "Praktyczne porady i wskazówki na każdą okazję.",
-    icon: "📖",
-  },
-};
 
 export default function Article() {
   const { id } = useParams<{ id: string }>();
@@ -55,17 +19,18 @@ export default function Article() {
     return (
       <div className="min-h-screen bg-background flex flex-col">
         <Header />
-        <main className="flex-1">
-          <Skeleton className="h-[300px] md:h-[400px] lg:h-[500px] w-full" />
-          <div className="container mx-auto px-4 -mt-32 relative z-10">
-            <div className="max-w-4xl mx-auto">
-              <Skeleton className="h-8 w-24 mb-6" />
-              <div className="bg-card rounded-2xl shadow-lg p-6 md:p-8 mb-8">
-                <Skeleton className="h-6 w-32 mb-4" />
-                <Skeleton className="h-10 w-full mb-4" />
-                <Skeleton className="h-20 w-full mb-6" />
-                <Skeleton className="h-4 w-40" />
-              </div>
+        <main className="flex-1 container py-6">
+          <Skeleton className="h-6 w-32 mb-4" />
+          <div className="grid lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <Skeleton className="aspect-video rounded-lg mb-4" />
+              <Skeleton className="h-8 w-3/4 mb-3" />
+              <Skeleton className="h-4 w-full mb-2" />
+              <Skeleton className="h-4 w-full mb-2" />
+              <Skeleton className="h-4 w-2/3" />
+            </div>
+            <div>
+              <Skeleton className="h-64 rounded-lg" />
             </div>
           </div>
         </main>
@@ -82,7 +47,7 @@ export default function Article() {
           <div className="text-center">
             <h1 className="text-2xl font-bold mb-4">Artykuł nie został znaleziony</h1>
             <Link to="/">
-              <Button variant="gradient">Wróć do strony głównej</Button>
+              <Button>Wróć do strony głównej</Button>
             </Link>
           </div>
         </main>
@@ -91,122 +56,107 @@ export default function Article() {
     );
   }
 
-  const categoryInfo = categoryDescriptions[article.category] || {
-    description: "Odkrywaj więcej artykułów z tej kategorii.",
-    icon: "📄",
-  };
-
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Header />
 
-      <main className="flex-1">
-        {/* Hero Image */}
-        <div className="relative h-[300px] md:h-[400px] lg:h-[500px] overflow-hidden">
-          <img
-            src={article.image}
-            alt={article.title}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
-        </div>
+      <main className="flex-1 container py-6">
+        {/* Back button */}
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-4 text-sm"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Powrót
+        </Link>
 
-        <div className="container mx-auto px-4 -mt-32 relative z-10">
-          <div className="max-w-4xl mx-auto">
-            {/* Back button */}
-            <Link
-              to="/"
-              className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Powrót
-            </Link>
-
-            {/* Article Header */}
-            <div className="bg-card rounded-2xl shadow-lg p-6 md:p-8 mb-8">
-              <div className="flex items-center gap-3 mb-4">
-                <Badge variant="category" className="text-sm">
-                  {categoryInfo.icon} {article.category}
-                </Badge>
-                {article.badge && (
-                  <Badge variant={article.badge as "hot" | "trending" | "new"}>
-                    {article.badge === "hot" && "🔥 Gorące"}
-                    {article.badge === "trending" && "📈 Trending"}
-                    {article.badge === "new" && "✨ Nowe"}
-                  </Badge>
-                )}
+        <div className="grid lg:grid-cols-3 gap-6">
+          {/* Main Content */}
+          <div className="lg:col-span-2">
+            {/* Article Card */}
+            <article className="bg-card rounded-lg overflow-hidden">
+              {/* Image */}
+              <div className="aspect-video overflow-hidden">
+                <img
+                  src={article.image}
+                  alt={article.title}
+                  className="w-full h-full object-cover"
+                />
               </div>
 
-              <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-4">
-                {article.title}
-              </h1>
-
-              {article.excerpt && (
-                <p className="text-lg text-muted-foreground mb-6">
-                  {article.excerpt}
-                </p>
-              )}
-
-              <div className="flex items-center justify-between border-t border-border pt-4">
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              {/* Content */}
+              <div className="p-5">
+                {/* Meta */}
+                <div className="flex items-center gap-2 mb-3 text-sm text-muted-foreground">
+                  <span>INFORMACJE.PL</span>
+                  <span>·</span>
+                  <span>{article.category}</span>
+                  <span>·</span>
                   <span className="flex items-center gap-1">
-                    <Clock className="h-4 w-4" />
+                    <Clock className="h-3.5 w-3.5" />
                     {article.timestamp}
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="icon">
-                    <Share2 className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon">
-                    <Bookmark className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
 
-            {/* Article Content */}
-            <div className="bg-card rounded-2xl shadow-lg p-6 md:p-8 mb-8">
-              <div className="prose prose-lg max-w-none dark:prose-invert">
-                {article.content?.split("\n\n").map((paragraph, index) => (
-                  <p key={index} className="text-foreground/90 leading-relaxed mb-4">
-                    {paragraph.trim()}
-                  </p>
-                )) || (
-                  <p className="text-foreground/90 leading-relaxed">
-                    Treść artykułu jest w przygotowaniu.
+                {/* Title */}
+                <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
+                  {article.title}
+                </h1>
+
+                {/* Excerpt */}
+                {article.excerpt && (
+                  <p className="text-lg text-muted-foreground mb-6">
+                    {article.excerpt}
                   </p>
                 )}
-              </div>
-            </div>
 
-            {/* Category Info Box */}
-            <div className="bg-primary/5 border border-primary/20 rounded-2xl p-6 mb-8">
-              <div className="flex items-start gap-4">
-                <div className="text-4xl">{categoryInfo.icon}</div>
-                <div>
-                  <h3 className="text-lg font-bold text-foreground mb-2 flex items-center gap-2">
-                    <Tag className="h-4 w-4 text-primary" />
-                    O kategorii: {article.category}
-                  </h3>
-                  <p className="text-muted-foreground">{categoryInfo.description}</p>
-                  <Link
-                    to={`/?category=${encodeURIComponent(article.category)}`}
-                    className="inline-flex items-center gap-1 text-primary hover:underline mt-3 text-sm font-medium"
-                  >
-                    Zobacz wszystkie artykuły z tej kategorii →
-                  </Link>
+                {/* Actions */}
+                <div className="flex items-center justify-between border-t border-border pt-4 mb-6">
+                  <div className="flex items-center gap-4">
+                    <button className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors">
+                      <ThumbsUp className="h-4 w-4" />
+                      <span className="text-sm">234</span>
+                    </button>
+                    <button className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors">
+                      <MessageCircle className="h-4 w-4" />
+                      <span className="text-sm">56</span>
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <Share2 className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <Bookmark className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Article Content */}
+                <div className="prose prose-lg max-w-none dark:prose-invert">
+                  {article.content?.split("\n\n").map((paragraph, index) => (
+                    <p key={index} className="text-foreground/90 leading-relaxed mb-4">
+                      {paragraph.trim()}
+                    </p>
+                  )) || (
+                    <p className="text-foreground/90 leading-relaxed">
+                      Treść artykułu jest w przygotowaniu.
+                    </p>
+                  )}
                 </div>
               </div>
-            </div>
+            </article>
+          </div>
 
+          {/* Sidebar */}
+          <aside className="space-y-4">
             {/* Related Articles */}
             {relatedArticles.length > 0 && (
-              <div className="mb-12">
-                <h2 className="text-xl font-bold text-foreground mb-6">
+              <div className="bg-card rounded-lg p-4">
+                <h3 className="font-semibold text-sm mb-3">
                   Więcej z kategorii {article.category}
-                </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                </h3>
+                <div className="divide-y divide-border">
                   {relatedArticles.map((related) => (
                     <NewsCard
                       key={related.id}
@@ -215,13 +165,13 @@ export default function Article() {
                       category={related.category}
                       image={related.image}
                       timestamp={related.timestamp}
-                      badge={related.badge || undefined}
+                      variant="list"
                     />
                   ))}
                 </div>
               </div>
             )}
-          </div>
+          </aside>
         </div>
       </main>
 
