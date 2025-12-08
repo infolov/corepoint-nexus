@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Menu, X, Search, User, Sun, Moon, Bell } from "lucide-react";
+import { Menu, X, Search, User, Sun, Moon, Bell, CloudSun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -33,7 +33,7 @@ export function Header() {
                 <span className="text-lg font-bold text-primary-foreground">I</span>
               </div>
               <span className="text-xl font-bold tracking-tight">
-                Info<span className="text-primary">Pulse</span>
+                INFORMACJE<span className="text-primary">.PL</span>
               </span>
             </Link>
           </div>
@@ -56,6 +56,10 @@ export function Header() {
             <Button variant="nav" size="icon" className="hidden sm:flex">
               <Search className="h-4 w-4" />
             </Button>
+            <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 text-nav-foreground/80 text-sm">
+              <CloudSun className="h-4 w-4 text-weather-sunny" />
+              <span className="font-medium">22°C</span>
+            </div>
             <Button variant="nav" size="icon" className="hidden sm:flex">
               <Bell className="h-4 w-4" />
             </Button>
