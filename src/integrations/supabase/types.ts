@@ -130,6 +130,54 @@ export type Database = {
         }
         Relationships: []
       }
+      articles: {
+        Row: {
+          author_id: string | null
+          badge: string | null
+          category: string
+          content: string | null
+          created_at: string
+          excerpt: string | null
+          id: string
+          image: string
+          is_featured: boolean
+          is_published: boolean
+          title: string
+          updated_at: string
+          view_count: number
+        }
+        Insert: {
+          author_id?: string | null
+          badge?: string | null
+          category: string
+          content?: string | null
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          image: string
+          is_featured?: boolean
+          is_published?: boolean
+          title: string
+          updated_at?: string
+          view_count?: number
+        }
+        Update: {
+          author_id?: string | null
+          badge?: string | null
+          category?: string
+          content?: string | null
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          image?: string
+          is_featured?: boolean
+          is_published?: boolean
+          title?: string
+          updated_at?: string
+          view_count?: number
+        }
+        Relationships: []
+      }
       campaign_stats: {
         Row: {
           campaign_id: string
