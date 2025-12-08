@@ -130,6 +130,54 @@ export type Database = {
         }
         Relationships: []
       }
+      articles: {
+        Row: {
+          author_id: string | null
+          badge: string | null
+          category: string
+          content: string | null
+          created_at: string
+          excerpt: string | null
+          id: string
+          image: string
+          is_featured: boolean
+          is_published: boolean
+          title: string
+          updated_at: string
+          view_count: number
+        }
+        Insert: {
+          author_id?: string | null
+          badge?: string | null
+          category: string
+          content?: string | null
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          image: string
+          is_featured?: boolean
+          is_published?: boolean
+          title: string
+          updated_at?: string
+          view_count?: number
+        }
+        Update: {
+          author_id?: string | null
+          badge?: string | null
+          category?: string
+          content?: string | null
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          image?: string
+          is_featured?: boolean
+          is_published?: boolean
+          title?: string
+          updated_at?: string
+          view_count?: number
+        }
+        Relationships: []
+      }
       campaign_stats: {
         Row: {
           campaign_id: string
@@ -272,6 +320,66 @@ export type Database = {
         }
         Relationships: []
       }
+      user_notification_preferences: {
+        Row: {
+          categories: string[] | null
+          created_at: string
+          id: string
+          tags: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          categories?: string[] | null
+          created_at?: string
+          id?: string
+          tags?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          categories?: string[] | null
+          created_at?: string
+          id?: string
+          tags?: string[] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_notifications: {
+        Row: {
+          article_url: string | null
+          category: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_read: boolean
+          title: string
+          user_id: string
+        }
+        Insert: {
+          article_url?: string | null
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_read?: boolean
+          title: string
+          user_id: string
+        }
+        Update: {
+          article_url?: string | null
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_read?: boolean
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -290,6 +398,45 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_site_settings: {
+        Row: {
+          city: string | null
+          county: string | null
+          created_at: string
+          id: string
+          language: string | null
+          locality: string | null
+          region: string | null
+          updated_at: string
+          user_id: string
+          voivodeship: string | null
+        }
+        Insert: {
+          city?: string | null
+          county?: string | null
+          created_at?: string
+          id?: string
+          language?: string | null
+          locality?: string | null
+          region?: string | null
+          updated_at?: string
+          user_id: string
+          voivodeship?: string | null
+        }
+        Update: {
+          city?: string | null
+          county?: string | null
+          created_at?: string
+          id?: string
+          language?: string | null
+          locality?: string | null
+          region?: string | null
+          updated_at?: string
+          user_id?: string
+          voivodeship?: string | null
         }
         Relationships: []
       }
