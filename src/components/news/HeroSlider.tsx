@@ -1,136 +1,152 @@
 import { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { useFeaturedArticles } from "@/hooks/useArticles";
-import { NewsCard } from "./NewsCard";
+
+interface HeroArticle {
+  id: string;
+  title: string;
+  excerpt: string;
+  category: string;
+  image: string;
+  timestamp: string;
+  badge?: "hot" | "trending" | "new";
+}
+
+const heroArticles: HeroArticle[] = [
+  {
+    id: "1",
+    title: "Przełomowa decyzja UE w sprawie regulacji sztucznej inteligencji",
+    excerpt: "Unia Europejska przyjęła nowe przepisy dotyczące AI, które zmienią sposób działania technologicznych gigantów na kontynencie.",
+    category: "Technologia",
+    image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1200&h=600&fit=crop",
+    timestamp: "2 godz. temu",
+    badge: "hot",
+  },
+  {
+    id: "2",
+    title: "Rekordowe wzrosty na giełdach światowych",
+    excerpt: "Indeksy giełdowe biją kolejne rekordy. Eksperci analizują przyczyny i prognozy na kolejne miesiące.",
+    category: "Biznes",
+    image: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1200&h=600&fit=crop",
+    timestamp: "4 godz. temu",
+    badge: "trending",
+  },
+  {
+    id: "3",
+    title: "Reprezentacja Polski w drodze do finału mistrzostw",
+    excerpt: "Polscy sportowcy pokazali klasę w półfinałowych zmaganiach. Przed nami wielki finał.",
+    category: "Sport",
+    image: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1200&h=600&fit=crop",
+    timestamp: "6 godz. temu",
+    badge: "new",
+  },
+];
 
 export function HeroSlider() {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const { data: heroArticles = [], isLoading } = useFeaturedArticles();
 
   useEffect(() => {
-    if (heroArticles.length === 0) return;
-    
     const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % Math.max(1, heroArticles.length - 2));
-    }, 8000);
+      setCurrentSlide((prev) => (prev + 1) % heroArticles.length);
+    }, 6000);
     return () => clearInterval(timer);
-  }, [heroArticles.length]);
+  }, []);
 
   const nextSlide = () => {
-    if (heroArticles.length === 0) return;
-    setCurrentSlide((prev) => (prev + 1) % Math.max(1, heroArticles.length - 2));
+    setCurrentSlide((prev) => (prev + 1) % heroArticles.length);
   };
 
   const prevSlide = () => {
-    if (heroArticles.length === 0) return;
-    setCurrentSlide((prev) => (prev - 1 + Math.max(1, heroArticles.length - 2)) % Math.max(1, heroArticles.length - 2));
+    setCurrentSlide((prev) => (prev - 1 + heroArticles.length) % heroArticles.length);
   };
 
-  if (isLoading) {
-    return (
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <div className="md:col-span-2">
-          <Skeleton className="h-[320px] w-full rounded-lg" />
-        </div>
-        <div className="flex flex-col gap-3">
-          <Skeleton className="h-[154px] w-full rounded-lg" />
-          <Skeleton className="h-[154px] w-full rounded-lg" />
-        </div>
-      </section>
-    );
-  }
-
-  if (heroArticles.length === 0) {
-    return null;
-  }
-
-  const mainArticle = heroArticles[currentSlide] || heroArticles[0];
-  const sideArticles = heroArticles.slice(currentSlide + 1, currentSlide + 3);
-
   return (
-    <section className="relative">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        {/* Main Hero Card */}
-        <div className="md:col-span-2 relative">
-          <NewsCard
-            id={mainArticle.id}
-            title={mainArticle.title}
-            category={mainArticle.category}
-            image={mainArticle.image}
-            timestamp={mainArticle.timestamp}
-            badge={mainArticle.badge as "trending" | "local" | undefined}
-            variant="hero"
-            className="h-[320px]"
-          />
-          
-          {/* Navigation Arrows */}
-          {heroArticles.length > 1 && (
-            <>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 text-white hover:bg-black/60 h-8 w-8 rounded-full"
-                onClick={prevSlide}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 text-white hover:bg-black/60 h-8 w-8 rounded-full"
-                onClick={nextSlide}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </>
-          )}
-
-          {/* Dots */}
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
-            {Array.from({ length: Math.max(1, heroArticles.length - 2) }).map((_, index) => (
-              <button
-                key={index}
-                className={cn(
-                  "w-1.5 h-1.5 rounded-full transition-all duration-300",
-                  index === currentSlide ? "bg-white w-4" : "bg-white/50 hover:bg-white/80"
-                )}
-                onClick={() => setCurrentSlide(index)}
+    <section className="relative overflow-hidden rounded-xl bg-card shadow-lg">
+      <div className="relative h-[400px] md:h-[500px]">
+        {heroArticles.map((article, index) => (
+          <div
+            key={article.id}
+            className={cn(
+              "absolute inset-0 transition-all duration-700 ease-in-out",
+              index === currentSlide ? "opacity-100 translate-x-0" : "opacity-0 translate-x-full"
+            )}
+          >
+            {/* Background Image */}
+            <div className="absolute inset-0">
+              <img
+                src={article.image}
+                alt={article.title}
+                className="w-full h-full object-cover"
               />
-            ))}
-          </div>
-        </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
+            </div>
 
-        {/* Side Cards */}
-        <div className="flex flex-col gap-3">
-          {sideArticles.map((article) => (
-            <NewsCard
-              key={article.id}
-              id={article.id}
-              title={article.title}
-              category={article.category}
-              image={article.image}
-              timestamp={article.timestamp}
-              variant="hero"
-              className="h-[154px]"
-            />
-          ))}
-          {/* Fill empty slots if needed */}
-          {sideArticles.length < 2 && heroArticles.slice(0, 2 - sideArticles.length).map((article) => (
-            <NewsCard
-              key={article.id + "-fill"}
-              id={article.id}
-              title={article.title}
-              category={article.category}
-              image={article.image}
-              timestamp={article.timestamp}
-              variant="hero"
-              className="h-[154px]"
-            />
-          ))}
-        </div>
+            {/* Content */}
+            <div className="relative h-full flex flex-col justify-end p-6 md:p-10">
+              <div className="max-w-3xl">
+                <div className="flex items-center gap-3 mb-4">
+                  <Badge variant="category">{article.category}</Badge>
+                  {article.badge && (
+                    <Badge variant={article.badge}>
+                      {article.badge === "hot" && "🔥 Gorące"}
+                      {article.badge === "trending" && "📈 Trending"}
+                      {article.badge === "new" && "✨ Nowe"}
+                    </Badge>
+                  )}
+                </div>
+                <h2 className="text-2xl md:text-4xl font-bold text-white mb-3 leading-tight">
+                  {article.title}
+                </h2>
+                <p className="text-white/80 text-base md:text-lg mb-4 line-clamp-2">
+                  {article.excerpt}
+                </p>
+                <div className="flex items-center gap-4">
+                  <span className="flex items-center gap-1 text-white/60 text-sm">
+                    <Clock className="h-4 w-4" />
+                    {article.timestamp}
+                  </span>
+                  <Button variant="gradient" size="sm">
+                    Czytaj więcej
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Navigation Arrows */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/30 text-white hover:bg-black/50 backdrop-blur-sm"
+        onClick={prevSlide}
+      >
+        <ChevronLeft className="h-6 w-6" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/30 text-white hover:bg-black/50 backdrop-blur-sm"
+        onClick={nextSlide}
+      >
+        <ChevronRight className="h-6 w-6" />
+      </Button>
+
+      {/* Dots */}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+        {heroArticles.map((_, index) => (
+          <button
+            key={index}
+            className={cn(
+              "w-2 h-2 rounded-full transition-all duration-300",
+              index === currentSlide ? "bg-primary w-6" : "bg-white/50 hover:bg-white/80"
+            )}
+            onClick={() => setCurrentSlide(index)}
+          />
+        ))}
       </div>
     </section>
   );

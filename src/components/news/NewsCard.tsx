@@ -1,173 +1,114 @@
-import { ThumbsUp, MessageCircle, TrendingUp, MapPin } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Clock } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 interface NewsCardProps {
-  id?: string;
   title: string;
   excerpt?: string;
   category: string;
   image: string;
   timestamp: string;
-  source?: string;
-  badge?: "trending" | "local";
-  likes?: number;
-  comments?: number;
-  variant?: "hero" | "medium" | "small" | "list";
+  badge?: "hot" | "trending" | "new";
+  variant?: "default" | "horizontal" | "compact";
   className?: string;
 }
 
 export function NewsCard({
-  id,
   title,
   excerpt,
   category,
   image,
   timestamp,
-  source = "INFORMACJE.PL",
   badge,
-  likes = Math.floor(Math.random() * 500) + 50,
-  comments = Math.floor(Math.random() * 100) + 5,
-  variant = "medium",
+  variant = "default",
   className,
 }: NewsCardProps) {
-  const Wrapper = id ? Link : "div";
-  const wrapperProps = id ? { to: `/article/${id}` } : {};
-
-  // Hero variant - large card with overlay text
-  if (variant === "hero") {
+  if (variant === "horizontal") {
     return (
-      <Wrapper {...(wrapperProps as any)}>
-        <article className={cn("group relative cursor-pointer msn-card h-full min-h-[300px]", className)}>
-          <div className="absolute inset-0">
-            <img
-              src={image}
-              alt={title}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-          </div>
-          <div className="relative h-full flex flex-col justify-end p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-xs text-white/80">{source}</span>
-              <span className="text-xs text-white/60">·</span>
-              <span className="text-xs text-white/60">{timestamp}</span>
-            </div>
-            <h2 className="text-lg md:text-xl font-semibold text-white line-clamp-3 mb-3 group-hover:underline">
-              {title}
-            </h2>
-            <div className="flex items-center gap-4 text-white/70 text-xs">
-              <span className="flex items-center gap-1">
-                <ThumbsUp className="h-3.5 w-3.5" />
-                {likes}
-              </span>
-              <span className="flex items-center gap-1">
-                <MessageCircle className="h-3.5 w-3.5" />
-                {comments}
-              </span>
-              {badge === "trending" && (
-                <span className="flex items-center gap-1 text-primary">
-                  <TrendingUp className="h-3.5 w-3.5" />
-                  Trending
-                </span>
-              )}
-              {badge === "local" && (
-                <span className="flex items-center gap-1 text-green-400">
-                  <MapPin className="h-3.5 w-3.5" />
-                  Lokalne
-                </span>
-              )}
-            </div>
-          </div>
-        </article>
-      </Wrapper>
-    );
-  }
-
-  // Medium variant - standard card with image on top
-  if (variant === "medium") {
-    return (
-      <Wrapper {...(wrapperProps as any)}>
-        <article className={cn("group cursor-pointer msn-card", className)}>
-          <div className="relative aspect-[16/10] overflow-hidden">
-            <img
-              src={image}
-              alt={title}
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-            />
-          </div>
-          <div className="p-3">
-            <div className="flex items-center gap-2 mb-1.5">
-              <span className="text-xs text-muted-foreground">{source}</span>
-              <span className="text-xs text-muted-foreground">·</span>
-              <span className="text-xs text-muted-foreground">{timestamp}</span>
-            </div>
-            <h3 className="font-medium text-foreground line-clamp-2 group-hover:text-primary transition-colors text-sm">
-              {title}
-            </h3>
-            <div className="flex items-center gap-3 mt-2 text-muted-foreground text-xs">
-              <span className="flex items-center gap-1">
-                <ThumbsUp className="h-3 w-3" />
-                {likes}
-              </span>
-              <span className="flex items-center gap-1">
-                <MessageCircle className="h-3 w-3" />
-                {comments}
-              </span>
-              {badge === "trending" && (
-                <span className="flex items-center gap-1 text-primary">
-                  <TrendingUp className="h-3 w-3" />
-                  Trending
-                </span>
-              )}
-            </div>
-          </div>
-        </article>
-      </Wrapper>
-    );
-  }
-
-  // Small variant - compact card
-  if (variant === "small") {
-    return (
-      <Wrapper {...(wrapperProps as any)}>
-        <article className={cn("group cursor-pointer msn-card", className)}>
-          <div className="relative aspect-[4/3] overflow-hidden">
-            <img
-              src={image}
-              alt={title}
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-            />
-          </div>
-          <div className="p-2.5">
-            <span className="text-xs text-muted-foreground">{source} · {timestamp}</span>
-            <h4 className="font-medium text-foreground line-clamp-2 group-hover:text-primary transition-colors text-sm mt-1">
-              {title}
-            </h4>
-          </div>
-        </article>
-      </Wrapper>
-    );
-  }
-
-  // List variant - horizontal layout for sidebar
-  return (
-    <Wrapper {...(wrapperProps as any)}>
-      <article className={cn("group flex gap-3 cursor-pointer py-2", className)}>
-        <div className="relative w-20 h-14 flex-shrink-0 overflow-hidden rounded">
+      <article className={cn("group flex gap-4 cursor-pointer", className)}>
+        <div className="relative w-32 h-24 md:w-40 md:h-28 flex-shrink-0 overflow-hidden rounded-lg">
           <img
             src={image}
             alt={title}
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
         </div>
-        <div className="flex-1 min-w-0">
-          <span className="text-xs text-muted-foreground">{source} · {timestamp}</span>
+        <div className="flex flex-col justify-center min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <Badge variant="category" className="text-xs">{category}</Badge>
+            {badge && (
+              <Badge variant={badge} className="text-xs">
+                {badge === "hot" && "🔥"}
+                {badge === "trending" && "📈"}
+                {badge === "new" && "✨"}
+              </Badge>
+            )}
+          </div>
+          <h3 className="font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors">
+            {title}
+          </h3>
+          <span className="flex items-center gap-1 text-muted-foreground text-xs mt-1">
+            <Clock className="h-3 w-3" />
+            {timestamp}
+          </span>
+        </div>
+      </article>
+    );
+  }
+
+  if (variant === "compact") {
+    return (
+      <article className={cn("group flex gap-3 cursor-pointer py-3 border-b border-border last:border-0", className)}>
+        <div className="relative w-16 h-16 flex-shrink-0 overflow-hidden rounded-md">
+          <img
+            src={image}
+            alt={title}
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        </div>
+        <div className="flex flex-col justify-center min-w-0">
+          <span className="text-xs text-primary font-medium">{category}</span>
           <h4 className="text-sm font-medium text-foreground line-clamp-2 group-hover:text-primary transition-colors">
             {title}
           </h4>
         </div>
       </article>
-    </Wrapper>
+    );
+  }
+
+  return (
+    <article className={cn("group cursor-pointer card-hover bg-card rounded-xl overflow-hidden shadow-sm", className)}>
+      <div className="relative aspect-[16/10] overflow-hidden">
+        <img
+          src={image}
+          alt={title}
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+        />
+        <div className="absolute top-3 left-3 flex gap-2">
+          <Badge variant="category">{category}</Badge>
+          {badge && (
+            <Badge variant={badge}>
+              {badge === "hot" && "🔥 Gorące"}
+              {badge === "trending" && "📈 Trending"}
+              {badge === "new" && "✨ Nowe"}
+            </Badge>
+          )}
+        </div>
+      </div>
+      <div className="p-4">
+        <h3 className="font-bold text-lg text-foreground line-clamp-2 group-hover:text-primary transition-colors mb-2">
+          {title}
+        </h3>
+        {excerpt && (
+          <p className="text-muted-foreground text-sm line-clamp-2 mb-3">
+            {excerpt}
+          </p>
+        )}
+        <span className="flex items-center gap-1 text-muted-foreground text-xs">
+          <Clock className="h-3 w-3" />
+          {timestamp}
+        </span>
+      </div>
+    </article>
   );
 }
