@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Menu, X, Search, User, Sun, Moon, Settings, CloudSun, LogOut } from "lucide-react";
+import { Menu, X, Search, User, Sun, Moon, Settings, CloudSun, LogOut, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsAdmin } from "@/hooks/useUserRole";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import {
   DropdownMenu,
@@ -26,6 +27,7 @@ export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDark, setIsDark] = useState(false);
   const { user, signOut, loading } = useAuth();
+  const { isAdmin } = useIsAdmin();
   const navigate = useNavigate();
 
   const toggleTheme = () => {
@@ -105,6 +107,15 @@ export function Header() {
                       <Settings className="h-4 w-4 mr-2" />
                       Ustawienia
                     </DropdownMenuItem>
+                    {isAdmin && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => navigate("/admin/articles")}>
+                          <Shield className="h-4 w-4 mr-2" />
+                          Panel admina
+                        </DropdownMenuItem>
+                      </>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => signOut()}>
                       <LogOut className="h-4 w-4 mr-2" />
