@@ -1,11 +1,8 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { HeroSlider } from "@/components/news/HeroSlider";
 import { NewsSection } from "@/components/sections/NewsSection";
-import { NewsCard } from "@/components/news/NewsCard";
-import { WeatherWidget } from "@/components/widgets/WeatherWidget";
-import { TrendingWidget } from "@/components/widgets/TrendingWidget";
 import { AdBanner } from "@/components/widgets/AdBanner";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import { Loader2, MapPin } from "lucide-react";
@@ -17,7 +14,6 @@ import {
   sportArticles,
   techArticles,
   lifestyleArticles,
-  recommendedArticles,
 } from "@/data/mockNews";
 
 // Base sections that cycle infinitely
@@ -127,15 +123,13 @@ const Index = () => {
           </div>
         )}
 
-        {/* Main Content Grid */}
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Left/Main Column - News */}
-          <div className="lg:col-span-2 space-y-8">
-            {sectionsToShow.map((section, index) => {
-              // Get articles for this section - prefer DB articles
-              const sectionArticles = getSectionArticles(section.category, section.articles);
-              
-              return (
+        {/* Main Content - Full width news sections */}
+        <div className="space-y-8">
+          {sectionsToShow.map((section, index) => {
+            // Get articles for this section - prefer DB articles
+            const sectionArticles = getSectionArticles(section.category, section.articles);
+            
+            return (
               <div key={section.id}>
                 <NewsSection
                   title={section.title}
@@ -150,56 +144,22 @@ const Index = () => {
                 )}
               </div>
             );
-            })}
+          })}
 
-            {/* Load more trigger - infinite scroll */}
-            <div 
-              ref={loadMoreRef} 
-              className="py-8 sm:py-10 md:py-12 flex justify-center min-h-[80px]"
-            >
-              {isLoading && (
-                <div className="flex items-center gap-2 text-muted-foreground animate-pulse">
-                  <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 animate-spin" />
-                  <span className="text-sm sm:text-base">Ładowanie więcej artykułów...</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Right Sidebar */}
-          <aside className="space-y-6">
-            {/* Weather */}
-            <WeatherWidget />
-
-            {/* Ad */}
-            <AdBanner variant="square" />
-
-            {/* Trending */}
-            <TrendingWidget />
-
-            {/* Recommended */}
-            <div className="bg-card rounded-xl p-5 shadow-sm">
-              <h3 className="font-bold text-lg mb-4">Polecane dla Ciebie</h3>
-              <div className="space-y-1">
-                {recommendedArticles.map((article) => (
-                  <NewsCard
-                    key={article.id}
-                    id={article.id}
-                    title={article.title}
-                    category={article.category}
-                    image={article.image}
-                    timestamp={article.timestamp}
-                    source={article.source}
-                    variant="compact"
-                  />
-                ))}
+          {/* Load more trigger - infinite scroll */}
+          <div 
+            ref={loadMoreRef} 
+            className="py-8 sm:py-10 md:py-12 flex justify-center min-h-[80px]"
+          >
+            {isLoading && (
+              <div className="flex items-center gap-2 text-muted-foreground animate-pulse">
+                <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 animate-spin" />
+                <span className="text-sm sm:text-base">Ładowanie więcej artykułów...</span>
               </div>
-            </div>
-
-            {/* Vertical Ad */}
-            <AdBanner variant="vertical" />
-          </aside>
+            )}
+          </div>
         </div>
+
       </main>
 
       <Footer />

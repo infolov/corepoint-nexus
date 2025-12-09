@@ -18,9 +18,8 @@ interface NewsSectionProps {
 }
 
 export function NewsSection({ title, category, articles }: NewsSectionProps) {
-  // Show first article as hero, rest as grid
-  const heroArticle = articles[0];
-  const gridArticles = articles.slice(1, 5);
+  // Show 3 articles in MSN-style grid
+  const gridArticles = articles.slice(0, 3);
 
   return (
     <section className="mb-6 sm:mb-8">
@@ -35,42 +34,22 @@ export function NewsSection({ title, category, articles }: NewsSectionProps) {
         </Link>
       </div>
 
-      {/* Responsive layout: stacked on mobile, grid on tablet/desktop */}
-      <div className="flex flex-col gap-3 sm:gap-4">
-        {/* Hero article - full width on mobile, spans 2 columns on desktop */}
-        {heroArticle && (
-          <div className="w-full">
-            <NewsCard
-              id={heroArticle.id}
-              title={heroArticle.title}
-              category={heroArticle.category}
-              image={heroArticle.image}
-              timestamp={heroArticle.timestamp}
-              source={heroArticle.source}
-              badge={heroArticle.badge}
-              variant="hero"
-              className="aspect-[16/10] sm:aspect-[16/9] md:aspect-[16/8]"
-            />
-          </div>
-        )}
-        
-        {/* Grid of smaller articles */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          {gridArticles.map((article) => (
-            <NewsCard
-              key={article.id}
-              id={article.id}
-              title={article.title}
-              category={article.category}
-              image={article.image}
-              timestamp={article.timestamp}
-              source={article.source}
-              badge={article.badge}
-              variant="default"
-              className="aspect-[4/3]"
-            />
-          ))}
-        </div>
+      {/* MSN-style grid - 3 cards in a row on desktop, 2 on tablet, 1 on mobile */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+        {gridArticles.map((article) => (
+          <NewsCard
+            key={article.id}
+            id={article.id}
+            title={article.title}
+            category={article.category}
+            image={article.image}
+            timestamp={article.timestamp}
+            source={article.source}
+            badge={article.badge}
+            variant="default"
+            className="aspect-[16/10]"
+          />
+        ))}
       </div>
     </section>
   );
