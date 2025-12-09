@@ -13,10 +13,10 @@ import {
 } from "@/components/ui/sheet";
 import { SettingsPanel } from "@/components/settings/SettingsPanel";
 import { SportDropdown } from "@/components/navigation/SportDropdown";
+import { CategoryDropdown } from "@/components/navigation/CategoryDropdown";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 const categories = [
-  { name: "Wiadomości", href: "/wiadomosci" },
   { name: "Biznes", href: "/biznes" },
   { name: "Technologia", href: "/technologia" },
   { name: "Lifestyle", href: "/lifestyle" },
@@ -78,17 +78,13 @@ export function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-1">
-            {categories.slice(0, 2).map((cat) => (
-              <Link
-                key={cat.name}
-                to={cat.href}
-                className="nav-link px-3 py-2 text-sm font-medium"
-              >
-                {cat.name}
-              </Link>
-            ))}
+            <CategoryDropdown 
+              categoryName="Wiadomości" 
+              categorySlug="wiadomosci" 
+              parentFilter="Wiadomości" 
+            />
             <SportDropdown />
-            {categories.slice(2).map((cat) => (
+            {categories.map((cat) => (
               <Link
                 key={cat.name}
                 to={cat.href}
