@@ -1,4 +1,4 @@
-import { Clock } from "lucide-react";
+import { ThumbsUp, ThumbsDown, MessageSquare } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
@@ -8,8 +8,11 @@ interface NewsCardProps {
   category: string;
   image: string;
   timestamp: string;
-  badge?: "hot" | "trending" | "new";
-  variant?: "default" | "horizontal" | "compact";
+  source?: string;
+  badge?: "hot" | "trending" | "new" | "pilne";
+  variant?: "default" | "horizontal" | "compact" | "hero";
+  likes?: number;
+  comments?: number;
   className?: string;
 }
 
@@ -19,10 +22,43 @@ export function NewsCard({
   category,
   image,
   timestamp,
+  source = "Informacje.pl",
   badge,
   variant = "default",
+  likes = Math.floor(Math.random() * 50),
+  comments = Math.floor(Math.random() * 20),
   className,
 }: NewsCardProps) {
+  // MSN-style compact list item (for sidebar)
+  if (variant === "compact") {
+    return (
+      <article className={cn("group flex gap-3 cursor-pointer py-3 border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors px-2 -mx-2 rounded", className)}>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            {badge && (
+              <Badge variant={badge === "pilne" ? "destructive" : badge} className="text-[10px] px-1.5 py-0">
+                {badge === "pilne" ? "Pilne" : badge === "hot" ? "🔥" : badge === "trending" ? "📈" : "✨"}
+              </Badge>
+            )}
+            <span className="text-xs text-muted-foreground">{source}</span>
+            <span className="text-xs text-muted-foreground">· {timestamp}</span>
+          </div>
+          <h4 className="text-sm font-medium text-foreground line-clamp-2 group-hover:text-primary transition-colors">
+            {title}
+          </h4>
+        </div>
+        <div className="relative w-16 h-16 flex-shrink-0 overflow-hidden rounded-md">
+          <img
+            src={image}
+            alt={title}
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        </div>
+      </article>
+    );
+  }
+
+  // MSN-style horizontal card
   if (variant === "horizontal") {
     return (
       <article className={cn("group flex gap-4 cursor-pointer", className)}>
@@ -35,79 +71,90 @@ export function NewsCard({
         </div>
         <div className="flex flex-col justify-center min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <Badge variant="category" className="text-xs">{category}</Badge>
-            {badge && (
-              <Badge variant={badge} className="text-xs">
-                {badge === "hot" && "🔥"}
-                {badge === "trending" && "📈"}
-                {badge === "new" && "✨"}
-              </Badge>
-            )}
+            <span className="text-xs text-muted-foreground">{source}</span>
+            <span className="text-xs text-muted-foreground">· {timestamp}</span>
           </div>
           <h3 className="font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors">
             {title}
           </h3>
-          <span className="flex items-center gap-1 text-muted-foreground text-xs mt-1">
-            <Clock className="h-3 w-3" />
-            {timestamp}
-          </span>
         </div>
       </article>
     );
   }
 
-  if (variant === "compact") {
+  // MSN-style hero card (large featured card)
+  if (variant === "hero") {
     return (
-      <article className={cn("group flex gap-3 cursor-pointer py-3 border-b border-border last:border-0", className)}>
-        <div className="relative w-16 h-16 flex-shrink-0 overflow-hidden rounded-md">
-          <img
-            src={image}
-            alt={title}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-          />
-        </div>
-        <div className="flex flex-col justify-center min-w-0">
-          <span className="text-xs text-primary font-medium">{category}</span>
-          <h4 className="text-sm font-medium text-foreground line-clamp-2 group-hover:text-primary transition-colors">
+      <article className={cn("group relative cursor-pointer rounded-xl overflow-hidden aspect-[16/10]", className)}>
+        <img
+          src={image}
+          alt={title}
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+        
+        {/* Content overlay */}
+        <div className="absolute inset-x-0 bottom-0 p-4">
+          {/* Source and timestamp */}
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-5 h-5 rounded bg-primary/80 flex items-center justify-center">
+              <span className="text-[10px] font-bold text-white">IP</span>
+            </div>
+            <span className="text-xs text-white/80">{source}</span>
+            <span className="text-xs text-white/60">· {timestamp}</span>
+          </div>
+          
+          {/* Title */}
+          <h3 className="font-bold text-lg md:text-xl text-white mb-3 line-clamp-3 group-hover:text-primary-foreground transition-colors">
             {title}
-          </h4>
+          </h3>
+          
+          {/* Engagement metrics */}
+          <div className="flex items-center gap-4 text-white/70">
+            <button className="flex items-center gap-1 hover:text-white transition-colors">
+              <ThumbsUp className="h-4 w-4" />
+              <span className="text-xs">{likes}</span>
+            </button>
+            <button className="flex items-center gap-1 hover:text-white transition-colors">
+              <ThumbsDown className="h-4 w-4" />
+            </button>
+            <button className="flex items-center gap-1 hover:text-white transition-colors">
+              <MessageSquare className="h-4 w-4" />
+              <span className="text-xs">{comments}</span>
+            </button>
+          </div>
         </div>
       </article>
     );
   }
 
+  // MSN-style default card (grid item)
   return (
-    <article className={cn("group cursor-pointer card-hover bg-card rounded-xl overflow-hidden shadow-sm", className)}>
+    <article className={cn("group cursor-pointer rounded-xl overflow-hidden bg-card relative", className)}>
       <div className="relative aspect-[16/10] overflow-hidden">
         <img
           src={image}
           alt={title}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
-        <div className="absolute top-3 left-3 flex gap-2">
-          <Badge variant="category">{category}</Badge>
-          {badge && (
-            <Badge variant={badge}>
-              {badge === "hot" && "🔥 Gorące"}
-              {badge === "trending" && "📈 Trending"}
-              {badge === "new" && "✨ Nowe"}
-            </Badge>
-          )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+        
+        {/* Content overlay */}
+        <div className="absolute inset-x-0 bottom-0 p-3">
+          {/* Source and timestamp */}
+          <div className="flex items-center gap-2 mb-1.5">
+            <div className="w-4 h-4 rounded bg-primary/80 flex items-center justify-center">
+              <span className="text-[8px] font-bold text-white">IP</span>
+            </div>
+            <span className="text-[11px] text-white/80">{source}</span>
+            <span className="text-[11px] text-white/60">· {timestamp}</span>
+          </div>
+          
+          {/* Title */}
+          <h3 className="font-semibold text-sm text-white line-clamp-2 group-hover:text-primary-foreground transition-colors">
+            {title}
+          </h3>
         </div>
-      </div>
-      <div className="p-4">
-        <h3 className="font-bold text-lg text-foreground line-clamp-2 group-hover:text-primary transition-colors mb-2">
-          {title}
-        </h3>
-        {excerpt && (
-          <p className="text-muted-foreground text-sm line-clamp-2 mb-3">
-            {excerpt}
-          </p>
-        )}
-        <span className="flex items-center gap-1 text-muted-foreground text-xs">
-          <Clock className="h-3 w-3" />
-          {timestamp}
-        </span>
       </div>
     </article>
   );
