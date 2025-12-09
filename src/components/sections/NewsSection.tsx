@@ -1,6 +1,8 @@
+import { useState, useCallback } from "react";
 import { NewsCard } from "@/components/news/NewsCard";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 
 interface NewsSectionProps {
   title: string;
@@ -15,11 +17,30 @@ interface NewsSectionProps {
     badge?: "hot" | "trending" | "new";
     source?: string;
   }>;
+  initialCount?: number;
+  loadMoreCount?: number;
+  enableInfiniteScroll?: boolean;
 }
 
-export function NewsSection({ title, category, articles }: NewsSectionProps) {
-  // Show 3 articles in MSN-style grid
-  const gridArticles = articles.slice(0, 3);
+export function NewsSection({ 
+  title, 
+  category, 
+  articles,
+  initialCount = 3,
+  loadMoreCount = 3,
+  enableInfiniteScroll = true
+}: NewsSectionProps) {
+  const [visibleCount, setVisibleCount] = useState(initialCount);
+  
+  const hasMore = enableInfiniteScroll && visibleCount < articles.length;
+  
+  const loadMore = useCallback(() => {
+    setVisibleCount((prev) => Math.min(prev + loadMoreCount, articles.length));
+  }, [loadMoreCount, articles.length]);
+
+  const { loadMoreRef, isLoading } = useInfiniteScroll(loadMore, hasMore);
+  
+  const visibleArticles = articles.slice(0, visibleCount);
 
   return (
     <section className="mb-6 sm:mb-8">
@@ -36,7 +57,7 @@ export function NewsSection({ title, category, articles }: NewsSectionProps) {
 
       {/* MSN-style grid - 3 cards in a row on desktop, 2 on tablet, 1 on mobile */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {gridArticles.map((article) => (
+        {visibleArticles.map((article) => (
           <NewsCard
             key={article.id}
             id={article.id}
@@ -50,6 +71,21 @@ export function NewsSection({ title, category, articles }: NewsSectionProps) {
           />
         ))}
       </div>
+
+      {/* Infinite scroll trigger for this section */}
+      {enableInfiniteScroll && hasMore && (
+        <div 
+          ref={loadMoreRef} 
+          className="py-4 flex justify-center"
+        >
+          {isLoading && (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span className="text-xs sm:text-sm">Ładowanie...</span>
+            </div>
+          )}
+        </div>
+      )}
     </section>
   );
 }
