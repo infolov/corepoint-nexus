@@ -5,11 +5,20 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
+import ResetPassword from "./pages/ResetPassword";
 import Category from "./pages/Category";
 import Article from "./pages/Article";
 import Search from "./pages/Search";
 import NotificationSettings from "./pages/NotificationSettings";
 import NotFound from "./pages/NotFound";
+import Dashboard from "./pages/dashboard/Dashboard";
+import DashboardHome from "./pages/dashboard/DashboardHome";
+import DashboardCalendar from "./pages/dashboard/DashboardCalendar";
+import DashboardPlacements from "./pages/dashboard/DashboardPlacements";
+import DashboardCredits from "./pages/dashboard/DashboardCredits";
+import DashboardStats from "./pages/dashboard/DashboardStats";
+import DashboardCampaigns from "./pages/dashboard/DashboardCampaigns";
+import DashboardSettings from "./pages/dashboard/DashboardSettings";
 
 const queryClient = new QueryClient();
 
@@ -22,12 +31,21 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/artykul/:id" element={<Article />} />
           <Route path="/notifications/settings" element={<NotificationSettings />} />
           <Route path="/szukaj" element={<Search />} />
+          <Route path="/dashboard" element={<Dashboard />}>
+            <Route index element={<DashboardHome />} />
+            <Route path="calendar" element={<DashboardCalendar />} />
+            <Route path="placements" element={<DashboardPlacements />} />
+            <Route path="credits" element={<DashboardCredits />} />
+            <Route path="stats" element={<DashboardStats />} />
+            <Route path="campaigns" element={<DashboardCampaigns />} />
+            <Route path="settings" element={<DashboardSettings />} />
+          </Route>
           <Route path="/sport/:subcategory" element={<Category />} />
           <Route path="/:category" element={<Category />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

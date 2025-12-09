@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Menu, X, Search, User, Sun, Moon, Settings, CloudSun } from "lucide-react";
+import { Menu, X, Search, User, Sun, Moon, Settings, CloudSun, LayoutDashboard, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -15,6 +15,7 @@ import { SettingsPanel } from "@/components/settings/SettingsPanel";
 import { SportDropdown } from "@/components/navigation/SportDropdown";
 import { CategoryDropdown } from "@/components/navigation/CategoryDropdown";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { useAuth } from "@/hooks/use-auth";
 
 const categories = [
   { name: "Wiadomości", slug: "wiadomosci", parentFilter: "Wiadomości" },
@@ -31,6 +32,12 @@ export function Header() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+  const { user, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
 
   const toggleTheme = () => {
     setIsDark(!isDark);
@@ -161,22 +168,51 @@ export function Header() {
                   <SheetTitle className="text-left">Menu</SheetTitle>
                 </SheetHeader>
                 <div className="mt-6 flex flex-col gap-4">
-                  {/* Login/Register section */}
+                  {/* Login/Register or User section */}
                   <div className="border-b border-border pb-4">
                     <h3 className="text-sm font-semibold text-muted-foreground mb-3">Konto</h3>
-                    <div className="flex flex-col gap-2">
-                      <Link to="/login">
-                        <Button variant="gradient" className="w-full">
-                          <User className="h-4 w-4 mr-2" />
-                          Zaloguj się
+                    {user ? (
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-3 p-2 rounded-lg bg-muted/50">
+                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                            <User className="h-5 w-5 text-primary" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">
+                              {user.user_metadata?.full_name || "Użytkownik"}
+                            </p>
+                            <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                          </div>
+                        </div>
+                        <Link to="/dashboard">
+                          <Button variant="gradient" className="w-full">
+                            <LayoutDashboard className="h-4 w-4 mr-2" />
+                            Panel reklamodawcy
+                          </Button>
+                        </Link>
+                        <Button variant="outline" className="w-full" onClick={handleSignOut}>
+                          <LogOut className="h-4 w-4 mr-2" />
+                          Wyloguj się
                         </Button>
-                      </Link>
-                      <Link to="/login">
-                        <Button variant="outline" className="w-full">
-                          Zarejestruj się
-                        </Button>
-                      </Link>
-                    </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-2">
+                        <Link to="/login">
+                          <Button variant="gradient" className="w-full">
+                            <User className="h-4 w-4 mr-2" />
+                            Zaloguj się
+                          </Button>
+                        </Link>
+                        <Link to="/login">
+                          <Button variant="outline" className="w-full">
+                            Zarejestruj się
+                          </Button>
+                        </Link>
+                        <p className="text-xs text-muted-foreground text-center mt-2">
+                          Załóż konto, aby zarządzać reklamami i mieć dostęp do panelu reklamodawcy.
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   {/* Personalization section */}

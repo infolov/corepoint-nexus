@@ -245,9 +245,9 @@ export default function Login() {
                     <input type="checkbox" className="rounded border-input" />
                     <span className="text-muted-foreground">Zapamiętaj mnie</span>
                   </label>
-                  <a href="#" className="text-primary hover:underline">
+                  <Link to="/reset-password" className="text-primary hover:underline">
                     Zapomniałeś hasła?
-                  </a>
+                  </Link>
                 </div>
               )}
 
