@@ -1,25 +1,123 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Eye, EyeOff, Mail, Lock, User, Building } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Eye, EyeOff, Mail, Lock, User, Building, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
+import { toast } from "sonner";
 
 type AuthMode = "login" | "register" | "advertiser";
 
 export default function Login() {
+  const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
   const [mode, setMode] = useState<AuthMode>("login");
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [company, setCompany] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate("/");
+    }
+  }, [user, authLoading, navigate]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement auth with Supabase
-    console.log("Auth attempt:", { mode, email, password, name, company });
+    
+    if (!email || !password) {
+      toast.error("Wypełnij wszystkie wymagane pola");
+      return;
+    }
+
+    if (password.length < 6) {
+      toast.error("Hasło musi mieć co najmniej 6 znaków");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      if (mode === "login") {
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (error) {
+          if (error.message === "Invalid login credentials") {
+            toast.error("Nieprawidłowy email lub hasło");
+          } else {
+            toast.error(error.message);
+          }
+          return;
+        }
+
+        toast.success("Zalogowano pomyślnie!");
+        navigate("/");
+      } else {
+        // Register (both regular and advertiser)
+        const redirectUrl = `${window.location.origin}/`;
+        
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: redirectUrl,
+            data: {
+              full_name: name,
+              company_name: mode === "advertiser" ? company : null,
+              is_advertiser: mode === "advertiser",
+            },
+          },
+        });
+
+        if (error) {
+          if (error.message.includes("already registered")) {
+            toast.error("Ten email jest już zarejestrowany");
+          } else {
+            toast.error(error.message);
+          }
+          return;
+        }
+
+        toast.success("Konto utworzone pomyślnie! Możesz się teraz zalogować.");
+        setMode("login");
+        setPassword("");
+      }
+    } catch (error) {
+      toast.error("Wystąpił błąd. Spróbuj ponownie.");
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const handleGoogleLogin = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/`,
+      },
+    });
+
+    if (error) {
+      toast.error("Błąd logowania przez Google");
+    }
+  };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -117,6 +215,7 @@ export default function Login() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-11 pr-4 py-3 rounded-lg bg-background border border-input focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  required
                 />
               </div>
 
@@ -128,6 +227,8 @@ export default function Login() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full pl-11 pr-11 py-3 rounded-lg bg-background border border-input focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                  required
+                  minLength={6}
                 />
                 <button
                   type="button"
@@ -152,7 +253,7 @@ export default function Login() {
 
               {(mode === "register" || mode === "advertiser") && (
                 <label className="flex items-start gap-2 cursor-pointer text-sm">
-                  <input type="checkbox" className="rounded border-input mt-1" />
+                  <input type="checkbox" className="rounded border-input mt-1" required />
                   <span className="text-muted-foreground">
                     Akceptuję{" "}
                     <a href="/terms" className="text-primary hover:underline">
@@ -166,10 +267,16 @@ export default function Login() {
                 </label>
               )}
 
-              <Button type="submit" variant="gradient" className="w-full" size="xl">
-                {mode === "login" && "Zaloguj się"}
-                {mode === "register" && "Utwórz konto"}
-                {mode === "advertiser" && "Załóż konto reklamodawcy"}
+              <Button type="submit" variant="gradient" className="w-full" size="xl" disabled={loading}>
+                {loading ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <>
+                    {mode === "login" && "Zaloguj się"}
+                    {mode === "register" && "Utwórz konto"}
+                    {mode === "advertiser" && "Załóż konto reklamodawcy"}
+                  </>
+                )}
               </Button>
             </form>
 
@@ -185,7 +292,7 @@ export default function Login() {
 
             {/* Social Login */}
             <div className="grid grid-cols-2 gap-3">
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full" onClick={handleGoogleLogin}>
                 <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
                   <path
                     fill="currentColor"
@@ -206,7 +313,7 @@ export default function Login() {
                 </svg>
                 Google
               </Button>
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full" disabled>
                 <svg className="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
                 </svg>
