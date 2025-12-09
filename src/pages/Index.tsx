@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { HeroSlider } from "@/components/news/HeroSlider";
@@ -8,7 +8,9 @@ import { WeatherWidget } from "@/components/widgets/WeatherWidget";
 import { TrendingWidget } from "@/components/widgets/TrendingWidget";
 import { AdBanner } from "@/components/widgets/AdBanner";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
-import { Loader2 } from "lucide-react";
+import { Loader2, MapPin } from "lucide-react";
+import { useUserSettings } from "@/hooks/use-user-settings";
+import { useArticles, formatArticleForCard } from "@/hooks/use-articles";
 import {
   newsArticles,
   businessArticles,
@@ -49,6 +51,8 @@ const generateSections = (count: number) => {
 
 const Index = () => {
   const [visibleSections, setVisibleSections] = useState(INITIAL_SECTIONS);
+  const { settings } = useUserSettings();
+  const { articles: dbArticles, loading: articlesLoading } = useArticles({ limit: 50 });
   
   // Always has more - infinite scroll
   const hasMore = true;
@@ -59,7 +63,45 @@ const Index = () => {
 
   const { loadMoreRef, isLoading } = useInfiniteScroll(loadMore, hasMore);
 
+  // Use database articles if available, otherwise use mock data
+  const formattedDbArticles = dbArticles.map(formatArticleForCard);
+  
+  // Group database articles by category
+  const articlesByCategory = formattedDbArticles.reduce((acc, article) => {
+    if (!acc[article.category]) {
+      acc[article.category] = [];
+    }
+    acc[article.category].push(article);
+    return acc;
+  }, {} as Record<string, typeof formattedDbArticles>);
+
+  // Create sections with DB articles if available, fallback to mock data
+  const getSectionArticles = (category: string, mockArticles: typeof newsArticles) => {
+    const dbCategoryArticles = articlesByCategory[category];
+    return dbCategoryArticles && dbCategoryArticles.length > 0 ? dbCategoryArticles : mockArticles;
+  };
+
   const sectionsToShow = generateSections(visibleSections);
+
+  // Get region label for display
+  const regionLabels: Record<string, string> = {
+    mazowieckie: "Mazowieckie",
+    malopolskie: "Małopolskie",
+    slaskie: "Śląskie",
+    wielkopolskie: "Wielkopolskie",
+    pomorskie: "Pomorskie",
+    dolnoslaskie: "Dolnośląskie",
+    lodzkie: "Łódzkie",
+    "kujawsko-pomorskie": "Kujawsko-Pomorskie",
+    podkarpackie: "Podkarpackie",
+    lubelskie: "Lubelskie",
+    "warminsko-mazurskie": "Warmińsko-Mazurskie",
+    zachodniopomorskie: "Zachodniopomorskie",
+    podlaskie: "Podlaskie",
+    swietokrzyskie: "Świętokrzyskie",
+    opolskie: "Opolskie",
+    lubuskie: "Lubuskie",
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -76,16 +118,28 @@ const Index = () => {
           <AdBanner variant="horizontal" className="w-full" />
         </div>
 
+        {/* Region indicator */}
+        {settings.voivodeship && (
+          <div className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
+            <MapPin className="h-4 w-4" />
+            <span>Artykuły dla regionu: <strong className="text-foreground">{regionLabels[settings.voivodeship] || settings.voivodeship}</strong></span>
+          </div>
+        )}
+
         {/* Main Content Grid */}
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Left/Main Column - News */}
           <div className="lg:col-span-2 space-y-8">
-            {sectionsToShow.map((section, index) => (
+            {sectionsToShow.map((section, index) => {
+              // Get articles for this section - prefer DB articles
+              const sectionArticles = getSectionArticles(section.category, section.articles);
+              
+              return (
               <div key={section.id}>
                 <NewsSection
                   title={section.title}
                   category={section.category}
-                  articles={section.articles}
+                  articles={sectionArticles}
                 />
                 {/* Insert ad every 2 sections */}
                 {(index + 1) % 2 === 0 && index !== sectionsToShow.length - 1 && (
@@ -94,7 +148,8 @@ const Index = () => {
                   </div>
                 )}
               </div>
-            ))}
+            );
+            })}
 
             {/* Load more trigger - infinite scroll */}
             <div ref={loadMoreRef} className="py-8 flex justify-center">

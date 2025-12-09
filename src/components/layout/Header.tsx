@@ -233,7 +233,8 @@ export function Header() {
       {/* Settings Panel */}
       <SettingsPanel 
         isOpen={isSettingsOpen} 
-        onClose={() => setIsSettingsOpen(false)} 
+        onClose={() => setIsSettingsOpen(false)}
+        onSettingsSaved={() => window.location.reload()}
       />
     </header>
   );

@@ -142,6 +142,7 @@ export type Database = {
           image: string
           is_featured: boolean
           is_published: boolean
+          region: string | null
           title: string
           updated_at: string
           view_count: number
@@ -157,6 +158,7 @@ export type Database = {
           image: string
           is_featured?: boolean
           is_published?: boolean
+          region?: string | null
           title: string
           updated_at?: string
           view_count?: number
@@ -172,6 +174,7 @@ export type Database = {
           image?: string
           is_featured?: boolean
           is_published?: boolean
+          region?: string | null
           title?: string
           updated_at?: string
           view_count?: number

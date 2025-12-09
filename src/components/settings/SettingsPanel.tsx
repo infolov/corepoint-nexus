@@ -10,6 +10,7 @@ import { toast } from "sonner";
 interface SettingsPanelProps {
   isOpen: boolean;
   onClose: () => void;
+  onSettingsSaved?: () => void;
 }
 
 const languages = [
@@ -36,7 +37,7 @@ const regions = [
   { id: "lubuskie", label: "Lubuskie" },
 ];
 
-export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
+export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPanelProps) {
   const { user } = useAuth();
   const [selectedLanguage, setSelectedLanguage] = useState("pl");
   const [selectedRegion, setSelectedRegion] = useState("mazowieckie");
@@ -127,12 +128,14 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
         }
 
         toast.success("Ustawienia zapisane");
+        onSettingsSaved?.();
       } catch (error) {
         console.error("Error saving settings:", error);
         toast.error("Błąd podczas zapisywania ustawień");
       }
     } else {
       toast.success("Ustawienia zapisane lokalnie");
+      onSettingsSaved?.();
     }
 
     setIsSaving(false);
