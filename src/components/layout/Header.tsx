@@ -111,29 +111,6 @@ export function Header() {
         </nav>
       </div>
 
-      {/* Secondary Nav - Categories Bar */}
-      <div className="hidden lg:block bg-card border-b">
-        <div className="container">
-          <div className="flex items-center gap-6 py-2 text-sm">
-            <span className="text-muted-foreground">Popularne:</span>
-            <Link to="/news/politics" className="text-foreground hover:text-primary transition-colors">
-              Polityka
-            </Link>
-            <Link to="/news/world" className="text-foreground hover:text-primary transition-colors">
-              Świat
-            </Link>
-            <Link to="/business/stocks" className="text-foreground hover:text-primary transition-colors">
-              Giełda
-            </Link>
-            <Link to="/sport/football" className="text-foreground hover:text-primary transition-colors">
-              Piłka nożna
-            </Link>
-            <Link to="/tech/ai" className="text-foreground hover:text-primary transition-colors">
-              AI
-            </Link>
-          </div>
-        </div>
-      </div>
     </header>
   );
 }
