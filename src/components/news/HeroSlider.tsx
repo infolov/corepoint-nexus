@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Play, MoreHorizontal, Flame, ChevronLeft, ChevronRight, ThumbsUp, MessageSquare } from "lucide-react";
+import { Play, MoreHorizontal, Flame, ChevronLeft, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
@@ -12,8 +12,6 @@ interface HeroArticle {
   timestamp: string;
   source: string;
   badge?: "hot" | "trending" | "new" | "pilne";
-  likes: number;
-  comments: number;
   hasVideo?: boolean;
 }
 
@@ -27,8 +25,6 @@ const heroArticles: HeroArticle[] = [
     timestamp: "2 godz.",
     source: "o2",
     badge: "hot",
-    likes: 4,
-    comments: 5,
     hasVideo: false,
   },
   {
@@ -40,8 +36,6 @@ const heroArticles: HeroArticle[] = [
     timestamp: "4 godz.",
     source: "Finanse24",
     badge: "trending",
-    likes: 35,
-    comments: 12,
   },
   {
     id: "3",
@@ -52,8 +46,6 @@ const heroArticles: HeroArticle[] = [
     timestamp: "6 godz.",
     source: "Sport.pl",
     badge: "new",
-    likes: 89,
-    comments: 45,
   },
 ];
 
@@ -153,32 +145,18 @@ export function HeroSlider() {
               {currentArticle.title}
             </h2>
             
-            {/* Engagement + Dots row */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4 text-white/70">
-                <span className="flex items-center gap-1 text-sm">
-                  <ThumbsUp className="w-4 h-4" />
-                  {currentArticle.likes}
-                </span>
-                <span className="flex items-center gap-1 text-sm">
-                  <MessageSquare className="w-4 h-4" />
-                  {currentArticle.comments}
-                </span>
-              </div>
-              
-              {/* Dots indicator */}
-              <div className="flex gap-1">
-                {Array.from({ length: 20 }).map((_, index) => (
-                  <button
-                    key={index}
-                    className={cn(
-                      "w-1.5 h-1.5 rounded-full transition-all duration-300",
-                      index === currentSlide ? "bg-white w-4" : "bg-white/30"
-                    )}
-                    onClick={() => index < heroArticles.length && setCurrentSlide(index)}
-                  />
-                ))}
-              </div>
+            {/* Dots indicator */}
+            <div className="flex justify-end gap-1">
+              {Array.from({ length: 20 }).map((_, index) => (
+                <button
+                  key={index}
+                  className={cn(
+                    "w-1.5 h-1.5 rounded-full transition-all duration-300",
+                    index === currentSlide ? "bg-white w-4" : "bg-white/30"
+                  )}
+                  onClick={() => index < heroArticles.length && setCurrentSlide(index)}
+                />
+              ))}
             </div>
           </div>
         </article>

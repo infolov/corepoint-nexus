@@ -12,8 +12,6 @@ interface NewsCardProps {
   source?: string;
   badge?: "hot" | "trending" | "new" | "pilne";
   variant?: "default" | "horizontal" | "compact" | "hero";
-  likes?: number;
-  comments?: number;
   className?: string;
 }
 
@@ -27,8 +25,6 @@ export function NewsCard({
   source = "Informacje.pl",
   badge,
   variant = "default",
-  likes = Math.floor(Math.random() * 50),
-  comments = Math.floor(Math.random() * 20),
   className,
 }: NewsCardProps) {
   const Wrapper = id ? Link : "div";
