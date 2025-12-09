@@ -49,33 +49,113 @@ const heroArticles: HeroArticle[] = [
   },
 ];
 
-const sidebarArticles = [
-  {
-    id: "s1",
-    title: "Kiedy ruszy budowa elektrowni jądrowej? Tusk...",
-    source: "DoRzeczy",
-    timestamp: "3 godz.",
-    image: "https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?w=200&h=200&fit=crop",
-    badge: "pilne" as const,
-  },
-  {
-    id: "s2",
-    title: "Ostry spór w NBP. Adam Glapiński odsunął trzech...",
-    source: "Rzeczpospolita",
-    timestamp: "1 godz.",
-    image: "https://images.unsplash.com/photo-1555848962-6e79363ec58f?w=200&h=200&fit=crop",
-  },
-  {
-    id: "s3",
-    title: "Łowca nastolatek ponownie stanął przed sądem. Jest...",
-    source: "Onet Wiadomości",
-    timestamp: "1 godz.",
-    image: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=200&h=200&fit=crop",
-  },
+// All sidebar articles - divided into pages
+const allSidebarArticles = [
+  // Page 1
+  [
+    {
+      id: "s1",
+      title: "Kiedy ruszy budowa elektrowni jądrowej? Tusk...",
+      source: "DoRzeczy",
+      timestamp: "3 godz.",
+      image: "https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?w=200&h=200&fit=crop",
+      badge: "pilne" as const,
+    },
+    {
+      id: "s2",
+      title: "Ostry spór w NBP. Adam Glapiński odsunął trzech...",
+      source: "Rzeczpospolita",
+      timestamp: "1 godz.",
+      image: "https://images.unsplash.com/photo-1555848962-6e79363ec58f?w=200&h=200&fit=crop",
+    },
+    {
+      id: "s3",
+      title: "Łowca nastolatek ponownie stanął przed sądem. Jest...",
+      source: "Onet Wiadomości",
+      timestamp: "1 godz.",
+      image: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=200&h=200&fit=crop",
+    },
+  ],
+  // Page 2
+  [
+    {
+      id: "s4",
+      title: "Nowe przepisy podatkowe wchodzą w życie. Co się zmieni?",
+      source: "Money.pl",
+      timestamp: "2 godz.",
+      image: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=200&h=200&fit=crop",
+      badge: "pilne" as const,
+    },
+    {
+      id: "s5",
+      title: "Wielka fuzja w branży technologicznej. Kto zyska najwięcej?",
+      source: "Business Insider",
+      timestamp: "4 godz.",
+      image: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=200&h=200&fit=crop",
+    },
+    {
+      id: "s6",
+      title: "Pogoda na weekend. Synoptycy ostrzegają przed...",
+      source: "TVN Meteo",
+      timestamp: "30 min",
+      image: "https://images.unsplash.com/photo-1504608524841-42fe6f032b4b?w=200&h=200&fit=crop",
+    },
+  ],
+  // Page 3
+  [
+    {
+      id: "s7",
+      title: "Najnowsze wyniki badań: Polacy zmieniają nawyki żywieniowe",
+      source: "Zdrowie.pl",
+      timestamp: "5 godz.",
+      image: "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=200&h=200&fit=crop",
+    },
+    {
+      id: "s8",
+      title: "Premiera nowego smartfona. Czy warto czekać na...",
+      source: "Chip.pl",
+      timestamp: "3 godz.",
+      image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=200&h=200&fit=crop",
+      badge: "pilne" as const,
+    },
+    {
+      id: "s9",
+      title: "Polska reprezentacja koszykarzy awansowała do...",
+      source: "Sport.pl",
+      timestamp: "1 godz.",
+      image: "https://images.unsplash.com/photo-1546519638-68e109498ffc?w=200&h=200&fit=crop",
+    },
+  ],
+  // Page 4
+  [
+    {
+      id: "s10",
+      title: "Rząd zapowiada nowe inwestycje w infrastrukturę drogową",
+      source: "PAP",
+      timestamp: "6 godz.",
+      image: "https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?w=200&h=200&fit=crop",
+    },
+    {
+      id: "s11",
+      title: "Kontrowersyjny wyrok sądu. Obrońcy praw człowieka reagują",
+      source: "Prawo.pl",
+      timestamp: "2 godz.",
+      image: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=200&h=200&fit=crop",
+      badge: "pilne" as const,
+    },
+    {
+      id: "s12",
+      title: "Nowy serial bije rekordy popularności. O czym jest?",
+      source: "Filmweb",
+      timestamp: "4 godz.",
+      image: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=200&h=200&fit=crop",
+    },
+  ],
 ];
 
 export function HeroSlider() {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [sidebarPage, setSidebarPage] = useState(0);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -85,6 +165,7 @@ export function HeroSlider() {
   }, []);
 
   const currentArticle = heroArticles[currentSlide];
+  const currentSidebarArticles = allSidebarArticles[sidebarPage];
 
   const goToPrev = () => {
     setCurrentSlide((prev) => (prev - 1 + heroArticles.length) % heroArticles.length);
@@ -92,6 +173,10 @@ export function HeroSlider() {
 
   const goToNext = () => {
     setCurrentSlide((prev) => (prev + 1) % heroArticles.length);
+  };
+
+  const goToSidebarPage = (page: number) => {
+    setSidebarPage(page);
   };
 
   return (
@@ -174,8 +259,8 @@ export function HeroSlider() {
           </button>
         </div>
 
-        <div className="space-y-0">
-          {sidebarArticles.map((article) => (
+        <div className="space-y-0 min-h-[240px]">
+          {currentSidebarArticles.map((article) => (
             <article 
               key={article.id} 
               className="group flex gap-3 cursor-pointer py-3 border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors rounded px-2 -mx-2"
@@ -214,12 +299,13 @@ export function HeroSlider() {
 
         {/* Pagination dots */}
         <div className="flex justify-center gap-1.5 mt-4">
-          {[0, 1, 2, 3].map((i) => (
+          {allSidebarArticles.map((_, i) => (
             <button
               key={i}
+              onClick={() => goToSidebarPage(i)}
               className={cn(
                 "w-2 h-2 rounded-full transition-colors",
-                i === 0 ? "bg-primary" : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
+                i === sidebarPage ? "bg-primary" : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
               )}
             />
           ))}
