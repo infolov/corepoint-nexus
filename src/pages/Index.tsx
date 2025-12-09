@@ -4,8 +4,6 @@ import { Footer } from "@/components/layout/Footer";
 import { HeroSlider } from "@/components/news/HeroSlider";
 import { NewsSection } from "@/components/sections/NewsSection";
 import { AdBanner } from "@/components/widgets/AdBanner";
-import { WeatherPanel } from "@/components/widgets/WeatherPanel";
-import { FinanceWidget } from "@/components/widgets/FinanceWidget";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import { Loader2, MapPin } from "lucide-react";
 import { useUserSettings } from "@/hooks/use-user-settings";
@@ -112,11 +110,9 @@ const Index = () => {
           <HeroSlider />
         </section>
 
-        {/* Weather Panel, Finance Widget & Ad Banner */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          <WeatherPanel />
-          <FinanceWidget />
-          <AdBanner variant="vertical" className="w-full h-full min-h-[300px]" />
+        {/* Ad Banner */}
+        <div className="mb-8">
+          <AdBanner variant="horizontal" className="w-full" />
         </div>
 
         {/* Region indicator */}

@@ -180,10 +180,10 @@ export function HeroSlider() {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
       {/* Main Hero Card */}
-      <div>
-        <article className="group relative cursor-pointer rounded-xl overflow-hidden aspect-[16/9] lg:h-full">
+      <div className="lg:col-span-2">
+        <article className="group relative cursor-pointer rounded-xl overflow-hidden aspect-[16/10]">
           <img
             src={currentArticle.image}
             alt={currentArticle.title}
