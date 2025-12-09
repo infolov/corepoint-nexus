@@ -7,6 +7,7 @@ export interface Article {
   timestamp: string;
   badge?: "hot" | "trending" | "new";
   source?: string;
+  sourceUrl?: string;
 }
 
 export const newsArticles: Article[] = [
@@ -19,6 +20,7 @@ export const newsArticles: Article[] = [
     timestamp: "1 godz. temu",
     badge: "hot",
     source: "PAP",
+    sourceUrl: "https://www.pap.pl",
   },
   {
     id: "n2",
@@ -27,6 +29,7 @@ export const newsArticles: Article[] = [
     image: "https://images.unsplash.com/photo-1569163139599-0f4517e36f51?w=400&h=300&fit=crop",
     timestamp: "3 godz. temu",
     source: "Reuters",
+    sourceUrl: "https://www.reuters.com",
   },
   {
     id: "n3",
@@ -35,6 +38,7 @@ export const newsArticles: Article[] = [
     image: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400&h=300&fit=crop",
     timestamp: "5 godz. temu",
     source: "TVN24",
+    sourceUrl: "https://tvn24.pl",
   },
   {
     id: "n4",
@@ -44,6 +48,7 @@ export const newsArticles: Article[] = [
     timestamp: "7 godz. temu",
     badge: "trending",
     source: "Polsat News",
+    sourceUrl: "https://www.polsatnews.pl",
   },
 ];
 

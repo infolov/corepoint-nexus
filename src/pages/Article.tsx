@@ -188,10 +188,24 @@ const Article = () => {
                   <p className="text-sm text-muted-foreground">Źródło informacji</p>
                   <p className="font-semibold text-foreground">{article.source || "Informacje.pl"}</p>
                 </div>
-                <Button variant="outline" size="sm" className="ml-auto">
-                  <ExternalLink className="h-4 w-4 mr-1" />
-                  Odwiedź źródło
-                </Button>
+                {article.sourceUrl ? (
+                  <a 
+                    href={article.sourceUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="ml-auto"
+                  >
+                    <Button variant="outline" size="sm">
+                      <ExternalLink className="h-4 w-4 mr-1" />
+                      Odwiedź źródło
+                    </Button>
+                  </a>
+                ) : (
+                  <Button variant="outline" size="sm" className="ml-auto" disabled>
+                    <ExternalLink className="h-4 w-4 mr-1" />
+                    Odwiedź źródło
+                  </Button>
+                )}
               </div>
             </div>
 
