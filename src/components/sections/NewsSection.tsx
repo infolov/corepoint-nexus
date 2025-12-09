@@ -35,7 +35,7 @@ export function NewsSection({ title, category, articles }: NewsSectionProps) {
       </div>
 
       {/* MSN-style grid - 3 cards in a row on desktop, 2 on tablet, 1 on mobile */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {gridArticles.map((article) => (
           <NewsCard
             key={article.id}
@@ -47,7 +47,6 @@ export function NewsSection({ title, category, articles }: NewsSectionProps) {
             source={article.source}
             badge={article.badge}
             variant="default"
-            className="aspect-[16/10]"
           />
         ))}
       </div>
