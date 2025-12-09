@@ -132,20 +132,6 @@ export function HeroSlider() {
               {currentArticle.title}
             </h2>
             
-            {/* Engagement metrics */}
-            <div className="flex items-center gap-5 text-white/70">
-              <button className="flex items-center gap-1.5 hover:text-white transition-colors">
-                <ThumbsUp className="h-5 w-5" />
-                <span className="text-sm">{currentArticle.likes}</span>
-              </button>
-              <button className="flex items-center gap-1.5 hover:text-white transition-colors">
-                <ThumbsDown className="h-5 w-5" />
-              </button>
-              <button className="flex items-center gap-1.5 hover:text-white transition-colors">
-                <MessageSquare className="h-5 w-5" />
-                <span className="text-sm">{currentArticle.comments}</span>
-              </button>
-            </div>
           </div>
 
           {/* Dots indicator */}
