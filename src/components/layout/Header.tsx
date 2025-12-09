@@ -12,11 +12,12 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { SettingsPanel } from "@/components/settings/SettingsPanel";
+import { SportDropdown } from "@/components/navigation/SportDropdown";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 const categories = [
   { name: "Wiadomości", href: "/wiadomosci" },
   { name: "Biznes", href: "/biznes" },
-  { name: "Sport", href: "/sport" },
   { name: "Technologia", href: "/technologia" },
   { name: "Lifestyle", href: "/lifestyle" },
   { name: "Rozrywka", href: "/rozrywka" },
@@ -77,7 +78,17 @@ export function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-1">
-            {categories.map((cat) => (
+            {categories.slice(0, 2).map((cat) => (
+              <Link
+                key={cat.name}
+                to={cat.href}
+                className="nav-link px-3 py-2 text-sm font-medium"
+              >
+                {cat.name}
+              </Link>
+            ))}
+            <SportDropdown />
+            {categories.slice(2).map((cat) => (
               <Link
                 key={cat.name}
                 to={cat.href}
@@ -132,6 +143,9 @@ export function Header() {
               <CloudSun className="h-4 w-4 text-weather-sunny" />
               <span className="font-medium">22°C</span>
             </div>
+
+            {/* Notifications */}
+            <NotificationBell />
 
             {/* Theme toggle */}
             <Button variant="nav" size="icon" onClick={toggleTheme}>

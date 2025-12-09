@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -5,6 +6,7 @@ import { NewsCard } from "@/components/news/NewsCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Clock, Share2, Bookmark, ExternalLink } from "lucide-react";
+import { useRecentlyViewed } from "@/hooks/use-recently-viewed";
 import {
   newsArticles,
   businessArticles,
@@ -45,8 +47,16 @@ Zachęcamy do dzielenia się swoimi opiniami i śledzenia naszego portalu, gdzie
 
 const Article = () => {
   const { id } = useParams<{ id: string }>();
+  const { trackArticleView } = useRecentlyViewed();
   
   const article = allArticles.find((a) => a.id === id);
+
+  // Track article view for logged-in users
+  useEffect(() => {
+    if (article && id) {
+      trackArticleView(id, article.category);
+    }
+  }, [id, article?.category]);
   
   if (!article) {
     return (
