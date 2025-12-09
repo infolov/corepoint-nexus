@@ -1,12 +1,44 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { NewsCard } from "@/components/news/NewsCard";
 import { useArticles, formatArticleForCard } from "@/hooks/use-articles";
-import { Search as SearchIcon } from "lucide-react";
+import { Search as SearchIcon, Filter, X, TrendingUp, Clock, Calendar } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+const categories = [
+  { value: "all", label: "Wszystkie kategorie" },
+  { value: "Wiadomości", label: "Wiadomości" },
+  { value: "Sport", label: "Sport" },
+  { value: "Biznes", label: "Biznes" },
+  { value: "Tech", label: "Tech" },
+  { value: "Lifestyle", label: "Lifestyle" },
+  { value: "Rozrywka", label: "Rozrywka" },
+];
+
+const dateFilters = [
+  { value: "all", label: "Dowolna data", icon: Calendar },
+  { value: "today", label: "Dzisiaj", days: 0 },
+  { value: "week", label: "Ostatni tydzień", days: 7 },
+  { value: "month", label: "Ostatni miesiąc", days: 30 },
+  { value: "year", label: "Ostatni rok", days: 365 },
+];
+
+const sortOptions = [
+  { value: "newest", label: "Najnowsze", icon: Clock },
+  { value: "oldest", label: "Najstarsze", icon: Clock },
+  { value: "popular", label: "Najpopularniejsze", icon: TrendingUp },
+];
 
 export default function Search() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -14,18 +46,71 @@ export default function Search() {
   const [searchInput, setSearchInput] = useState(query);
   const { articles, loading } = useArticles({ limit: 100 });
 
+  // Filters state
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("newest");
+  const [showFilters, setShowFilters] = useState(false);
+
   useEffect(() => {
     setSearchInput(query);
   }, [query]);
 
-  const filteredArticles = articles.filter((article) => {
-    const searchLower = query.toLowerCase();
-    return (
-      article.title.toLowerCase().includes(searchLower) ||
-      article.excerpt?.toLowerCase().includes(searchLower) ||
-      article.category.toLowerCase().includes(searchLower)
-    );
-  });
+  const filteredAndSortedArticles = useMemo(() => {
+    let results = articles.filter((article) => {
+      const searchLower = query.toLowerCase();
+      const matchesSearch = 
+        article.title.toLowerCase().includes(searchLower) ||
+        article.excerpt?.toLowerCase().includes(searchLower) ||
+        article.category.toLowerCase().includes(searchLower);
+
+      if (!matchesSearch) return false;
+
+      // Category filter
+      if (categoryFilter !== "all" && article.category !== categoryFilter) {
+        return false;
+      }
+
+      // Date filter
+      if (dateFilter !== "all") {
+        const articleDate = new Date(article.created_at);
+        const now = new Date();
+        const filterConfig = dateFilters.find(f => f.value === dateFilter);
+        
+        if (filterConfig && 'days' in filterConfig) {
+          const daysAgo = new Date();
+          daysAgo.setDate(now.getDate() - (filterConfig.days || 0));
+          daysAgo.setHours(0, 0, 0, 0);
+          
+          if (dateFilter === "today") {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            if (articleDate < today) return false;
+          } else if (articleDate < daysAgo) {
+            return false;
+          }
+        }
+      }
+
+      return true;
+    });
+
+    // Sort results
+    results.sort((a, b) => {
+      switch (sortBy) {
+        case "newest":
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        case "oldest":
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case "popular":
+          return (b.view_count || 0) - (a.view_count || 0);
+        default:
+          return 0;
+      }
+    });
+
+    return results;
+  }, [articles, query, categoryFilter, dateFilter, sortBy]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,13 +119,21 @@ export default function Search() {
     }
   };
 
+  const clearFilters = () => {
+    setCategoryFilter("all");
+    setDateFilter("all");
+    setSortBy("newest");
+  };
+
+  const hasActiveFilters = categoryFilter !== "all" || dateFilter !== "all" || sortBy !== "newest";
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
       
       <main className="flex-1 container py-8">
         {/* Search Header */}
-        <div className="mb-8">
+        <div className="mb-6">
           <h1 className="text-3xl font-bold mb-4">Wyniki wyszukiwania</h1>
           
           {/* Search Form */}
@@ -59,19 +152,141 @@ export default function Search() {
               Szukaj
             </Button>
           </form>
-          
-          {query && (
-            <p className="mt-4 text-muted-foreground">
-              {loading ? (
-                "Wyszukiwanie..."
-              ) : (
-                <>
-                  Znaleziono <span className="font-semibold text-foreground">{filteredArticles.length}</span> wyników dla "{query}"
-                </>
+        </div>
+
+        {/* Filters Section */}
+        <div className="mb-6 space-y-4">
+          {/* Filter Toggle & Active Filters */}
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              variant={showFilters ? "default" : "outline"}
+              size="sm"
+              onClick={() => setShowFilters(!showFilters)}
+              className="gap-2"
+            >
+              <Filter className="h-4 w-4" />
+              Filtry
+              {hasActiveFilters && (
+                <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                  !
+                </Badge>
               )}
-            </p>
+            </Button>
+
+            {/* Active filter badges */}
+            {hasActiveFilters && (
+              <>
+                {categoryFilter !== "all" && (
+                  <Badge variant="secondary" className="gap-1">
+                    {categories.find(c => c.value === categoryFilter)?.label}
+                    <X 
+                      className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                      onClick={() => setCategoryFilter("all")}
+                    />
+                  </Badge>
+                )}
+                {dateFilter !== "all" && (
+                  <Badge variant="secondary" className="gap-1">
+                    {dateFilters.find(d => d.value === dateFilter)?.label}
+                    <X 
+                      className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                      onClick={() => setDateFilter("all")}
+                    />
+                  </Badge>
+                )}
+                {sortBy !== "newest" && (
+                  <Badge variant="secondary" className="gap-1">
+                    {sortOptions.find(s => s.value === sortBy)?.label}
+                    <X 
+                      className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                      onClick={() => setSortBy("newest")}
+                    />
+                  </Badge>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearFilters}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  Wyczyść wszystkie
+                </Button>
+              </>
+            )}
+          </div>
+
+          {/* Expanded Filters */}
+          {showFilters && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 bg-card rounded-xl border border-border">
+              {/* Category Filter */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-muted-foreground">Kategoria</label>
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Wybierz kategorię" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.value} value={cat.value}>
+                        {cat.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Date Filter */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-muted-foreground">Data publikacji</label>
+                <Select value={dateFilter} onValueChange={setDateFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Wybierz zakres dat" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {dateFilters.map((date) => (
+                      <SelectItem key={date.value} value={date.value}>
+                        {date.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Sort */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-muted-foreground">Sortowanie</label>
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sortuj według" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sortOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        <span className="flex items-center gap-2">
+                          <option.icon className="h-4 w-4" />
+                          {option.label}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           )}
         </div>
+
+        {/* Results Count */}
+        {query && (
+          <p className="mb-6 text-muted-foreground">
+            {loading ? (
+              "Wyszukiwanie..."
+            ) : (
+              <>
+                Znaleziono <span className="font-semibold text-foreground">{filteredAndSortedArticles.length}</span> wyników dla "{query}"
+              </>
+            )}
+          </p>
+        )}
 
         {/* Results */}
         {loading ? (
@@ -86,9 +301,9 @@ export default function Search() {
               </div>
             ))}
           </div>
-        ) : filteredArticles.length > 0 ? (
+        ) : filteredAndSortedArticles.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredArticles.map((article) => (
+            {filteredAndSortedArticles.map((article) => (
               <NewsCard key={article.id} {...formatArticleForCard(article)} />
             ))}
           </div>
@@ -97,11 +312,18 @@ export default function Search() {
             <SearchIcon className="h-16 w-16 mx-auto text-muted-foreground/50 mb-4" />
             <h2 className="text-xl font-semibold mb-2">Brak wyników</h2>
             <p className="text-muted-foreground mb-6">
-              Nie znaleziono artykułów dla "{query}". Spróbuj innych słów kluczowych.
+              Nie znaleziono artykułów dla "{query}"{hasActiveFilters && " z wybranymi filtrami"}. Spróbuj innych słów kluczowych lub zmień filtry.
             </p>
-            <Link to="/">
-              <Button variant="outline">Wróć na stronę główną</Button>
-            </Link>
+            <div className="flex gap-3 justify-center">
+              {hasActiveFilters && (
+                <Button variant="outline" onClick={clearFilters}>
+                  Wyczyść filtry
+                </Button>
+              )}
+              <Link to="/">
+                <Button variant="outline">Wróć na stronę główną</Button>
+              </Link>
+            </div>
           </div>
         ) : (
           <div className="text-center py-16">
