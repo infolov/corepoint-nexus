@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserSettings } from "@/hooks/use-user-settings";
 
-interface Article {
+export interface Article {
   id: string;
   title: string;
   excerpt: string | null;
@@ -11,6 +11,7 @@ interface Article {
   badge: string | null;
   created_at: string;
   region: string | null;
+  view_count: number;
 }
 
 interface UseArticlesOptions {
@@ -32,7 +33,7 @@ export function useArticles(options: UseArticlesOptions = {}) {
     try {
       let query = supabase
         .from("articles")
-        .select("id, title, excerpt, category, image, badge, created_at, region")
+        .select("id, title, excerpt, category, image, badge, created_at, region, view_count")
         .eq("is_published", true)
         .order("created_at", { ascending: false })
         .limit(limit);
