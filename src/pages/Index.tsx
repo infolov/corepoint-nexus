@@ -29,6 +29,7 @@ const baseSections = [
   { title: "Lifestyle", category: "lifestyle", articles: lifestyleArticles },
 ];
 
+// Responsive initial sections based on device
 const INITIAL_SECTIONS = 3;
 const SECTIONS_PER_LOAD = 2;
 
@@ -152,11 +153,14 @@ const Index = () => {
             })}
 
             {/* Load more trigger - infinite scroll */}
-            <div ref={loadMoreRef} className="py-8 flex justify-center">
+            <div 
+              ref={loadMoreRef} 
+              className="py-8 sm:py-10 md:py-12 flex justify-center min-h-[80px]"
+            >
               {isLoading && (
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  <span>Ładowanie...</span>
+                <div className="flex items-center gap-2 text-muted-foreground animate-pulse">
+                  <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 animate-spin" />
+                  <span className="text-sm sm:text-base">Ładowanie więcej artykułów...</span>
                 </div>
               )}
             </div>
