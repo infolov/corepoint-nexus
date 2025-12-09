@@ -17,10 +17,10 @@ import { CategoryDropdown } from "@/components/navigation/CategoryDropdown";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 const categories = [
-  { name: "Biznes", href: "/biznes" },
-  { name: "Technologia", href: "/technologia" },
-  { name: "Lifestyle", href: "/lifestyle" },
-  { name: "Rozrywka", href: "/rozrywka" },
+  { name: "Wiadomości", slug: "wiadomosci", parentFilter: "Wiadomości" },
+  { name: "Biznes", slug: "biznes", parentFilter: "Biznes" },
+  { name: "Lifestyle", slug: "lifestyle", parentFilter: "Lifestyle" },
+  { name: "Rozrywka", slug: "rozrywka", parentFilter: "Rozrywka" },
 ];
 
 export function Header() {
@@ -78,20 +78,22 @@ export function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-1">
-            <CategoryDropdown 
-              categoryName="Wiadomości" 
-              categorySlug="wiadomosci" 
-              parentFilter="Wiadomości" 
-            />
-            <SportDropdown />
-            {categories.map((cat) => (
-              <Link
+            {categories.slice(0, 1).map((cat) => (
+              <CategoryDropdown 
                 key={cat.name}
-                to={cat.href}
-                className="nav-link px-3 py-2 text-sm font-medium"
-              >
-                {cat.name}
-              </Link>
+                categoryName={cat.name} 
+                categorySlug={cat.slug} 
+                parentFilter={cat.parentFilter} 
+              />
+            ))}
+            <SportDropdown />
+            {categories.slice(1).map((cat) => (
+              <CategoryDropdown 
+                key={cat.name}
+                categoryName={cat.name} 
+                categorySlug={cat.slug} 
+                parentFilter={cat.parentFilter} 
+              />
             ))}
           </nav>
 
@@ -204,7 +206,7 @@ export function Header() {
                       {categories.map((cat) => (
                         <Link
                           key={cat.name}
-                          to={cat.href}
+                          to={`/${cat.slug}`}
                           className="px-3 py-2 text-sm font-medium rounded-lg hover:bg-muted transition-colors"
                         >
                           {cat.name}
@@ -230,7 +232,7 @@ export function Header() {
           {categories.map((cat) => (
             <Link
               key={cat.name}
-              to={cat.href}
+              to={`/${cat.slug}`}
               className="px-4 py-2 text-nav-foreground hover:bg-nav-foreground/10 rounded-lg transition-colors"
               onClick={() => setIsMenuOpen(false)}
             >
