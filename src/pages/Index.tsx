@@ -118,10 +118,12 @@ const Index = () => {
                 {recommendedArticles.map((article) => (
                   <NewsCard
                     key={article.id}
+                    id={article.id}
                     title={article.title}
                     category={article.category}
                     image={article.image}
                     timestamp={article.timestamp}
+                    source={article.source}
                     variant="compact"
                   />
                 ))}

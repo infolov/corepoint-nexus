@@ -13,6 +13,7 @@ interface NewsSectionProps {
     image: string;
     timestamp: string;
     badge?: "hot" | "trending" | "new";
+    source?: string;
   }>;
 }
 
@@ -40,10 +41,12 @@ export function NewsSection({ title, category, articles }: NewsSectionProps) {
         {heroArticle && (
           <div className="md:col-span-2 md:row-span-2">
             <NewsCard
+              id={heroArticle.id}
               title={heroArticle.title}
               category={heroArticle.category}
               image={heroArticle.image}
               timestamp={heroArticle.timestamp}
+              source={heroArticle.source}
               badge={heroArticle.badge}
               variant="hero"
               className="h-full"
@@ -55,10 +58,12 @@ export function NewsSection({ title, category, articles }: NewsSectionProps) {
         {gridArticles.map((article) => (
           <NewsCard
             key={article.id}
+            id={article.id}
             title={article.title}
             category={article.category}
             image={article.image}
             timestamp={article.timestamp}
+            source={article.source}
             badge={article.badge}
             variant="horizontal"
             className="md:hidden"
@@ -68,10 +73,12 @@ export function NewsSection({ title, category, articles }: NewsSectionProps) {
         {gridArticles.map((article) => (
           <NewsCard
             key={`desktop-${article.id}`}
+            id={article.id}
             title={article.title}
             category={article.category}
             image={article.image}
             timestamp={article.timestamp}
+            source={article.source}
             badge={article.badge}
             variant="default"
             className="hidden md:block"
