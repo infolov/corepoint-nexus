@@ -4,7 +4,7 @@ import { Footer } from "@/components/layout/Footer";
 import { NewsCard } from "@/components/news/NewsCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Clock, Share2, Bookmark, ThumbsUp, ThumbsDown, MessageSquare, ExternalLink } from "lucide-react";
+import { ArrowLeft, Clock, Share2, Bookmark, ExternalLink } from "lucide-react";
 import {
   newsArticles,
   businessArticles,
@@ -22,25 +22,25 @@ const allArticles = [
   ...lifestyleArticles,
 ];
 
-// Mock full content for articles
+// Mock full content for articles in Polish
 const getArticleContent = (title: string) => `
 ${title}
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+W dzisiejszym artykule przyjrzymy się bliżej temu zagadnieniu, analizując najnowsze doniesienia i opinie ekspertów. Temat ten budzi coraz większe zainteresowanie wśród Polaków, a jego znaczenie rośnie z każdym dniem.
 
-Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+Według najnowszych danych, sytuacja rozwija się dynamicznie. Eksperci podkreślają, że obserwujemy istotne zmiany, które mogą mieć długofalowe konsekwencje dla całego społeczeństwa.
 
 ## Szczegóły
 
-Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.
+Analitycy zwracają uwagę na kilka kluczowych aspektów tej sprawy. Po pierwsze, należy wziąć pod uwagę kontekst historyczny i społeczny. Po drugie, istotne są również czynniki ekonomiczne, które wpływają na obecną sytuację.
 
-Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.
+Przedstawiciele branży komentują: "To niezwykle ważny moment. Musimy działać rozważnie, ale jednocześnie zdecydowanie, aby wykorzystać pojawiające się możliwości."
 
 ## Podsumowanie
 
-Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem.
+Reasumując, omawiane zagadnienie pozostaje w centrum uwagi opinii publicznej. Dalszy rozwój wydarzeń będziemy śledzić na bieżąco, informując Państwa o wszystkich istotnych zmianach.
 
-Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?
+Zachęcamy do dzielenia się swoimi opiniami i śledzenia naszego portalu, gdzie publikujemy najświeższe informacje z kraju i ze świata.
 `;
 
 const Article = () => {
@@ -145,26 +145,15 @@ const Article = () => {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center justify-between border-b border-border pb-4 mb-6">
+            <div className="flex items-center justify-end border-b border-border pb-4 mb-6">
               <div className="flex items-center gap-2">
                 <Button variant="ghost" size="sm">
-                  <ThumbsUp className="h-4 w-4 mr-1" />
-                  <span>{Math.floor(Math.random() * 100)}</span>
+                  <Bookmark className="h-4 w-4 mr-1" />
+                  Zapisz
                 </Button>
                 <Button variant="ghost" size="sm">
-                  <ThumbsDown className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="sm">
-                  <MessageSquare className="h-4 w-4 mr-1" />
-                  <span>{Math.floor(Math.random() * 50)}</span>
-                </Button>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm">
-                  <Bookmark className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="sm">
-                  <Share2 className="h-4 w-4" />
+                  <Share2 className="h-4 w-4 mr-1" />
+                  Udostępnij
                 </Button>
               </div>
             </div>

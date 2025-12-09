@@ -1,4 +1,3 @@
-import { ThumbsUp, ThumbsDown, MessageSquare } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -116,24 +115,9 @@ export function NewsCard({
             </div>
             
             {/* Title */}
-            <h3 className="font-bold text-lg md:text-xl text-white mb-3 line-clamp-3 leading-snug">
+            <h3 className="font-bold text-lg md:text-xl text-white line-clamp-3 leading-snug">
               {title}
             </h3>
-            
-            {/* Engagement metrics */}
-            <div className="flex items-center gap-4 text-white/60">
-              <button className="flex items-center gap-1.5 hover:text-white transition-colors" onClick={(e) => e.preventDefault()}>
-                <ThumbsUp className="h-4 w-4" />
-                <span className="text-sm">{likes}</span>
-              </button>
-              <button className="flex items-center gap-1.5 hover:text-white transition-colors" onClick={(e) => e.preventDefault()}>
-                <ThumbsDown className="h-4 w-4" />
-              </button>
-              <button className="flex items-center gap-1.5 hover:text-white transition-colors" onClick={(e) => e.preventDefault()}>
-                <MessageSquare className="h-4 w-4" />
-                <span className="text-sm">{comments}</span>
-              </button>
-            </div>
           </div>
         </article>
       </Wrapper>
