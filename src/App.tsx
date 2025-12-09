@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Category from "./pages/Category";
 import Article from "./pages/Article";
+import Search from "./pages/Search";
 import NotificationSettings from "./pages/NotificationSettings";
 import NotFound from "./pages/NotFound";
 
@@ -23,6 +24,7 @@ const App = () => (
           <Route path="/login" element={<Login />} />
           <Route path="/artykul/:id" element={<Article />} />
           <Route path="/notifications/settings" element={<NotificationSettings />} />
+          <Route path="/szukaj" element={<Search />} />
           <Route path="/sport/:subcategory" element={<Category />} />
           <Route path="/:category" element={<Category />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
