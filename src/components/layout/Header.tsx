@@ -5,12 +5,12 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const categories = [
-  { name: "Wiadomości", href: "/news" },
-  { name: "Biznes", href: "/business" },
+  { name: "Wiadomości", href: "/wiadomosci" },
+  { name: "Biznes", href: "/biznes" },
   { name: "Sport", href: "/sport" },
-  { name: "Technologia", href: "/tech" },
+  { name: "Technologia", href: "/technologia" },
   { name: "Lifestyle", href: "/lifestyle" },
-  { name: "Rozrywka", href: "/entertainment" },
+  { name: "Rozrywka", href: "/rozrywka" },
 ];
 
 export function Header() {
