@@ -20,6 +20,7 @@ const categoryConfig: Record<string, { title: string; articles: Article[] }> = {
   sport: { title: "Sport", articles: sportArticles },
   technologia: { title: "Technologia", articles: techArticles },
   lifestyle: { title: "Lifestyle", articles: lifestyleArticles },
+  rozrywka: { title: "Rozrywka", articles: lifestyleArticles }, // Uses lifestyle as placeholder
 };
 
 // Generate more mock articles for each category
