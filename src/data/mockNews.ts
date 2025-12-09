@@ -6,6 +6,7 @@ export interface Article {
   image: string;
   timestamp: string;
   badge?: "hot" | "trending" | "new";
+  source?: string;
 }
 
 export const newsArticles: Article[] = [
@@ -17,6 +18,7 @@ export const newsArticles: Article[] = [
     image: "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=800&h=500&fit=crop",
     timestamp: "1 godz. temu",
     badge: "hot",
+    source: "PAP",
   },
   {
     id: "n2",
@@ -24,6 +26,7 @@ export const newsArticles: Article[] = [
     category: "Wiadomości",
     image: "https://images.unsplash.com/photo-1569163139599-0f4517e36f51?w=400&h=300&fit=crop",
     timestamp: "3 godz. temu",
+    source: "Reuters",
   },
   {
     id: "n3",
@@ -31,6 +34,7 @@ export const newsArticles: Article[] = [
     category: "Wiadomości",
     image: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400&h=300&fit=crop",
     timestamp: "5 godz. temu",
+    source: "TVN24",
   },
   {
     id: "n4",
@@ -39,6 +43,7 @@ export const newsArticles: Article[] = [
     image: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=400&h=300&fit=crop",
     timestamp: "7 godz. temu",
     badge: "trending",
+    source: "Polsat News",
   },
 ];
 
@@ -51,6 +56,7 @@ export const businessArticles: Article[] = [
     image: "https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?w=800&h=500&fit=crop",
     timestamp: "30 min temu",
     badge: "trending",
+    source: "Money.pl",
   },
   {
     id: "b2",
@@ -58,6 +64,7 @@ export const businessArticles: Article[] = [
     category: "Biznes",
     image: "https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?w=400&h=300&fit=crop",
     timestamp: "2 godz. temu",
+    source: "Bloomberg",
   },
   {
     id: "b3",
@@ -65,6 +72,7 @@ export const businessArticles: Article[] = [
     category: "Biznes",
     image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&h=300&fit=crop",
     timestamp: "4 godz. temu",
+    source: "Forbes",
   },
   {
     id: "b4",
@@ -73,6 +81,7 @@ export const businessArticles: Article[] = [
     image: "https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=400&h=300&fit=crop",
     timestamp: "6 godz. temu",
     badge: "new",
+    source: "Business Insider",
   },
 ];
 
@@ -85,6 +94,7 @@ export const sportArticles: Article[] = [
     image: "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=800&h=500&fit=crop",
     timestamp: "45 min temu",
     badge: "hot",
+    source: "Sport.pl",
   },
   {
     id: "s2",
@@ -92,6 +102,7 @@ export const sportArticles: Article[] = [
     category: "Sport",
     image: "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=400&h=300&fit=crop",
     timestamp: "3 godz. temu",
+    source: "Eurosport",
   },
   {
     id: "s3",
@@ -99,6 +110,7 @@ export const sportArticles: Article[] = [
     category: "Sport",
     image: "https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=400&h=300&fit=crop",
     timestamp: "5 godz. temu",
+    source: "TVP Sport",
   },
   {
     id: "s4",
@@ -106,6 +118,7 @@ export const sportArticles: Article[] = [
     category: "Sport",
     image: "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=400&h=300&fit=crop",
     timestamp: "8 godz. temu",
+    source: "F1.com",
   },
 ];
 
@@ -118,6 +131,7 @@ export const techArticles: Article[] = [
     image: "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=800&h=500&fit=crop",
     timestamp: "1 godz. temu",
     badge: "new",
+    source: "The Verge",
   },
   {
     id: "t2",
@@ -126,6 +140,7 @@ export const techArticles: Article[] = [
     image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=400&h=300&fit=crop",
     timestamp: "4 godz. temu",
     badge: "trending",
+    source: "TechCrunch",
   },
   {
     id: "t3",
@@ -133,6 +148,7 @@ export const techArticles: Article[] = [
     category: "Technologia",
     image: "https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=400&h=300&fit=crop",
     timestamp: "6 godz. temu",
+    source: "Wyborcza",
   },
   {
     id: "t4",
@@ -140,6 +156,7 @@ export const techArticles: Article[] = [
     category: "Technologia",
     image: "https://images.unsplash.com/photo-1516849841032-87cbac4d88f7?w=400&h=300&fit=crop",
     timestamp: "9 godz. temu",
+    source: "Spider's Web",
   },
 ];
 
@@ -151,6 +168,7 @@ export const lifestyleArticles: Article[] = [
     category: "Lifestyle",
     image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=500&fit=crop",
     timestamp: "2 godz. temu",
+    source: "National Geographic",
   },
   {
     id: "l2",
@@ -158,6 +176,7 @@ export const lifestyleArticles: Article[] = [
     category: "Lifestyle",
     image: "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=400&h=300&fit=crop",
     timestamp: "5 godz. temu",
+    source: "Zdrowie.pl",
   },
   {
     id: "l3",
@@ -165,6 +184,7 @@ export const lifestyleArticles: Article[] = [
     category: "Lifestyle",
     image: "https://images.unsplash.com/photo-1486946255434-2466348c2166?w=400&h=300&fit=crop",
     timestamp: "7 godz. temu",
+    source: "Elle Decor",
   },
 ];
 
@@ -175,6 +195,7 @@ export const recommendedArticles: Article[] = [
     category: "Analiza",
     image: "https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=200&h=200&fit=crop",
     timestamp: "2 godz. temu",
+    source: "Newsweek",
   },
   {
     id: "r2",
@@ -182,6 +203,7 @@ export const recommendedArticles: Article[] = [
     category: "Kultura",
     image: "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=200&h=200&fit=crop",
     timestamp: "4 godz. temu",
+    source: "Polityka",
   },
   {
     id: "r3",
@@ -189,6 +211,7 @@ export const recommendedArticles: Article[] = [
     category: "Lifestyle",
     image: "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=200&h=200&fit=crop",
     timestamp: "6 godz. temu",
+    source: "Warszawa.pl",
   },
   {
     id: "r4",
@@ -196,5 +219,6 @@ export const recommendedArticles: Article[] = [
     category: "Poradnik",
     image: "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?w=200&h=200&fit=crop",
     timestamp: "8 godz. temu",
+    source: "Money.pl",
   },
 ];
