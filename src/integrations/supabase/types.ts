@@ -143,6 +143,7 @@ export type Database = {
           is_featured: boolean
           is_published: boolean
           region: string | null
+          subcategory: string | null
           title: string
           updated_at: string
           view_count: number
@@ -159,6 +160,7 @@ export type Database = {
           is_featured?: boolean
           is_published?: boolean
           region?: string | null
+          subcategory?: string | null
           title: string
           updated_at?: string
           view_count?: number
@@ -175,6 +177,7 @@ export type Database = {
           is_featured?: boolean
           is_published?: boolean
           region?: string | null
+          subcategory?: string | null
           title?: string
           updated_at?: string
           view_count?: number
@@ -323,6 +326,36 @@ export type Database = {
         }
         Relationships: []
       }
+      sport_subcategories: {
+        Row: {
+          created_at: string
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          name: string
+          parent_category: string | null
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          parent_category?: string | null
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          parent_category?: string | null
+          slug?: string
+        }
+        Relationships: []
+      }
       user_notification_preferences: {
         Row: {
           categories: string[] | null
@@ -382,6 +415,38 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_recently_viewed: {
+        Row: {
+          article_id: string
+          category: string
+          id: string
+          user_id: string
+          viewed_at: string
+        }
+        Insert: {
+          article_id: string
+          category: string
+          id?: string
+          user_id: string
+          viewed_at?: string
+        }
+        Update: {
+          article_id?: string
+          category?: string
+          id?: string
+          user_id?: string
+          viewed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_recently_viewed_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
