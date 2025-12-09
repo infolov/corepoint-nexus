@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface SettingsPanelProps {
   isOpen: boolean;
@@ -34,23 +37,105 @@ const regions = [
 ];
 
 export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
+  const { user } = useAuth();
   const [selectedLanguage, setSelectedLanguage] = useState("pl");
-  const [selectedRegions, setSelectedRegions] = useState<string[]>(["mazowieckie"]);
+  const [selectedRegion, setSelectedRegion] = useState("mazowieckie");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleRegionChange = (regionId: string, checked: boolean) => {
-    if (checked) {
-      setSelectedRegions((prev) => [...prev, regionId]);
-    } else {
-      setSelectedRegions((prev) => prev.filter((r) => r !== regionId));
+  // Fetch settings when panel opens
+  useEffect(() => {
+    if (isOpen) {
+      loadSettings();
+    }
+  }, [isOpen, user]);
+
+  const loadSettings = async () => {
+    // First try localStorage
+    const localSettings = localStorage.getItem("userSettings");
+    if (localSettings) {
+      const parsed = JSON.parse(localSettings);
+      setSelectedLanguage(parsed.language || "pl");
+      setSelectedRegion(parsed.voivodeship || "mazowieckie");
+    }
+
+    // If logged in, fetch from database
+    if (user) {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("user_site_settings")
+          .select("*")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (data) {
+          setSelectedLanguage(data.language || "pl");
+          setSelectedRegion(data.voivodeship || "mazowieckie");
+        }
+      } catch (error) {
+        console.error("Error loading settings:", error);
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
-  const handleSave = () => {
-    // Save settings to localStorage or database
+  const handleSave = async () => {
+    setIsSaving(true);
+
+    // Always save to localStorage
     localStorage.setItem("userSettings", JSON.stringify({
       language: selectedLanguage,
-      regions: selectedRegions,
+      voivodeship: selectedRegion,
     }));
+
+    // If logged in, save to database
+    if (user) {
+      try {
+        // Check if settings exist
+        const { data: existing } = await supabase
+          .from("user_site_settings")
+          .select("id")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (existing) {
+          // Update existing
+          const { error } = await supabase
+            .from("user_site_settings")
+            .update({
+              language: selectedLanguage,
+              voivodeship: selectedRegion,
+            })
+            .eq("user_id", user.id);
+
+          if (error) throw error;
+        } else {
+          // Insert new
+          const { error } = await supabase
+            .from("user_site_settings")
+            .insert({
+              user_id: user.id,
+              language: selectedLanguage,
+              voivodeship: selectedRegion,
+            });
+
+          if (error) throw error;
+        }
+
+        toast.success("Ustawienia zapisane");
+      } catch (error) {
+        console.error("Error saving settings:", error);
+        toast.error("Błąd podczas zapisywania ustawień");
+      }
+    } else {
+      toast.success("Ustawienia zapisane lokalnie");
+    }
+
+    setIsSaving(false);
     onClose();
   };
 
@@ -68,7 +153,14 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
       <div className="relative bg-card rounded-xl shadow-xl max-w-lg w-full mx-4 max-h-[80vh] overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border">
-          <h2 className="text-xl font-bold">Ustawienia</h2>
+          <div>
+            <h2 className="text-xl font-bold">Ustawienia</h2>
+            {!user && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Zaloguj się, aby zapisać ustawienia na koncie
+              </p>
+            )}
+          </div>
           <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="h-5 w-5" />
           </Button>
@@ -76,55 +168,61 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
 
         {/* Content */}
         <div className="p-4 overflow-y-auto max-h-[60vh]">
-          {/* Language Section */}
-          <div className="mb-6">
-            <h3 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">
-              Język / Language
-            </h3>
-            <div className="flex flex-wrap gap-4">
-              {languages.map((lang) => (
-                <div key={lang.id} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`lang-${lang.id}`}
-                    checked={selectedLanguage === lang.id}
-                    onCheckedChange={() => setSelectedLanguage(lang.id)}
-                  />
-                  <Label 
-                    htmlFor={`lang-${lang.id}`}
-                    className="text-sm font-medium cursor-pointer"
-                  >
-                    {lang.label}
-                  </Label>
-                </div>
-              ))}
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
-          </div>
+          ) : (
+            <>
+              {/* Language Section */}
+              <div className="mb-6">
+                <h3 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">
+                  Język / Language
+                </h3>
+                <div className="flex flex-wrap gap-4">
+                  {languages.map((lang) => (
+                    <div key={lang.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`lang-${lang.id}`}
+                        checked={selectedLanguage === lang.id}
+                        onCheckedChange={() => setSelectedLanguage(lang.id)}
+                      />
+                      <Label 
+                        htmlFor={`lang-${lang.id}`}
+                        className="text-sm font-medium cursor-pointer"
+                      >
+                        {lang.label}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
-          {/* Region Section */}
-          <div>
-            <h3 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">
-              Region (województwo)
-            </h3>
-            <div className="grid grid-cols-2 gap-3">
-              {regions.map((region) => (
-                <div key={region.id} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`region-${region.id}`}
-                    checked={selectedRegions.includes(region.id)}
-                    onCheckedChange={(checked) => 
-                      handleRegionChange(region.id, checked as boolean)
-                    }
-                  />
-                  <Label 
-                    htmlFor={`region-${region.id}`}
-                    className="text-sm font-medium cursor-pointer"
-                  >
-                    {region.label}
-                  </Label>
+              {/* Region Section */}
+              <div>
+                <h3 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">
+                  Województwo
+                </h3>
+                <div className="grid grid-cols-2 gap-3">
+                  {regions.map((region) => (
+                    <div key={region.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`region-${region.id}`}
+                        checked={selectedRegion === region.id}
+                        onCheckedChange={() => setSelectedRegion(region.id)}
+                      />
+                      <Label 
+                        htmlFor={`region-${region.id}`}
+                        className="text-sm font-medium cursor-pointer"
+                      >
+                        {region.label}
+                      </Label>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Footer */}
@@ -132,8 +230,15 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
           <Button variant="outline" onClick={onClose}>
             Anuluj
           </Button>
-          <Button variant="gradient" onClick={handleSave}>
-            Zapisz
+          <Button variant="gradient" onClick={handleSave} disabled={isSaving || isLoading}>
+            {isSaving ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Zapisywanie...
+              </>
+            ) : (
+              "Zapisz"
+            )}
           </Button>
         </div>
       </div>
