@@ -23,23 +23,23 @@ export function NewsSection({ title, category, articles }: NewsSectionProps) {
   const gridArticles = articles.slice(1, 5);
 
   return (
-    <section className="mb-8">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-foreground">{title}</h2>
+    <section className="mb-6 sm:mb-8">
+      <div className="flex items-center justify-between mb-3 sm:mb-4">
+        <h2 className="text-lg sm:text-xl font-bold text-foreground">{title}</h2>
         <Link
           to={`/${category}`}
-          className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+          className="flex items-center gap-1 text-xs sm:text-sm font-medium text-primary hover:underline"
         >
           Więcej
-          <ChevronRight className="h-4 w-4" />
+          <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
         </Link>
       </div>
 
-      {/* MSN-style layout: stacked on mobile, grid on desktop */}
-      <div className="flex flex-col md:grid md:grid-cols-2 lg:grid-cols-4 gap-3">
-        {/* Hero article - spans 2 columns on desktop */}
+      {/* Responsive layout: stacked on mobile, grid on tablet/desktop */}
+      <div className="flex flex-col gap-3 sm:gap-4">
+        {/* Hero article - full width on mobile, spans 2 columns on desktop */}
         {heroArticle && (
-          <div className="md:col-span-2 md:row-span-2">
+          <div className="w-full">
             <NewsCard
               id={heroArticle.id}
               title={heroArticle.title}
@@ -49,41 +49,28 @@ export function NewsSection({ title, category, articles }: NewsSectionProps) {
               source={heroArticle.source}
               badge={heroArticle.badge}
               variant="hero"
-              className="h-full"
+              className="aspect-[16/10] sm:aspect-[16/9] md:aspect-[16/8]"
             />
           </div>
         )}
         
-        {/* Grid of smaller articles - horizontal on mobile */}
-        {gridArticles.map((article) => (
-          <NewsCard
-            key={article.id}
-            id={article.id}
-            title={article.title}
-            category={article.category}
-            image={article.image}
-            timestamp={article.timestamp}
-            source={article.source}
-            badge={article.badge}
-            variant="horizontal"
-            className="md:hidden"
-          />
-        ))}
-        {/* Default cards on tablet/desktop */}
-        {gridArticles.map((article) => (
-          <NewsCard
-            key={`desktop-${article.id}`}
-            id={article.id}
-            title={article.title}
-            category={article.category}
-            image={article.image}
-            timestamp={article.timestamp}
-            source={article.source}
-            badge={article.badge}
-            variant="default"
-            className="hidden md:block"
-          />
-        ))}
+        {/* Grid of smaller articles */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          {gridArticles.map((article) => (
+            <NewsCard
+              key={article.id}
+              id={article.id}
+              title={article.title}
+              category={article.category}
+              image={article.image}
+              timestamp={article.timestamp}
+              source={article.source}
+              badge={article.badge}
+              variant="default"
+              className="aspect-[4/3]"
+            />
+          ))}
+        </div>
       </div>
     </section>
   );
