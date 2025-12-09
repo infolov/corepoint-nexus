@@ -123,7 +123,7 @@ export function NewsCard({
   // MSN-style default card (grid item) - dark overlay style
   return (
     <Wrapper {...wrapperProps as any}>
-      <article className={cn("group cursor-pointer rounded-xl overflow-hidden relative aspect-[4/3]", className)}>
+      <article className={cn("group cursor-pointer rounded-lg sm:rounded-xl overflow-hidden relative aspect-[16/10] sm:aspect-[4/3]", className)}>
         <img
           src={image}
           alt={title}
@@ -132,18 +132,18 @@ export function NewsCard({
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
         
         {/* Content overlay */}
-        <div className="absolute inset-x-0 bottom-0 p-3">
+        <div className="absolute inset-x-0 bottom-0 p-2 sm:p-3">
           {/* Source and timestamp */}
-          <div className="flex items-center gap-1.5 mb-1.5">
-            <div className="w-5 h-5 rounded bg-primary/90 flex items-center justify-center">
-              <span className="text-[8px] font-bold text-primary-foreground">IP</span>
+          <div className="flex items-center gap-1 sm:gap-1.5 mb-1 sm:mb-1.5">
+            <div className="w-4 h-4 sm:w-5 sm:h-5 rounded bg-primary/90 flex items-center justify-center">
+              <span className="text-[6px] sm:text-[8px] font-bold text-primary-foreground">IP</span>
             </div>
-            <span className="text-[11px] text-white/80 font-medium">{source}</span>
-            <span className="text-[11px] text-white/50">· {timestamp}</span>
+            <span className="text-[9px] sm:text-[11px] text-white/80 font-medium">{source}</span>
+            <span className="text-[9px] sm:text-[11px] text-white/50">· {timestamp}</span>
           </div>
           
           {/* Title */}
-          <h3 className="font-semibold text-sm text-white line-clamp-2 leading-snug">
+          <h3 className="font-semibold text-xs sm:text-sm text-white line-clamp-2 leading-snug">
             {title}
           </h3>
         </div>
