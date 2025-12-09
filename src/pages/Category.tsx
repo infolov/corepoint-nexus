@@ -83,11 +83,13 @@ export default function Category() {
             {heroArticle && (
               <div className="mb-6">
                 <NewsCard
+                  id={heroArticle.id}
                   title={heroArticle.title}
                   excerpt={heroArticle.excerpt}
                   category={heroArticle.category}
                   image={heroArticle.image}
                   timestamp={heroArticle.timestamp}
+                  source={heroArticle.source}
                   badge={heroArticle.badge}
                   variant="hero"
                   className="h-[400px]"
@@ -100,10 +102,12 @@ export default function Category() {
               {gridArticles.map((article) => (
                 <NewsCard
                   key={article.id}
+                  id={article.id}
                   title={article.title}
                   category={article.category}
                   image={article.image}
                   timestamp={article.timestamp}
+                  source={article.source}
                   badge={article.badge}
                   variant="default"
                 />
