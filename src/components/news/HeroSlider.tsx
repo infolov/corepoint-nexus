@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ThumbsUp, ThumbsDown, MessageSquare, Play, MoreHorizontal, Flame } from "lucide-react";
+import { Play, MoreHorizontal, Flame, ChevronLeft, ChevronRight, ThumbsUp, MessageSquare } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
@@ -20,21 +20,21 @@ interface HeroArticle {
 const heroArticles: HeroArticle[] = [
   {
     id: "1",
-    title: "Przełomowa decyzja UE w sprawie regulacji sztucznej inteligencji. Nowe przepisy zmienią rynek technologiczny",
-    excerpt: "Unia Europejska przyjęła nowe przepisy dotyczące AI, które zmienią sposób działania technologicznych gigantów na kontynencie.",
-    category: "Technologia",
+    title: "Trump nie ma wątpliwości ws. Rosji. Mówi o III wojnie światowej",
+    excerpt: "Prezydent USA komentuje sytuację międzynarodową w wywiadzie dla mediów.",
+    category: "Polityka",
     image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1200&h=600&fit=crop",
     timestamp: "2 godz.",
-    source: "Informacje.pl",
+    source: "o2",
     badge: "hot",
-    likes: 42,
-    comments: 18,
-    hasVideo: true,
+    likes: 4,
+    comments: 5,
+    hasVideo: false,
   },
   {
     id: "2",
     title: "Rekordowe wzrosty na giełdach światowych. Eksperci prognozują dalsze zyski",
-    excerpt: "Indeksy giełdowe biją kolejne rekordy. Eksperci analizują przyczyny i prognozy na kolejne miesiące.",
+    excerpt: "Indeksy giełdowe biją kolejne rekordy.",
     category: "Biznes",
     image: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1200&h=600&fit=crop",
     timestamp: "4 godz.",
@@ -45,8 +45,8 @@ const heroArticles: HeroArticle[] = [
   },
   {
     id: "3",
-    title: "Reprezentacja Polski w drodze do finału mistrzostw. Wielki sukces naszych sportowców",
-    excerpt: "Polscy sportowcy pokazali klasę w półfinałowych zmaganiach. Przed nami wielki finał.",
+    title: "Reprezentacja Polski w drodze do finału mistrzostw",
+    excerpt: "Polscy sportowcy pokazali klasę w półfinałowych zmaganiach.",
     category: "Sport",
     image: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1200&h=600&fit=crop",
     timestamp: "6 godz.",
@@ -57,28 +57,27 @@ const heroArticles: HeroArticle[] = [
   },
 ];
 
-// Sidebar articles for "Najlepsze artykuły"
 const sidebarArticles = [
   {
     id: "s1",
-    title: "Litwa ogłasza stan wyjątkowy",
-    source: "Rzeczpospolita",
-    timestamp: "2 godz.",
+    title: "Kiedy ruszy budowa elektrowni jądrowej? Tusk...",
+    source: "DoRzeczy",
+    timestamp: "3 godz.",
     image: "https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?w=200&h=200&fit=crop",
     badge: "pilne" as const,
   },
   {
     id: "s2",
-    title: "KO znów liderem, ale nie ma powodów do radości. Nowy...",
-    source: "Gazeta.pl",
-    timestamp: "3 godz.",
+    title: "Ostry spór w NBP. Adam Glapiński odsunął trzech...",
+    source: "Rzeczpospolita",
+    timestamp: "1 godz.",
     image: "https://images.unsplash.com/photo-1555848962-6e79363ec58f?w=200&h=200&fit=crop",
   },
   {
     id: "s3",
-    title: "Katastrofa ogromnego samolotu. Rosyjska maszyna...",
-    source: "Radio ZET",
-    timestamp: "21 min",
+    title: "Łowca nastolatek ponownie stanął przed sądem. Jest...",
+    source: "Onet Wiadomości",
+    timestamp: "1 godz.",
     image: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=200&h=200&fit=crop",
   },
 ];
@@ -95,6 +94,14 @@ export function HeroSlider() {
 
   const currentArticle = heroArticles[currentSlide];
 
+  const goToPrev = () => {
+    setCurrentSlide((prev) => (prev - 1 + heroArticles.length) % heroArticles.length);
+  };
+
+  const goToNext = () => {
+    setCurrentSlide((prev) => (prev + 1) % heroArticles.length);
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
       {/* Main Hero Card */}
@@ -106,6 +113,20 @@ export function HeroSlider() {
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+          
+          {/* Navigation arrows */}
+          <button 
+            onClick={goToPrev}
+            className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/30 hover:bg-black/50 flex items-center justify-center transition-colors opacity-0 group-hover:opacity-100"
+          >
+            <ChevronLeft className="w-6 h-6 text-white" />
+          </button>
+          <button 
+            onClick={goToNext}
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/30 hover:bg-black/50 flex items-center justify-center transition-colors opacity-0 group-hover:opacity-100"
+          >
+            <ChevronRight className="w-6 h-6 text-white" />
+          </button>
           
           {/* Video play icon */}
           {currentArticle.hasVideo && (
@@ -120,8 +141,8 @@ export function HeroSlider() {
           <div className="absolute inset-x-0 bottom-0 p-5">
             {/* Source and timestamp */}
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-6 h-6 rounded bg-primary flex items-center justify-center">
-                <span className="text-xs font-bold text-primary-foreground">IP</span>
+              <div className="w-6 h-6 rounded-full bg-orange-500 flex items-center justify-center">
+                <span className="text-xs font-bold text-white">🔥</span>
               </div>
               <span className="text-sm text-white/90 font-medium">{currentArticle.source}</span>
               <span className="text-sm text-white/60">· {currentArticle.timestamp}</span>
@@ -132,20 +153,33 @@ export function HeroSlider() {
               {currentArticle.title}
             </h2>
             
-          </div>
-
-          {/* Dots indicator */}
-          <div className="absolute bottom-5 right-5 flex gap-1.5">
-            {heroArticles.map((_, index) => (
-              <button
-                key={index}
-                className={cn(
-                  "w-2 h-2 rounded-full transition-all duration-300",
-                  index === currentSlide ? "bg-white w-5" : "bg-white/40 hover:bg-white/60"
-                )}
-                onClick={() => setCurrentSlide(index)}
-              />
-            ))}
+            {/* Engagement + Dots row */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4 text-white/70">
+                <span className="flex items-center gap-1 text-sm">
+                  <ThumbsUp className="w-4 h-4" />
+                  {currentArticle.likes}
+                </span>
+                <span className="flex items-center gap-1 text-sm">
+                  <MessageSquare className="w-4 h-4" />
+                  {currentArticle.comments}
+                </span>
+              </div>
+              
+              {/* Dots indicator */}
+              <div className="flex gap-1">
+                {Array.from({ length: 20 }).map((_, index) => (
+                  <button
+                    key={index}
+                    className={cn(
+                      "w-1.5 h-1.5 rounded-full transition-all duration-300",
+                      index === currentSlide ? "bg-white w-4" : "bg-white/30"
+                    )}
+                    onClick={() => index < heroArticles.length && setCurrentSlide(index)}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
         </article>
       </div>
