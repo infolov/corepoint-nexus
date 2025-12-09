@@ -34,11 +34,11 @@ export function NewsSection({ title, category, articles }: NewsSectionProps) {
         </Link>
       </div>
 
-      {/* MSN-style layout: 1 large + smaller grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {/* Hero article - spans 2 columns */}
+      {/* MSN-style layout: stacked on mobile, grid on desktop */}
+      <div className="flex flex-col md:grid md:grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* Hero article - spans 2 columns on desktop */}
         {heroArticle && (
-          <div className="col-span-2 row-span-2">
+          <div className="md:col-span-2 md:row-span-2">
             <NewsCard
               title={heroArticle.title}
               category={heroArticle.category}
@@ -51,7 +51,7 @@ export function NewsSection({ title, category, articles }: NewsSectionProps) {
           </div>
         )}
         
-        {/* Grid of smaller articles */}
+        {/* Grid of smaller articles - horizontal on mobile */}
         {gridArticles.map((article) => (
           <NewsCard
             key={article.id}
@@ -60,7 +60,21 @@ export function NewsSection({ title, category, articles }: NewsSectionProps) {
             image={article.image}
             timestamp={article.timestamp}
             badge={article.badge}
+            variant="horizontal"
+            className="md:hidden"
+          />
+        ))}
+        {/* Default cards on tablet/desktop */}
+        {gridArticles.map((article) => (
+          <NewsCard
+            key={`desktop-${article.id}`}
+            title={article.title}
+            category={article.category}
+            image={article.image}
+            timestamp={article.timestamp}
+            badge={article.badge}
             variant="default"
+            className="hidden md:block"
           />
         ))}
       </div>
