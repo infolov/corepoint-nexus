@@ -34,35 +34,35 @@ export function NewsSection({ title, category, articles }: NewsSectionProps) {
         </Link>
       </div>
 
-      {/* MSN-style layout: 1 large + 4 small */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Hero article */}
+      {/* MSN-style layout: 1 large + smaller grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* Hero article - spans 2 columns */}
         {heroArticle && (
-          <NewsCard
-            title={heroArticle.title}
-            category={heroArticle.category}
-            image={heroArticle.image}
-            timestamp={heroArticle.timestamp}
-            badge={heroArticle.badge}
-            variant="hero"
-            className="lg:row-span-2"
-          />
+          <div className="col-span-2 row-span-2">
+            <NewsCard
+              title={heroArticle.title}
+              category={heroArticle.category}
+              image={heroArticle.image}
+              timestamp={heroArticle.timestamp}
+              badge={heroArticle.badge}
+              variant="hero"
+              className="h-full"
+            />
+          </div>
         )}
         
         {/* Grid of smaller articles */}
-        <div className="grid grid-cols-2 gap-3">
-          {gridArticles.map((article) => (
-            <NewsCard
-              key={article.id}
-              title={article.title}
-              category={article.category}
-              image={article.image}
-              timestamp={article.timestamp}
-              badge={article.badge}
-              variant="default"
-            />
-          ))}
-        </div>
+        {gridArticles.map((article) => (
+          <NewsCard
+            key={article.id}
+            title={article.title}
+            category={article.category}
+            image={article.image}
+            timestamp={article.timestamp}
+            badge={article.badge}
+            variant="default"
+          />
+        ))}
       </div>
     </section>
   );

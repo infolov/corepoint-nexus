@@ -47,7 +47,7 @@ export function NewsCard({
             {title}
           </h4>
         </div>
-        <div className="relative w-16 h-16 flex-shrink-0 overflow-hidden rounded-md">
+        <div className="relative w-16 h-16 flex-shrink-0 overflow-hidden rounded-lg">
           <img
             src={image}
             alt={title}
@@ -62,7 +62,7 @@ export function NewsCard({
   if (variant === "horizontal") {
     return (
       <article className={cn("group flex gap-4 cursor-pointer", className)}>
-        <div className="relative w-32 h-24 md:w-40 md:h-28 flex-shrink-0 overflow-hidden rounded-lg">
+        <div className="relative w-32 h-24 md:w-40 md:h-28 flex-shrink-0 overflow-hidden rounded-xl">
           <img
             src={image}
             alt={title}
@@ -85,42 +85,42 @@ export function NewsCard({
   // MSN-style hero card (large featured card)
   if (variant === "hero") {
     return (
-      <article className={cn("group relative cursor-pointer rounded-xl overflow-hidden aspect-[16/10]", className)}>
+      <article className={cn("group relative cursor-pointer rounded-2xl overflow-hidden aspect-[4/3] lg:aspect-auto lg:h-full", className)}>
         <img
           src={image}
           alt={title}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
         
         {/* Content overlay */}
-        <div className="absolute inset-x-0 bottom-0 p-4">
+        <div className="absolute inset-x-0 bottom-0 p-5">
           {/* Source and timestamp */}
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-5 h-5 rounded bg-primary/80 flex items-center justify-center">
-              <span className="text-[10px] font-bold text-white">IP</span>
+            <div className="w-6 h-6 rounded-md bg-primary flex items-center justify-center shadow-lg">
+              <span className="text-[10px] font-bold text-primary-foreground">IP</span>
             </div>
-            <span className="text-xs text-white/80">{source}</span>
-            <span className="text-xs text-white/60">· {timestamp}</span>
+            <span className="text-sm text-white/90 font-medium">{source}</span>
+            <span className="text-sm text-white/60">· {timestamp}</span>
           </div>
           
           {/* Title */}
-          <h3 className="font-bold text-lg md:text-xl text-white mb-3 line-clamp-3 group-hover:text-primary-foreground transition-colors">
+          <h3 className="font-bold text-lg md:text-xl text-white mb-3 line-clamp-3 leading-snug">
             {title}
           </h3>
           
           {/* Engagement metrics */}
-          <div className="flex items-center gap-4 text-white/70">
-            <button className="flex items-center gap-1 hover:text-white transition-colors">
+          <div className="flex items-center gap-4 text-white/60">
+            <button className="flex items-center gap-1.5 hover:text-white transition-colors">
               <ThumbsUp className="h-4 w-4" />
-              <span className="text-xs">{likes}</span>
+              <span className="text-sm">{likes}</span>
             </button>
-            <button className="flex items-center gap-1 hover:text-white transition-colors">
+            <button className="flex items-center gap-1.5 hover:text-white transition-colors">
               <ThumbsDown className="h-4 w-4" />
             </button>
-            <button className="flex items-center gap-1 hover:text-white transition-colors">
+            <button className="flex items-center gap-1.5 hover:text-white transition-colors">
               <MessageSquare className="h-4 w-4" />
-              <span className="text-xs">{comments}</span>
+              <span className="text-sm">{comments}</span>
             </button>
           </div>
         </div>
@@ -128,33 +128,31 @@ export function NewsCard({
     );
   }
 
-  // MSN-style default card (grid item)
+  // MSN-style default card (grid item) - dark overlay style
   return (
-    <article className={cn("group cursor-pointer rounded-xl overflow-hidden bg-card relative", className)}>
-      <div className="relative aspect-[16/10] overflow-hidden">
-        <img
-          src={image}
-          alt={title}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-        
-        {/* Content overlay */}
-        <div className="absolute inset-x-0 bottom-0 p-3">
-          {/* Source and timestamp */}
-          <div className="flex items-center gap-2 mb-1.5">
-            <div className="w-4 h-4 rounded bg-primary/80 flex items-center justify-center">
-              <span className="text-[8px] font-bold text-white">IP</span>
-            </div>
-            <span className="text-[11px] text-white/80">{source}</span>
-            <span className="text-[11px] text-white/60">· {timestamp}</span>
+    <article className={cn("group cursor-pointer rounded-xl overflow-hidden relative aspect-[4/3]", className)}>
+      <img
+        src={image}
+        alt={title}
+        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+      
+      {/* Content overlay */}
+      <div className="absolute inset-x-0 bottom-0 p-3">
+        {/* Source and timestamp */}
+        <div className="flex items-center gap-1.5 mb-1.5">
+          <div className="w-5 h-5 rounded bg-primary/90 flex items-center justify-center">
+            <span className="text-[8px] font-bold text-primary-foreground">IP</span>
           </div>
-          
-          {/* Title */}
-          <h3 className="font-semibold text-sm text-white line-clamp-2 group-hover:text-primary-foreground transition-colors">
-            {title}
-          </h3>
+          <span className="text-[11px] text-white/80 font-medium">{source}</span>
+          <span className="text-[11px] text-white/50">· {timestamp}</span>
         </div>
+        
+        {/* Title */}
+        <h3 className="font-semibold text-sm text-white line-clamp-2 leading-snug">
+          {title}
+        </h3>
       </div>
     </article>
   );
