@@ -37,13 +37,13 @@ const Index = () => {
           <div className="lg:col-span-2 space-y-8">
             <NewsSection
               title="Najnowsze wiadomości"
-              category="news"
+              category="wiadomosci"
               articles={newsArticles}
             />
 
             <NewsSection
               title="Biznes i finanse"
-              category="business"
+              category="biznes"
               articles={businessArticles}
             />
 
@@ -55,7 +55,7 @@ const Index = () => {
 
             <NewsSection
               title="Technologia"
-              category="tech"
+              category="technologia"
               articles={techArticles}
             />
 
