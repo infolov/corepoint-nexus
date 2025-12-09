@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Clock } from "lucide-react";
+import { ThumbsUp, ThumbsDown, MessageSquare, Play, MoreHorizontal, Flame } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface HeroArticle {
@@ -11,36 +10,76 @@ interface HeroArticle {
   category: string;
   image: string;
   timestamp: string;
-  badge?: "hot" | "trending" | "new";
+  source: string;
+  badge?: "hot" | "trending" | "new" | "pilne";
+  likes: number;
+  comments: number;
+  hasVideo?: boolean;
 }
 
 const heroArticles: HeroArticle[] = [
   {
     id: "1",
-    title: "Przełomowa decyzja UE w sprawie regulacji sztucznej inteligencji",
+    title: "Przełomowa decyzja UE w sprawie regulacji sztucznej inteligencji. Nowe przepisy zmienią rynek technologiczny",
     excerpt: "Unia Europejska przyjęła nowe przepisy dotyczące AI, które zmienią sposób działania technologicznych gigantów na kontynencie.",
     category: "Technologia",
     image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1200&h=600&fit=crop",
-    timestamp: "2 godz. temu",
+    timestamp: "2 godz.",
+    source: "Informacje.pl",
     badge: "hot",
+    likes: 42,
+    comments: 18,
+    hasVideo: true,
   },
   {
     id: "2",
-    title: "Rekordowe wzrosty na giełdach światowych",
+    title: "Rekordowe wzrosty na giełdach światowych. Eksperci prognozują dalsze zyski",
     excerpt: "Indeksy giełdowe biją kolejne rekordy. Eksperci analizują przyczyny i prognozy na kolejne miesiące.",
     category: "Biznes",
     image: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1200&h=600&fit=crop",
-    timestamp: "4 godz. temu",
+    timestamp: "4 godz.",
+    source: "Finanse24",
     badge: "trending",
+    likes: 35,
+    comments: 12,
   },
   {
     id: "3",
-    title: "Reprezentacja Polski w drodze do finału mistrzostw",
+    title: "Reprezentacja Polski w drodze do finału mistrzostw. Wielki sukces naszych sportowców",
     excerpt: "Polscy sportowcy pokazali klasę w półfinałowych zmaganiach. Przed nami wielki finał.",
     category: "Sport",
     image: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1200&h=600&fit=crop",
-    timestamp: "6 godz. temu",
+    timestamp: "6 godz.",
+    source: "Sport.pl",
     badge: "new",
+    likes: 89,
+    comments: 45,
+  },
+];
+
+// Sidebar articles for "Najlepsze artykuły"
+const sidebarArticles = [
+  {
+    id: "s1",
+    title: "Litwa ogłasza stan wyjątkowy",
+    source: "Rzeczpospolita",
+    timestamp: "2 godz.",
+    image: "https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?w=200&h=200&fit=crop",
+    badge: "pilne" as const,
+  },
+  {
+    id: "s2",
+    title: "KO znów liderem, ale nie ma powodów do radości. Nowy...",
+    source: "Gazeta.pl",
+    timestamp: "3 godz.",
+    image: "https://images.unsplash.com/photo-1555848962-6e79363ec58f?w=200&h=200&fit=crop",
+  },
+  {
+    id: "s3",
+    title: "Katastrofa ogromnego samolotu. Rosyjska maszyna...",
+    source: "Radio ZET",
+    timestamp: "21 min",
+    image: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=200&h=200&fit=crop",
   },
 ];
 
@@ -54,100 +93,145 @@ export function HeroSlider() {
     return () => clearInterval(timer);
   }, []);
 
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % heroArticles.length);
-  };
-
-  const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + heroArticles.length) % heroArticles.length);
-  };
+  const currentArticle = heroArticles[currentSlide];
 
   return (
-    <section className="relative overflow-hidden rounded-xl bg-card shadow-lg">
-      <div className="relative h-[400px] md:h-[500px]">
-        {heroArticles.map((article, index) => (
-          <div
-            key={article.id}
-            className={cn(
-              "absolute inset-0 transition-all duration-700 ease-in-out",
-              index === currentSlide ? "opacity-100 translate-x-0" : "opacity-0 translate-x-full"
-            )}
-          >
-            {/* Background Image */}
-            <div className="absolute inset-0">
-              <img
-                src={article.image}
-                alt={article.title}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
-            </div>
-
-            {/* Content */}
-            <div className="relative h-full flex flex-col justify-end p-6 md:p-10">
-              <div className="max-w-3xl">
-                <div className="flex items-center gap-3 mb-4">
-                  <Badge variant="category">{article.category}</Badge>
-                  {article.badge && (
-                    <Badge variant={article.badge}>
-                      {article.badge === "hot" && "🔥 Gorące"}
-                      {article.badge === "trending" && "📈 Trending"}
-                      {article.badge === "new" && "✨ Nowe"}
-                    </Badge>
-                  )}
-                </div>
-                <h2 className="text-2xl md:text-4xl font-bold text-white mb-3 leading-tight">
-                  {article.title}
-                </h2>
-                <p className="text-white/80 text-base md:text-lg mb-4 line-clamp-2">
-                  {article.excerpt}
-                </p>
-                <div className="flex items-center gap-4">
-                  <span className="flex items-center gap-1 text-white/60 text-sm">
-                    <Clock className="h-4 w-4" />
-                    {article.timestamp}
-                  </span>
-                  <Button variant="gradient" size="sm">
-                    Czytaj więcej
-                  </Button>
-                </div>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      {/* Main Hero Card */}
+      <div className="lg:col-span-2">
+        <article className="group relative cursor-pointer rounded-xl overflow-hidden aspect-[16/10]">
+          <img
+            src={currentArticle.image}
+            alt={currentArticle.title}
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+          
+          {/* Video play icon */}
+          {currentArticle.hasVideo && (
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+              <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:bg-white/30 transition-colors">
+                <Play className="w-8 h-8 text-white fill-white" />
               </div>
             </div>
+          )}
+          
+          {/* Content overlay */}
+          <div className="absolute inset-x-0 bottom-0 p-5">
+            {/* Source and timestamp */}
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-6 h-6 rounded bg-primary flex items-center justify-center">
+                <span className="text-xs font-bold text-primary-foreground">IP</span>
+              </div>
+              <span className="text-sm text-white/90 font-medium">{currentArticle.source}</span>
+              <span className="text-sm text-white/60">· {currentArticle.timestamp}</span>
+            </div>
+            
+            {/* Title */}
+            <h2 className="font-bold text-xl md:text-2xl text-white mb-4 line-clamp-3 leading-tight">
+              {currentArticle.title}
+            </h2>
+            
+            {/* Engagement metrics */}
+            <div className="flex items-center gap-5 text-white/70">
+              <button className="flex items-center gap-1.5 hover:text-white transition-colors">
+                <ThumbsUp className="h-5 w-5" />
+                <span className="text-sm">{currentArticle.likes}</span>
+              </button>
+              <button className="flex items-center gap-1.5 hover:text-white transition-colors">
+                <ThumbsDown className="h-5 w-5" />
+              </button>
+              <button className="flex items-center gap-1.5 hover:text-white transition-colors">
+                <MessageSquare className="h-5 w-5" />
+                <span className="text-sm">{currentArticle.comments}</span>
+              </button>
+            </div>
           </div>
-        ))}
+
+          {/* Dots indicator */}
+          <div className="absolute bottom-5 right-5 flex gap-1.5">
+            {heroArticles.map((_, index) => (
+              <button
+                key={index}
+                className={cn(
+                  "w-2 h-2 rounded-full transition-all duration-300",
+                  index === currentSlide ? "bg-white w-5" : "bg-white/40 hover:bg-white/60"
+                )}
+                onClick={() => setCurrentSlide(index)}
+              />
+            ))}
+          </div>
+        </article>
       </div>
 
-      {/* Navigation Arrows */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/30 text-white hover:bg-black/50 backdrop-blur-sm"
-        onClick={prevSlide}
-      >
-        <ChevronLeft className="h-6 w-6" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/30 text-white hover:bg-black/50 backdrop-blur-sm"
-        onClick={nextSlide}
-      >
-        <ChevronRight className="h-6 w-6" />
-      </Button>
+      {/* Sidebar - Najlepsze artykuły */}
+      <div className="bg-card rounded-xl p-4">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Flame className="w-5 h-5 text-orange-500" />
+            <h3 className="font-bold text-foreground">Najlepsze artykuły</h3>
+          </div>
+          <button className="text-muted-foreground hover:text-foreground transition-colors">
+            <MoreHorizontal className="w-5 h-5" />
+          </button>
+        </div>
 
-      {/* Dots */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-        {heroArticles.map((_, index) => (
-          <button
-            key={index}
-            className={cn(
-              "w-2 h-2 rounded-full transition-all duration-300",
-              index === currentSlide ? "bg-primary w-6" : "bg-white/50 hover:bg-white/80"
-            )}
-            onClick={() => setCurrentSlide(index)}
-          />
-        ))}
+        <div className="space-y-0">
+          {sidebarArticles.map((article) => (
+            <article 
+              key={article.id} 
+              className="group flex gap-3 cursor-pointer py-3 border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors rounded px-2 -mx-2"
+            >
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                  {article.badge === "pilne" && (
+                    <Badge variant="destructive" className="text-[10px] px-1.5 py-0 h-5">
+                      Pilne
+                    </Badge>
+                  )}
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-4 h-4 rounded bg-muted flex items-center justify-center">
+                      <span className="text-[8px] font-bold text-muted-foreground">
+                        {article.source.charAt(0)}
+                      </span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">{article.source}</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">· {article.timestamp}</span>
+                </div>
+                <h4 className="text-sm font-medium text-foreground line-clamp-2 group-hover:text-primary transition-colors">
+                  {article.title}
+                </h4>
+              </div>
+              <div className="relative w-16 h-16 flex-shrink-0 overflow-hidden rounded-md">
+                <img
+                  src={article.image}
+                  alt={article.title}
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+              </div>
+            </article>
+          ))}
+        </div>
+
+        {/* Pagination dots */}
+        <div className="flex justify-center gap-1.5 mt-4">
+          {[0, 1, 2, 3].map((i) => (
+            <button
+              key={i}
+              className={cn(
+                "w-2 h-2 rounded-full transition-colors",
+                i === 0 ? "bg-primary" : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
+              )}
+            />
+          ))}
+        </div>
+
+        {/* Sponsorowane label */}
+        <div className="text-right mt-3">
+          <span className="text-xs text-muted-foreground">Sponsorowane</span>
+        </div>
       </div>
-    </section>
+    </div>
   );
 }
