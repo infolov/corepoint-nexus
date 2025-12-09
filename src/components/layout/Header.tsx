@@ -11,6 +11,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { SettingsPanel } from "@/components/settings/SettingsPanel";
 
 const categories = [
   { name: "Wiadomości", href: "/wiadomosci" },
@@ -26,6 +27,7 @@ export function Header() {
   const [isDark, setIsDark] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
@@ -174,7 +176,11 @@ export function Header() {
                         {isDark ? <Sun className="h-4 w-4 mr-2" /> : <Moon className="h-4 w-4 mr-2" />}
                         {isDark ? "Tryb jasny" : "Tryb ciemny"}
                       </Button>
-                      <Button variant="ghost" className="w-full justify-start">
+                      <Button 
+                        variant="ghost" 
+                        className="w-full justify-start"
+                        onClick={() => setIsSettingsOpen(true)}
+                      >
                         <Settings className="h-4 w-4 mr-2" />
                         Ustawienia
                       </Button>
@@ -223,6 +229,12 @@ export function Header() {
           ))}
         </nav>
       </div>
+
+      {/* Settings Panel */}
+      <SettingsPanel 
+        isOpen={isSettingsOpen} 
+        onClose={() => setIsSettingsOpen(false)} 
+      />
     </header>
   );
 }
