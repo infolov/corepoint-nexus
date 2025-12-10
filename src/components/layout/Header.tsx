@@ -85,8 +85,22 @@ export function Header() {
             </Link>
           </div>
 
+          {/* Central Search Bar - MSN style */}
+          <form onSubmit={handleSearch} className="hidden sm:flex flex-1 max-w-md mx-4">
+            <div className="relative w-full">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Szukaj wiadomości, tematów..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full h-10 pl-10 pr-4 rounded-full bg-background/90 border-border/50 text-foreground placeholder:text-muted-foreground focus:bg-background focus:border-primary/50 transition-all"
+              />
+            </div>
+          </form>
+
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="hidden lg:flex items-center gap-1">
             {categories.slice(0, 1).map((cat) => (
               <CategoryDropdown 
                 key={cat.name}
@@ -108,8 +122,8 @@ export function Header() {
 
           {/* Actions */}
           <div className="flex items-center gap-2">
-            {/* Search */}
-            <div className="relative">
+            {/* Mobile Search Toggle */}
+            <div className="relative sm:hidden">
               {isSearchOpen ? (
                 <form onSubmit={handleSearch} className="flex items-center">
                   <Input
@@ -119,7 +133,7 @@ export function Header() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyDown={handleSearchKeyDown}
-                    className="w-40 sm:w-56 h-8 text-sm bg-nav-foreground/10 border-nav-foreground/20 text-nav-foreground placeholder:text-nav-foreground/50"
+                    className="w-40 h-8 text-sm bg-nav-foreground/10 border-nav-foreground/20 text-nav-foreground placeholder:text-nav-foreground/50"
                   />
                   <Button
                     type="button"
