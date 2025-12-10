@@ -11,7 +11,7 @@ interface NewsCardProps {
   timestamp: string;
   source?: string;
   badge?: "hot" | "trending" | "new" | "pilne";
-  variant?: "default" | "horizontal" | "compact" | "hero";
+  variant?: "default" | "horizontal" | "compact" | "hero" | "msn-slot";
   className?: string;
 }
 
@@ -120,10 +120,45 @@ export function NewsCard({
     );
   }
 
-  // MSN-style default card (grid item) - dark overlay style
+  // MSN-style slot card (for slots 2-5 in sidebar)
+  if (variant === "msn-slot") {
+    return (
+      <Wrapper {...wrapperProps as any}>
+        <article className={cn(
+          "group cursor-pointer rounded-lg overflow-hidden relative",
+          "h-[90px] lg:h-[95px]",
+          className
+        )}>
+          <img
+            src={image}
+            alt={title}
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+          
+          {/* Content overlay */}
+          <div className="absolute inset-x-0 bottom-0 p-2">
+            <div className="flex items-center gap-1 mb-1">
+              <span className="text-[10px] text-white/80 font-medium">{source}</span>
+              <span className="text-[10px] text-white/60">· {timestamp}</span>
+            </div>
+            <h4 className="font-medium text-xs text-white line-clamp-2 leading-tight text-senior-sm">
+              {title}
+            </h4>
+          </div>
+        </article>
+      </Wrapper>
+    );
+  }
+
+  // MSN-style default card (grid item) - dark overlay style with 16:9 aspect ratio
   return (
     <Wrapper {...wrapperProps as any}>
-      <article className={cn("group cursor-pointer rounded-xl overflow-hidden relative aspect-[16/9]", className)}>
+      <article className={cn(
+        "group cursor-pointer rounded-xl overflow-hidden relative",
+        "aspect-[16/9] min-h-[180px] max-h-[250px]",
+        className
+      )}>
         <img
           src={image}
           alt={title}
@@ -143,7 +178,7 @@ export function NewsCard({
           </div>
           
           {/* Title */}
-          <h3 className="font-semibold text-sm sm:text-base text-white line-clamp-2 leading-snug">
+          <h3 className="font-semibold text-sm sm:text-base text-white line-clamp-2 leading-snug text-senior">
             {title}
           </h3>
         </div>

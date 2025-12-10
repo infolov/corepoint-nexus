@@ -6,6 +6,7 @@ import { X, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { DisplaySettings } from "./DisplaySettings";
 
 interface SettingsPanelProps {
   isOpen: boolean;
@@ -177,6 +178,9 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
             </div>
           ) : (
             <>
+              {/* Display Settings (Data Saver, Font Size, Mode) */}
+              <DisplaySettings className="mb-6 pb-6 border-b border-border" />
+
               {/* Language Section */}
               <div className="mb-6">
                 <h3 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">
@@ -192,7 +196,7 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
                       />
                       <Label 
                         htmlFor={`lang-${lang.id}`}
-                        className="text-sm font-medium cursor-pointer"
+                        className="text-senior-sm font-medium cursor-pointer"
                       >
                         {lang.label}
                       </Label>
@@ -216,7 +220,7 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
                       />
                       <Label 
                         htmlFor={`region-${region.id}`}
-                        className="text-sm font-medium cursor-pointer"
+                        className="text-senior-sm font-medium cursor-pointer"
                       >
                         {region.label}
                       </Label>
