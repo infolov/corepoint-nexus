@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { Play } from "lucide-react";
 
 interface NewsCardProps {
   id?: string;
@@ -11,9 +12,31 @@ interface NewsCardProps {
   timestamp: string;
   source?: string;
   badge?: "hot" | "trending" | "new" | "pilne";
+  hasVideo?: boolean;
   variant?: "default" | "horizontal" | "compact" | "hero" | "msn-slot";
   className?: string;
 }
+
+// Source icon colors mapping
+const sourceColors: Record<string, string> = {
+  "PAP": "bg-blue-500",
+  "Reuters": "bg-orange-500",
+  "Bloomberg": "bg-emerald-500",
+  "TVN24": "bg-red-500",
+  "Polsat News": "bg-yellow-500",
+  "Money.pl": "bg-green-500",
+  "Forbes": "bg-slate-700",
+  "Informacje.pl": "bg-primary",
+};
+
+const getSourceColor = (source: string) => {
+  return sourceColors[source] || "bg-primary";
+};
+
+const getSourceInitials = (source: string) => {
+  if (source.length <= 3) return source;
+  return source.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+};
 
 export function NewsCard({
   id,
@@ -24,37 +47,46 @@ export function NewsCard({
   timestamp,
   source = "Informacje.pl",
   badge,
+  hasVideo,
   variant = "default",
   className,
 }: NewsCardProps) {
   const Wrapper = id ? Link : "div";
   const wrapperProps = id ? { to: `/artykul/${id}` } : {};
 
-  // MSN-style compact list item (for sidebar)
+  // MSN-style compact list item (for sidebar/data saver)
   if (variant === "compact") {
     return (
       <Wrapper {...wrapperProps as any}>
-        <article className={cn("group flex gap-3 cursor-pointer py-3 border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors px-2 -mx-2 rounded", className)}>
+        <article className={cn(
+          "group flex gap-3 cursor-pointer py-3 px-3 -mx-3",
+          "border-b border-border/50 last:border-0",
+          "hover:bg-muted/50 transition-all duration-200 rounded-lg",
+          className
+        )}>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              {badge && (
-                <Badge variant={badge === "pilne" ? "destructive" : badge} className="text-[10px] px-1.5 py-0">
-                  {badge === "pilne" ? "Pilne" : badge === "hot" ? "🔥" : badge === "trending" ? "📈" : "✨"}
-                </Badge>
-              )}
-              <span className="text-xs text-muted-foreground">{source}</span>
+            <div className="flex items-center gap-2 mb-1.5">
+              <div className={cn("w-5 h-5 rounded flex items-center justify-center flex-shrink-0", getSourceColor(source))}>
+                <span className="text-[9px] font-bold text-white">{getSourceInitials(source)}</span>
+              </div>
+              <span className="text-xs text-muted-foreground font-medium">{source}</span>
               <span className="text-xs text-muted-foreground">· {timestamp}</span>
             </div>
-            <h4 className="text-sm font-medium text-foreground line-clamp-2 group-hover:text-primary transition-colors">
+            <h4 className="text-sm font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors leading-snug">
               {title}
             </h4>
           </div>
-          <div className="relative w-16 h-16 flex-shrink-0 overflow-hidden rounded-lg">
+          <div className="relative w-20 h-14 flex-shrink-0 overflow-hidden rounded-lg">
             <img
               src={image}
               alt={title}
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
+            {hasVideo && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                <Play className="w-5 h-5 text-white fill-white" />
+              </div>
+            )}
           </div>
         </article>
       </Wrapper>
@@ -65,17 +97,29 @@ export function NewsCard({
   if (variant === "horizontal") {
     return (
       <Wrapper {...wrapperProps as any}>
-        <article className={cn("group flex gap-4 cursor-pointer", className)}>
+        <article className={cn(
+          "group flex gap-4 cursor-pointer p-2 -m-2 rounded-xl",
+          "hover:bg-muted/50 transition-all duration-200",
+          className
+        )}>
           <div className="relative w-32 h-24 md:w-40 md:h-28 flex-shrink-0 overflow-hidden rounded-xl">
             <img
               src={image}
               alt={title}
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
+            {hasVideo && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                <Play className="w-8 h-8 text-white fill-white" />
+              </div>
+            )}
           </div>
           <div className="flex flex-col justify-center min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs text-muted-foreground">{source}</span>
+            <div className="flex items-center gap-2 mb-1.5">
+              <div className={cn("w-5 h-5 rounded flex items-center justify-center", getSourceColor(source))}>
+                <span className="text-[9px] font-bold text-white">{getSourceInitials(source)}</span>
+              </div>
+              <span className="text-xs text-muted-foreground font-medium">{source}</span>
               <span className="text-xs text-muted-foreground">· {timestamp}</span>
             </div>
             <h3 className="font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors">
@@ -91,27 +135,46 @@ export function NewsCard({
   if (variant === "hero") {
     return (
       <Wrapper {...wrapperProps as any}>
-        <article className={cn("group relative cursor-pointer rounded-2xl overflow-hidden aspect-[4/3] lg:aspect-auto lg:h-full", className)}>
+        <article className={cn(
+          "group relative cursor-pointer overflow-hidden",
+          "rounded-2xl shadow-lg",
+          "aspect-[4/3] lg:aspect-auto lg:h-full",
+          className
+        )}>
           <img
             src={image}
             alt={title}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+          
+          {/* Video indicator */}
+          {hasVideo && (
+            <div className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+              <Play className="w-5 h-5 text-white fill-white" />
+            </div>
+          )}
           
           {/* Content overlay */}
-          <div className="absolute inset-x-0 bottom-0 p-5">
+          <div className="absolute inset-x-0 bottom-0 p-5 lg:p-6">
+            {/* Badge */}
+            {badge && (
+              <Badge variant={badge === "pilne" ? "destructive" : badge} className="mb-3">
+                {badge === "pilne" ? "PILNE" : badge === "hot" ? "Popularne" : badge === "trending" ? "Na czasie" : "Nowe"}
+              </Badge>
+            )}
+            
             {/* Source and timestamp */}
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-6 h-6 rounded-md bg-primary flex items-center justify-center shadow-lg">
-                <span className="text-[10px] font-bold text-primary-foreground">IP</span>
+            <div className="flex items-center gap-2 mb-3">
+              <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center shadow-lg", getSourceColor(source))}>
+                <span className="text-[10px] font-bold text-white">{getSourceInitials(source)}</span>
               </div>
               <span className="text-sm text-white/90 font-medium">{source}</span>
               <span className="text-sm text-white/60">· {timestamp}</span>
             </div>
             
             {/* Title */}
-            <h3 className="font-bold text-lg md:text-xl text-white line-clamp-3 leading-snug">
+            <h3 className="font-bold text-xl md:text-2xl text-white line-clamp-3 leading-tight">
               {title}
             </h3>
           </div>
@@ -125,8 +188,9 @@ export function NewsCard({
     return (
       <Wrapper {...wrapperProps as any}>
         <article className={cn(
-          "group cursor-pointer rounded-lg overflow-hidden relative",
-          "h-[90px] lg:h-[95px]",
+          "group cursor-pointer rounded-xl overflow-hidden relative",
+          "h-[95px] lg:h-[98px] shadow-sm",
+          "hover:shadow-md transition-shadow duration-200",
           className
         )}>
           <img
@@ -134,15 +198,25 @@ export function NewsCard({
             alt={title}
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
+          
+          {/* Video indicator */}
+          {hasVideo && (
+            <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+              <Play className="w-3 h-3 text-white fill-white" />
+            </div>
+          )}
           
           {/* Content overlay */}
-          <div className="absolute inset-x-0 bottom-0 p-2">
-            <div className="flex items-center gap-1 mb-1">
+          <div className="absolute inset-x-0 bottom-0 p-2.5">
+            <div className="flex items-center gap-1.5 mb-1">
+              <div className={cn("w-4 h-4 rounded flex items-center justify-center", getSourceColor(source))}>
+                <span className="text-[8px] font-bold text-white">{getSourceInitials(source)}</span>
+              </div>
               <span className="text-[10px] text-white/80 font-medium">{source}</span>
               <span className="text-[10px] text-white/60">· {timestamp}</span>
             </div>
-            <h4 className="font-medium text-xs text-white line-clamp-2 leading-tight text-senior-sm">
+            <h4 className="font-semibold text-xs text-white line-clamp-2 leading-tight">
               {title}
             </h4>
           </div>
@@ -151,12 +225,13 @@ export function NewsCard({
     );
   }
 
-  // MSN-style default card (grid item) - dark overlay style with 16:9 aspect ratio
+  // MSN-style default card (grid item) - 16:9 aspect ratio with proper height
   return (
     <Wrapper {...wrapperProps as any}>
       <article className={cn(
         "group cursor-pointer rounded-xl overflow-hidden relative",
         "aspect-[16/9] min-h-[180px] max-h-[250px]",
+        "shadow-sm hover:shadow-lg transition-all duration-300",
         className
       )}>
         <img
@@ -164,21 +239,37 @@ export function NewsCard({
           alt={title}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+        
+        {/* Video indicator */}
+        {hasVideo && (
+          <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+            <Play className="w-4 h-4 text-white fill-white" />
+          </div>
+        )}
+        
+        {/* Badge */}
+        {badge && (
+          <div className="absolute top-3 left-3">
+            <Badge variant={badge === "pilne" ? "destructive" : badge} className="text-[10px] px-2 py-0.5">
+              {badge === "pilne" ? "PILNE" : badge === "hot" ? "🔥" : badge === "trending" ? "📈" : "✨"}
+            </Badge>
+          </div>
+        )}
         
         {/* Content overlay */}
         <div className="absolute inset-x-0 bottom-0 p-3 sm:p-4">
           {/* Source and timestamp */}
-          <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
-            <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-orange-500 flex items-center justify-center">
-              <span className="text-[10px] sm:text-xs">🔥</span>
+          <div className="flex items-center gap-1.5 sm:gap-2 mb-2">
+            <div className={cn("w-5 h-5 sm:w-6 sm:h-6 rounded-md flex items-center justify-center shadow", getSourceColor(source))}>
+              <span className="text-[9px] sm:text-[10px] font-bold text-white">{getSourceInitials(source)}</span>
             </div>
-            <span className="text-[10px] sm:text-xs text-white/90 font-medium">{source}</span>
-            <span className="text-[10px] sm:text-xs text-white/60">· {timestamp}</span>
+            <span className="text-[11px] sm:text-xs text-white/90 font-medium">{source}</span>
+            <span className="text-[11px] sm:text-xs text-white/60">· {timestamp}</span>
           </div>
           
           {/* Title */}
-          <h3 className="font-semibold text-sm sm:text-base text-white line-clamp-2 leading-snug text-senior">
+          <h3 className="font-semibold text-sm sm:text-base text-white line-clamp-2 leading-snug">
             {title}
           </h3>
         </div>

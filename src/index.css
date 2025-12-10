@@ -6,7 +6,7 @@
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
+    --background: 210 25% 97%;
     --foreground: 222 47% 11%;
 
     --card: 0 0% 100%;
@@ -15,16 +15,17 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    --primary: 24 95% 53%;
+    /* MSN-style blue primary */
+    --primary: 207 90% 54%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 215 28% 17%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
 
-    --muted: 214 32% 91%;
+    --muted: 210 40% 96%;
     --muted-foreground: 215 16% 47%;
 
-    --accent: 24 95% 53%;
+    --accent: 207 90% 54%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
@@ -32,21 +33,29 @@
 
     --border: 214 32% 91%;
     --input: 214 32% 91%;
-    --ring: 24 95% 53%;
+    --ring: 207 90% 54%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
 
-    /* Custom tokens */
+    /* Custom tokens - MSN style */
     --nav-bg: 222 47% 11%;
     --nav-foreground: 210 40% 98%;
-    --hero-gradient-start: 24 95% 53%;
-    --hero-gradient-end: 16 100% 50%;
-    --card-hover: 210 20% 96%;
+    --hero-gradient-start: 207 90% 54%;
+    --hero-gradient-end: 199 89% 48%;
+    --card-hover: 210 40% 98%;
+    --card-shadow: 0 2px 8px -2px hsl(222 47% 11% / 0.08);
+    --card-shadow-hover: 0 8px 24px -4px hsl(222 47% 11% / 0.15);
     --badge-hot: 0 84% 60%;
-    --badge-trending: 24 95% 53%;
+    --badge-trending: 207 90% 54%;
     --badge-new: 142 71% 45%;
+    --badge-pilne: 0 84% 60%;
     --weather-sunny: 45 93% 47%;
     --weather-cloudy: 215 16% 47%;
+    
+    /* Source colors */
+    --source-pap: 207 90% 54%;
+    --source-reuters: 24 95% 53%;
+    --source-bloomberg: 142 71% 45%;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -59,39 +68,41 @@
   }
 
   .dark {
-    --background: 222 47% 6%;
+    --background: 222 47% 7%;
     --foreground: 210 40% 98%;
 
-    --card: 222 47% 9%;
+    --card: 222 47% 10%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222 47% 9%;
+    --popover: 222 47% 10%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 24 95% 53%;
+    --primary: 207 90% 54%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 215 28% 17%;
+    --secondary: 217 33% 17%;
     --secondary-foreground: 210 40% 98%;
 
     --muted: 217 33% 17%;
     --muted-foreground: 215 20% 65%;
 
-    --accent: 24 95% 53%;
+    --accent: 207 90% 54%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217 33% 17%;
+    --border: 217 33% 20%;
     --input: 217 33% 17%;
-    --ring: 24 95% 53%;
+    --ring: 207 90% 54%;
 
-    --nav-bg: 222 47% 4%;
+    --nav-bg: 222 47% 5%;
     --nav-foreground: 210 40% 98%;
-    --hero-gradient-start: 24 95% 53%;
-    --hero-gradient-end: 16 100% 50%;
-    --card-hover: 222 47% 12%;
+    --hero-gradient-start: 207 90% 54%;
+    --hero-gradient-end: 199 89% 48%;
+    --card-hover: 222 47% 14%;
+    --card-shadow: 0 2px 8px -2px hsl(0 0% 0% / 0.3);
+    --card-shadow-hover: 0 8px 24px -4px hsl(0 0% 0% / 0.4);
 
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
