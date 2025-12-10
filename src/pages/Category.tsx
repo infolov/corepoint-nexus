@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { NewsCard } from "@/components/news/NewsCard";
@@ -8,7 +8,8 @@ import { TrendingWidget } from "@/components/widgets/TrendingWidget";
 import { AdBanner } from "@/components/widgets/AdBanner";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import { useDisplayMode } from "@/hooks/use-display-mode";
-import { Loader2 } from "lucide-react";
+import { Loader2, ChevronDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   newsArticles,
   businessArticles,
@@ -17,6 +18,71 @@ import {
   lifestyleArticles,
   Article,
 } from "@/data/mockNews";
+
+// Categories with subcategories
+const categoriesMenu = [
+  {
+    name: "Wiadomości",
+    slug: "wiadomosci",
+    subcategories: [
+      { name: "Polityka krajowa", slug: "polityka-krajowa" },
+      { name: "Polityka zagraniczna", slug: "polityka-zagraniczna" },
+      { name: "Społeczeństwo", slug: "spoleczenstwo" },
+      { name: "Gospodarka", slug: "gospodarka" },
+    ],
+  },
+  {
+    name: "Sport",
+    slug: "sport",
+    subcategories: [
+      { name: "Piłka nożna", slug: "pilka-nozna" },
+      { name: "Koszykówka", slug: "koszykowka" },
+      { name: "Siatkówka", slug: "siatkowka" },
+      { name: "Tenis", slug: "tenis" },
+      { name: "F1", slug: "f1" },
+    ],
+  },
+  {
+    name: "Biznes",
+    slug: "biznes",
+    subcategories: [
+      { name: "Finanse", slug: "finanse" },
+      { name: "Giełda", slug: "gielda" },
+      { name: "Nieruchomości", slug: "nieruchomosci" },
+      { name: "Startupy", slug: "startupy" },
+    ],
+  },
+  {
+    name: "Technologia",
+    slug: "technologia",
+    subcategories: [
+      { name: "AI", slug: "ai" },
+      { name: "Smartfony", slug: "smartfony" },
+      { name: "Gaming", slug: "gaming" },
+      { name: "Cyberbezpieczeństwo", slug: "cyberbezpieczenstwo" },
+    ],
+  },
+  {
+    name: "Lifestyle",
+    slug: "lifestyle",
+    subcategories: [
+      { name: "Zdrowie", slug: "zdrowie" },
+      { name: "Moda", slug: "moda" },
+      { name: "Podróże", slug: "podroze" },
+      { name: "Kuchnia", slug: "kuchnia" },
+    ],
+  },
+  {
+    name: "Rozrywka",
+    slug: "rozrywka",
+    subcategories: [
+      { name: "Film", slug: "film" },
+      { name: "Muzyka", slug: "muzyka" },
+      { name: "Gwiazdy", slug: "gwiazdy" },
+      { name: "TV", slug: "tv" },
+    ],
+  },
+];
 
 // Combine all articles from all categories
 const getAllArticles = (): Article[] => {
@@ -60,6 +126,7 @@ export default function Category() {
   const { category } = useParams<{ category: string }>();
   const { settings: displaySettings } = useDisplayMode();
   const isCompact = displaySettings.mode === "compact" || displaySettings.dataSaver;
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   
   const allArticles = getAllArticles();
   
@@ -79,6 +146,58 @@ export default function Category() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
+      
+      {/* Category Navigation Menu */}
+      <div className="bg-card border-b border-border sticky top-12 z-40">
+        <div className="max-w-7xl mx-auto px-4">
+          <nav className="flex items-center gap-1 overflow-x-auto py-2 scrollbar-hide">
+            {categoriesMenu.map((cat) => (
+              <div 
+                key={cat.slug}
+                className="relative"
+                onMouseEnter={() => setOpenDropdown(cat.slug)}
+                onMouseLeave={() => setOpenDropdown(null)}
+              >
+                <button
+                  className={cn(
+                    "flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-colors",
+                    "hover:bg-muted text-foreground",
+                    openDropdown === cat.slug && "bg-muted"
+                  )}
+                >
+                  {cat.name}
+                  <ChevronDown className={cn(
+                    "h-4 w-4 transition-transform",
+                    openDropdown === cat.slug && "rotate-180"
+                  )} />
+                </button>
+                
+                {/* Dropdown */}
+                {openDropdown === cat.slug && (
+                  <div className="absolute top-full left-0 mt-1 bg-popover border border-border rounded-lg shadow-lg py-2 min-w-[180px] z-50">
+                    <Link
+                      to={`/${cat.slug}`}
+                      className="block px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+                    >
+                      Wszystkie {cat.name}
+                    </Link>
+                    <div className="border-t border-border my-1" />
+                    {cat.subcategories.map((sub) => (
+                      <Link
+                        key={sub.slug}
+                        to={`/${cat.slug}/${sub.slug}`}
+                        className="block px-4 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                      >
+                        {sub.name}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </nav>
+        </div>
+      </div>
       
       <main className="max-w-7xl mx-auto px-4 py-6">
         {/* Page Title */}
