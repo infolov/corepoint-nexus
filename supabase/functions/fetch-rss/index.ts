@@ -11,11 +11,18 @@ const RSS_SOURCES = [
   { url: 'https://www.polsatnews.pl/rss/wszystkie.xml', source: 'Polsat News', category: 'Wiadomości' },
   { url: 'https://tvn24.pl/najnowsze.xml', source: 'TVN24', category: 'Wiadomości' },
   { url: 'https://www.rp.pl/rss/1061-swiat', source: 'Rzeczpospolita', category: 'Wiadomości' },
+  { url: 'https://wiadomosci.onet.pl/rss/kraj', source: 'Onet', category: 'Wiadomości' },
+  { url: 'https://wiadomosci.wp.pl/rss.xml', source: 'Wirtualna Polska', category: 'Wiadomości' },
+  { url: 'https://fakty.interia.pl/rss', source: 'Interia', category: 'Wiadomości' },
+  { url: 'https://sport.onet.pl/rss/pilka-nozna', source: 'Onet Sport', category: 'Sport' },
+  { url: 'https://sport.interia.pl/rss', source: 'Interia Sport', category: 'Sport' },
   { url: 'https://www.bankier.pl/rss/wiadomosci.xml', source: 'Bankier.pl', category: 'Biznes' },
   { url: 'https://www.money.pl/rss/rss.xml', source: 'Money.pl', category: 'Biznes' },
+  { url: 'https://biznes.interia.pl/rss', source: 'Interia Biznes', category: 'Biznes' },
   { url: 'https://sportowefakty.wp.pl/rss.xml', source: 'Sportowe Fakty', category: 'Sport' },
   { url: 'https://www.chip.pl/feed', source: 'Chip.pl', category: 'Technologia' },
   { url: 'https://www.dobreprogramy.pl/feed', source: 'Dobreprogramy', category: 'Technologia' },
+  { url: 'https://tech.wp.pl/rss.xml', source: 'WP Tech', category: 'Technologia' },
 ];
 
 interface Article {
