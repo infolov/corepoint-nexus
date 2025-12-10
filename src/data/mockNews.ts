@@ -57,6 +57,7 @@ export const newsArticles: Article[] = [
     image: "https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?w=400&h=300&fit=crop",
     timestamp: "8 godz. temu",
     source: "Onet",
+    sourceUrl: "https://www.onet.pl",
   },
   {
     id: "n6",
@@ -66,6 +67,7 @@ export const newsArticles: Article[] = [
     timestamp: "9 godz. temu",
     badge: "new",
     source: "Gazeta.pl",
+    sourceUrl: "https://www.gazeta.pl",
   },
   {
     id: "n7",
@@ -74,6 +76,7 @@ export const newsArticles: Article[] = [
     image: "https://images.unsplash.com/photo-1532375810709-75b1da00537c?w=400&h=300&fit=crop",
     timestamp: "10 godz. temu",
     source: "Onet Wiadomości",
+    sourceUrl: "https://wiadomosci.onet.pl",
   },
   {
     id: "n8",
@@ -82,6 +85,7 @@ export const newsArticles: Article[] = [
     image: "https://images.unsplash.com/photo-1504608524841-42fe6f032b4b?w=400&h=300&fit=crop",
     timestamp: "11 godz. temu",
     source: "IMGW",
+    sourceUrl: "https://www.imgw.pl",
   },
   {
     id: "n9",
@@ -90,6 +94,7 @@ export const newsArticles: Article[] = [
     image: "https://images.unsplash.com/photo-1599930113854-d6d7fd521f10?w=400&h=300&fit=crop",
     timestamp: "12 godz. temu",
     source: "Nauka w Polsce",
+    sourceUrl: "https://naukawpolsce.pl",
   },
 ];
 
@@ -103,6 +108,7 @@ export const businessArticles: Article[] = [
     timestamp: "30 min temu",
     badge: "trending",
     source: "Money.pl",
+    sourceUrl: "https://www.money.pl",
   },
   {
     id: "b2",
@@ -111,6 +117,7 @@ export const businessArticles: Article[] = [
     image: "https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?w=400&h=300&fit=crop",
     timestamp: "2 godz. temu",
     source: "Bloomberg",
+    sourceUrl: "https://www.bloomberg.com",
   },
   {
     id: "b3",
@@ -119,6 +126,7 @@ export const businessArticles: Article[] = [
     image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&h=300&fit=crop",
     timestamp: "4 godz. temu",
     source: "Forbes",
+    sourceUrl: "https://www.forbes.pl",
   },
   {
     id: "b4",
@@ -128,6 +136,7 @@ export const businessArticles: Article[] = [
     timestamp: "6 godz. temu",
     badge: "new",
     source: "Business Insider",
+    sourceUrl: "https://businessinsider.com.pl",
   },
 ];
 
@@ -141,6 +150,7 @@ export const sportArticles: Article[] = [
     timestamp: "45 min temu",
     badge: "hot",
     source: "Sport.pl",
+    sourceUrl: "https://www.sport.pl",
   },
   {
     id: "s2",
@@ -149,6 +159,7 @@ export const sportArticles: Article[] = [
     image: "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=400&h=300&fit=crop",
     timestamp: "3 godz. temu",
     source: "Eurosport",
+    sourceUrl: "https://www.eurosport.pl",
   },
   {
     id: "s3",
@@ -157,6 +168,7 @@ export const sportArticles: Article[] = [
     image: "https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=400&h=300&fit=crop",
     timestamp: "5 godz. temu",
     source: "TVP Sport",
+    sourceUrl: "https://sport.tvp.pl",
   },
   {
     id: "s4",
@@ -165,6 +177,7 @@ export const sportArticles: Article[] = [
     image: "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=400&h=300&fit=crop",
     timestamp: "8 godz. temu",
     source: "F1.com",
+    sourceUrl: "https://www.formula1.com",
   },
 ];
 
@@ -178,6 +191,7 @@ export const techArticles: Article[] = [
     timestamp: "1 godz. temu",
     badge: "new",
     source: "The Verge",
+    sourceUrl: "https://www.theverge.com",
   },
   {
     id: "t2",
@@ -187,6 +201,7 @@ export const techArticles: Article[] = [
     timestamp: "4 godz. temu",
     badge: "trending",
     source: "TechCrunch",
+    sourceUrl: "https://techcrunch.com",
   },
   {
     id: "t3",
@@ -195,6 +210,7 @@ export const techArticles: Article[] = [
     image: "https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=400&h=300&fit=crop",
     timestamp: "6 godz. temu",
     source: "Wyborcza",
+    sourceUrl: "https://wyborcza.pl",
   },
   {
     id: "t4",
@@ -203,6 +219,7 @@ export const techArticles: Article[] = [
     image: "https://images.unsplash.com/photo-1516849841032-87cbac4d88f7?w=400&h=300&fit=crop",
     timestamp: "9 godz. temu",
     source: "Spider's Web",
+    sourceUrl: "https://spidersweb.pl",
   },
 ];
 
@@ -215,6 +232,7 @@ export const lifestyleArticles: Article[] = [
     image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=500&fit=crop",
     timestamp: "2 godz. temu",
     source: "National Geographic",
+    sourceUrl: "https://www.nationalgeographic.pl",
   },
   {
     id: "l2",
@@ -223,6 +241,7 @@ export const lifestyleArticles: Article[] = [
     image: "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=400&h=300&fit=crop",
     timestamp: "5 godz. temu",
     source: "Zdrowie.pl",
+    sourceUrl: "https://zdrowie.onet.pl",
   },
   {
     id: "l3",
@@ -231,6 +250,7 @@ export const lifestyleArticles: Article[] = [
     image: "https://images.unsplash.com/photo-1486946255434-2466348c2166?w=400&h=300&fit=crop",
     timestamp: "7 godz. temu",
     source: "Elle Decor",
+    sourceUrl: "https://www.elle.pl/elle-decoration",
   },
 ];
 
@@ -242,6 +262,7 @@ export const recommendedArticles: Article[] = [
     image: "https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=200&h=200&fit=crop",
     timestamp: "2 godz. temu",
     source: "Newsweek",
+    sourceUrl: "https://www.newsweek.pl",
   },
   {
     id: "r2",
@@ -250,6 +271,7 @@ export const recommendedArticles: Article[] = [
     image: "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=200&h=200&fit=crop",
     timestamp: "4 godz. temu",
     source: "Polityka",
+    sourceUrl: "https://www.polityka.pl",
   },
   {
     id: "r3",
@@ -258,6 +280,7 @@ export const recommendedArticles: Article[] = [
     image: "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=200&h=200&fit=crop",
     timestamp: "6 godz. temu",
     source: "Warszawa.pl",
+    sourceUrl: "https://www.um.warszawa.pl",
   },
   {
     id: "r4",
@@ -266,5 +289,6 @@ export const recommendedArticles: Article[] = [
     image: "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?w=200&h=200&fit=crop",
     timestamp: "8 godz. temu",
     source: "Money.pl",
+    sourceUrl: "https://www.money.pl",
   },
 ];
