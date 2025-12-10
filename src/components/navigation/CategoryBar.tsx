@@ -17,8 +17,12 @@ const categoriesWithSubs = [
       { name: "Świat", slug: "swiat" },
       { name: "Polityka", slug: "polityka" },
       { name: "Społeczeństwo", slug: "spoleczenstwo" },
-      { name: "Wypadki", slug: "wypadki" },
+      { name: "Wypadki i zdarzenia", slug: "wypadki" },
       { name: "Pogoda", slug: "pogoda" },
+      { name: "Samorząd", slug: "samorzad" },
+      { name: "Prawo", slug: "prawo" },
+      { name: "Edukacja", slug: "edukacja" },
+      { name: "Wojsko i obronność", slug: "wojsko" },
     ]
   },
   { 
@@ -29,20 +33,29 @@ const categoriesWithSubs = [
       { name: "Koszykówka", slug: "koszykowka" },
       { name: "Siatkówka", slug: "siatkowka" },
       { name: "Tenis", slug: "tenis" },
-      { name: "F1", slug: "f1" },
-      { name: "MMA", slug: "mma" },
+      { name: "Sporty motorowe", slug: "sporty-motorowe" },
+      { name: "Sporty walki", slug: "sporty-walki" },
+      { name: "Hokej", slug: "hokej" },
+      { name: "Lekkoatletyka", slug: "lekkoatletyka" },
+      { name: "Sporty zimowe", slug: "sporty-zimowe" },
+      { name: "E-sport", slug: "e-sport" },
+      { name: "Inne sporty", slug: "inne-sporty" },
     ]
   },
   { 
     name: "Biznes", 
     slug: "biznes",
     subcategories: [
-      { name: "Finanse", slug: "finanse" },
-      { name: "Giełda", slug: "gielda" },
+      { name: "Finanse osobiste", slug: "finanse-osobiste" },
+      { name: "Giełda i inwestycje", slug: "gielda" },
       { name: "Nieruchomości", slug: "nieruchomosci" },
-      { name: "Praca", slug: "praca" },
+      { name: "Praca i kariera", slug: "praca" },
       { name: "Podatki", slug: "podatki" },
-      { name: "Firmy", slug: "firmy" },
+      { name: "Firmy i startupy", slug: "firmy" },
+      { name: "Gospodarka", slug: "gospodarka" },
+      { name: "Bankowość", slug: "bankowosc" },
+      { name: "Ubezpieczenia", slug: "ubezpieczenia" },
+      { name: "Kryptowaluty", slug: "kryptowaluty" },
     ]
   },
   { 
@@ -50,11 +63,15 @@ const categoriesWithSubs = [
     slug: "technologia",
     subcategories: [
       { name: "Smartfony", slug: "smartfony" },
-      { name: "Komputery", slug: "komputery" },
+      { name: "Komputery i laptopy", slug: "komputery" },
       { name: "Gaming", slug: "gaming" },
-      { name: "AI", slug: "ai" },
-      { name: "Internet", slug: "internet" },
-      { name: "Recenzje", slug: "recenzje" },
+      { name: "Sztuczna inteligencja", slug: "ai" },
+      { name: "Internet i social media", slug: "internet" },
+      { name: "Recenzje i testy", slug: "recenzje" },
+      { name: "Aplikacje", slug: "aplikacje" },
+      { name: "Gadżety", slug: "gadzety" },
+      { name: "Cyberbezpieczeństwo", slug: "cyberbezpieczenstwo" },
+      { name: "Smart home", slug: "smart-home" },
     ]
   },
   { 
@@ -63,10 +80,14 @@ const categoriesWithSubs = [
     subcategories: [
       { name: "Moda", slug: "moda" },
       { name: "Uroda", slug: "uroda" },
-      { name: "Związki", slug: "zwiazki" },
-      { name: "Dom", slug: "dom" },
-      { name: "Gotowanie", slug: "gotowanie" },
+      { name: "Związki i relacje", slug: "zwiazki" },
+      { name: "Dom i wnętrza", slug: "dom" },
+      { name: "Gotowanie i przepisy", slug: "gotowanie" },
       { name: "Podróże", slug: "podroze" },
+      { name: "Zakupy", slug: "zakupy" },
+      { name: "Ogród", slug: "ogrod" },
+      { name: "Zwierzęta", slug: "zwierzeta" },
+      { name: "DIY i rękodzieło", slug: "diy" },
     ]
   },
   { 
@@ -76,43 +97,75 @@ const categoriesWithSubs = [
       { name: "Film", slug: "film" },
       { name: "Muzyka", slug: "muzyka" },
       { name: "Seriale", slug: "seriale" },
-      { name: "Gwiazdy", slug: "gwiazdy" },
-      { name: "TV", slug: "tv" },
+      { name: "Gwiazdy i celebryci", slug: "gwiazdy" },
+      { name: "Telewizja", slug: "tv" },
       { name: "Książki", slug: "ksiazki" },
+      { name: "Streaming", slug: "streaming" },
+      { name: "Koncerty i wydarzenia", slug: "wydarzenia" },
+      { name: "Memy i viral", slug: "memy" },
+      { name: "Plotki", slug: "plotki" },
     ]
   },
   { 
     name: "Zdrowie", 
     slug: "zdrowie",
     subcategories: [
-      { name: "Dieta", slug: "dieta" },
-      { name: "Fitness", slug: "fitness" },
+      { name: "Dieta i odżywianie", slug: "dieta" },
+      { name: "Fitness i trening", slug: "fitness" },
       { name: "Psychologia", slug: "psychologia" },
       { name: "Medycyna", slug: "medycyna" },
-      { name: "Ciąża", slug: "ciaza" },
-      { name: "Dzieci", slug: "dzieci" },
+      { name: "Ciąża i macierzyństwo", slug: "ciaza" },
+      { name: "Zdrowie dziecka", slug: "zdrowie-dziecka" },
+      { name: "Zdrowie seniora", slug: "zdrowie-seniora" },
+      { name: "Naturalne metody", slug: "naturalne" },
+      { name: "Seksualność", slug: "seksualnosc" },
+      { name: "Uzależnienia", slug: "uzaleznienia" },
     ]
   },
   { 
     name: "Nauka", 
     slug: "nauka",
     subcategories: [
-      { name: "Kosmos", slug: "kosmos" },
-      { name: "Natura", slug: "natura" },
+      { name: "Kosmos i astronomia", slug: "kosmos" },
+      { name: "Natura i przyroda", slug: "natura" },
       { name: "Historia", slug: "historia" },
-      { name: "Odkrycia", slug: "odkrycia" },
-      { name: "Ekologia", slug: "ekologia" },
+      { name: "Odkrycia naukowe", slug: "odkrycia" },
+      { name: "Ekologia i klimat", slug: "ekologia" },
+      { name: "Archeologia", slug: "archeologia" },
+      { name: "Fizyka", slug: "fizyka" },
+      { name: "Biologia", slug: "biologia" },
+      { name: "Chemia", slug: "chemia" },
+      { name: "Matematyka", slug: "matematyka" },
     ]
   },
   { 
     name: "Motoryzacja", 
     slug: "motoryzacja",
     subcategories: [
-      { name: "Testy", slug: "testy" },
-      { name: "Nowości", slug: "nowosci" },
-      { name: "Porady", slug: "porady" },
-      { name: "Elektryki", slug: "elektryki" },
+      { name: "Testy samochodów", slug: "testy" },
+      { name: "Nowości motoryzacyjne", slug: "nowosci" },
+      { name: "Porady i poradniki", slug: "porady" },
+      { name: "Samochody elektryczne", slug: "elektryczne" },
       { name: "Motocykle", slug: "motocykle" },
+      { name: "Prawo jazdy", slug: "prawo-jazdy" },
+      { name: "Ubezpieczenia OC/AC", slug: "ubezpieczenia-auto" },
+      { name: "Tuning", slug: "tuning" },
+      { name: "Klasyki", slug: "klasyki" },
+      { name: "Wypadki drogowe", slug: "wypadki-drogowe" },
+    ]
+  },
+  { 
+    name: "Kultura", 
+    slug: "kultura",
+    subcategories: [
+      { name: "Sztuka", slug: "sztuka" },
+      { name: "Teatr", slug: "teatr" },
+      { name: "Literatura", slug: "literatura" },
+      { name: "Muzea i wystawy", slug: "muzea" },
+      { name: "Architektura", slug: "architektura" },
+      { name: "Fotografia", slug: "fotografia" },
+      { name: "Design", slug: "design" },
+      { name: "Historia kultury", slug: "historia-kultury" },
     ]
   },
 ];
@@ -192,7 +245,7 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
                 {category.name}
                 {category.subcategories.length > 0 && (
                   <ChevronDown className={cn(
-                    "h-3.5 w-3.5 transition-transform",
+                    "h-3.5 w-3.5 transition-transform duration-200",
                     openDropdown === category.slug && "rotate-180"
                   )} />
                 )}
@@ -200,7 +253,7 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
 
               {/* Dropdown */}
               {category.subcategories.length > 0 && openDropdown === category.slug && (
-                <div className="absolute top-full left-0 mt-1 min-w-[180px] bg-popover border border-border rounded-lg shadow-lg py-2 z-50">
+                <div className="absolute top-full left-0 mt-1 min-w-[200px] bg-popover border border-border rounded-lg shadow-lg py-2 z-50 animate-fade-in">
                   {/* Main category link */}
                   <Link
                     to={`/${category.slug}`}
@@ -213,16 +266,18 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
                     Wszystkie {category.name}
                   </Link>
                   <div className="border-t border-border my-1" />
-                  {category.subcategories.map((sub) => (
-                    <Link
-                      key={sub.slug}
-                      to={`/${category.slug}/${sub.slug}`}
-                      className="block px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                      onClick={() => setOpenDropdown(null)}
-                    >
-                      {sub.name}
-                    </Link>
-                  ))}
+                  <div className="max-h-[300px] overflow-y-auto">
+                    {category.subcategories.map((sub) => (
+                      <Link
+                        key={sub.slug}
+                        to={`/${category.slug}/${sub.slug}`}
+                        className="block px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                        onClick={() => setOpenDropdown(null)}
+                      >
+                        {sub.name}
+                      </Link>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
