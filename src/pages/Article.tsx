@@ -24,26 +24,171 @@ const allArticles = [
   ...lifestyleArticles,
 ];
 
-// Mock full content for articles in Polish
-const getArticleContent = (title: string) => `
+// Generate detailed Polish content based on category and title
+const getArticleContent = (title: string, category: string) => {
+  const categoryContent: Record<string, string> = {
+    "Wiadomości": `
 ${title}
 
-W dzisiejszym artykule przyjrzymy się bliżej temu zagadnieniu, analizując najnowsze doniesienia i opinie ekspertów. Temat ten budzi coraz większe zainteresowanie wśród Polaków, a jego znaczenie rośnie z każdym dniem.
+Najnowsze doniesienia z kraju i świata potwierdzają, że ta sprawa budzi ogromne zainteresowanie wśród Polaków. Eksperci i analitycy od tygodni obserwują rozwój sytuacji, próbując przewidzieć jej dalszy przebieg.
 
-Według najnowszych danych, sytuacja rozwija się dynamicznie. Eksperci podkreślają, że obserwujemy istotne zmiany, które mogą mieć długofalowe konsekwencje dla całego społeczeństwa.
+## Tło wydarzeń
 
-## Szczegóły
+Jak informują źródła bliskie sprawie, wszystko zaczęło się kilka tygodni temu. Początkowo nikt nie spodziewał się, że wydarzenia przyjmą taki obrót. Dziennikarze śledczy dotarli do kluczowych informacji, które rzucają nowe światło na całą sprawę.
 
-Analitycy zwracają uwagę na kilka kluczowych aspektów tej sprawy. Po pierwsze, należy wziąć pod uwagę kontekst historyczny i społeczny. Po drugie, istotne są również czynniki ekonomiczne, które wpływają na obecną sytuację.
+Rzecznik prasowy potwierdził: "Prowadzimy intensywne działania w tej sprawie. Wszystkie informacje są na bieżąco weryfikowane przez odpowiednie służby."
 
-Przedstawiciele branży komentują: "To niezwykle ważny moment. Musimy działać rozważnie, ale jednocześnie zdecydowanie, aby wykorzystać pojawiające się możliwości."
+## Reakcje społeczne
+
+Polacy reagują żywiołowo na najnowsze doniesienia. W mediach społecznościowych temat stał się numerem jeden, generując tysiące komentarzy i dyskusji. Sondaże pokazują, że większość obywateli uważnie śledzi rozwój wydarzeń.
+
+Organizacje pozarządowe apelują o spokój i rozwagę: "Musimy poczekać na oficjalne stanowisko instytucji państwowych. Spekulacje w tym momencie mogą być szkodliwe."
+
+## Co dalej?
+
+Według naszych informatorów, w najbliższych dniach możemy spodziewać się kolejnych istotnych komunikatów. Władze zapowiedziały konferencję prasową, na której mają zostać przedstawione szczegóły dalszych działań.
+
+Eksperci przewidują, że konsekwencje tych wydarzeń będą odczuwalne przez wiele miesięcy. Niektórzy mówią nawet o przełomowym momencie w historii naszego kraju.
+
+Redakcja będzie na bieżąco informować o wszystkich nowych faktach w tej sprawie.
+`,
+    "Biznes": `
+${title}
+
+Polski rynek finansowy przeżywa dynamiczny okres. Analitycy największych instytucji finansowych w kraju zwracają uwagę na kilka kluczowych wskaźników, które mogą wpłynąć na dalszy rozwój sytuacji gospodarczej.
+
+## Analiza rynku
+
+Dane makroekonomiczne z ostatniego kwartału pokazują interesujące trendy. PKB Polski rośnie w tempie przewyższającym średnią europejską, co cieszy ekonomistów. Jednocześnie inflacja utrzymuje się na kontrolowanym poziomie.
+
+"Widzimy wyraźne sygnały ożywienia gospodarczego" - komentuje główny ekonomista jednego z wiodących banków. "Przedsiębiorcy są coraz bardziej optymistyczni co do przyszłości."
+
+## Inwestycje i kapitał
+
+Napływ inwestycji zagranicznych do Polski w tym roku przekroczył już oczekiwania. Szczególnie aktywne są sektory technologiczny i produkcyjny. Nowe fabryki i centra usług wspólnych powstają w całym kraju.
+
+Giełda Papierów Wartościowych w Warszawie notuje stabilne wzrosty. Indeks WIG20 osiągnął poziomy niewidziane od lat, co przyciąga kolejnych inwestorów indywidualnych i instytucjonalnych.
+
+## Prognozy ekspertów
+
+Ekonomiści są zgodni - najbliższe miesiące będą kluczowe dla polskiej gospodarki. Decyzje Rady Polityki Pieniężnej dotyczące stóp procentowych mogą znacząco wpłynąć na rynek kredytowy i konsumpcję.
+
+"Polska ma wszystkie atuty, by pozostać liderem wzrostu w regionie" - podsumowuje raport jednej z czołowych agencji ratingowych.
+
+Zachęcamy do śledzenia naszych codziennych analiz rynkowych.
+`,
+    "Sport": `
+${title}
+
+To był mecz, który przejdzie do historii! Emocje sięgały zenitu, a kibice nie mogli oderwać oczu od boiska. Polscy sportowcy po raz kolejny pokazali, na co ich stać na międzynarodowej arenie.
+
+## Przebieg rywalizacji
+
+Od pierwszych minut było widać determinację naszych zawodników. Trener przygotował taktykę, która zaskoczyła rywali. Świetna forma fizyczna i mentalna przełożyła się na efektowne zagrania.
+
+"Pracowaliśmy na ten moment przez całą sezon" - powiedział kapitan drużyny w pomeczowym wywiadzie. "Każdy z nas dał z siebie 100 procent."
+
+## Kluczowe momenty
+
+W drugiej połowie spotkania nastąpił punkt zwrotny. Seria błyskawicznych akcji doprowadziła do przewagi, która okazała się decydująca. Publiczność szalała z radości, a sportowcy celebrowali każdy sukces.
+
+Szczególnie wyróżnił się młody talent, który zdobył uznanie ekspertów. "To przyszłość polskiego sportu" - zgodnie twierdzą komentatorzy.
+
+## Reakcje i komentarze
+
+Media sportowe z całej Europy komentują występ Polaków. Zagraniczne redakcje podkreślają profesjonalizm i determinację naszych zawodników. W mediach społecznościowych hashtagi związane z meczem są w trendach.
+
+Prezes federacji zapowiedział specjalne premie dla całego zespołu. "To sukces, który cieszy wszystkich kibiców" - podkreślił.
+
+## Co przed nami?
+
+Już za tydzień kolejne ważne spotkanie. Stawka jest wysoka - chodzi o awans do następnej rundy. Drużyna już rozpoczęła przygotowania. Kibice mogą kupować bilety na oficjalnej stronie.
+`,
+    "Technologia": `
+${title}
+
+Świat technologii nigdy nie stoi w miejscu. Najnowsze innowacje pokazują, jak szybko zmienia się nasza rzeczywistość. Polscy specjaliści IT odgrywają coraz większą rolę w globalnym wyścigu technologicznym.
+
+## Przełomowe rozwiązania
+
+Nowa technologia, o której dziś piszemy, może zrewolucjonizować sposób, w jaki korzystamy z urządzeń elektronicznych. Inżynierowie pracowali nad tym projektem przez lata, a teraz możemy zobaczyć efekty ich pracy.
+
+"To dopiero początek" - mówi główny architekt systemu. "W ciągu najbliższych lat zobaczymy zastosowania, o których dziś nawet nie śnimy."
+
+## Sztuczna inteligencja i przyszłość
+
+AI zmienia praktycznie każdą branżę. Od medycyny przez finanse po rozrywkę - algorytmy uczenia maszynowego usprawniają procesy i tworzą nowe możliwości. Polskie startupy są w czołówce firm rozwijających te technologie.
+
+Etyczne aspekty rozwoju sztucznej inteligencji są przedmiotem ożywionych debat. Eksperci apelują o odpowiedzialne podejście do wdrażania nowych rozwiązań.
+
+## Cyberbezpieczeństwo
+
+W erze cyfrowej transformacji ochrona danych staje się priorytetem. Firmy inwestują miliony w systemy zabezpieczeń. Specjaliści ds. cyberbezpieczeństwa są jednymi z najbardziej poszukiwanych pracowników na rynku.
+
+"Każdy użytkownik powinien dbać o swoją cyfrową higienę" - przypominają eksperci.
 
 ## Podsumowanie
 
-Reasumując, omawiane zagadnienie pozostaje w centrum uwagi opinii publicznej. Dalszy rozwój wydarzeń będziemy śledzić na bieżąco, informując Państwa o wszystkich istotnych zmianach.
+Technologia zmienia nasz świat na lepsze, ale wymaga świadomego i odpowiedzialnego korzystania. Śledź nasze publikacje, by być na bieżąco z najnowszymi trendami.
+`,
+    "Lifestyle": `
+${title}
 
-Zachęcamy do dzielenia się swoimi opiniami i śledzenia naszego portalu, gdzie publikujemy najświeższe informacje z kraju i ze świata.
+Dbanie o jakość życia to nie luksus, lecz konieczność. Coraz więcej Polaków zwraca uwagę na równowagę między pracą a odpoczynkiem. Przedstawiamy najnowsze trendy, które mogą pozytywnie wpłynąć na Twoje codzienne życie.
+
+## Zdrowy styl życia
+
+Eksperci są zgodni - kluczem do dobrego samopoczucia jest regularna aktywność fizyczna i zbilansowana dieta. Nie chodzi o ekstremalne diety czy morderczy trening, ale o konsekwentne, małe zmiany w codziennych nawykach.
+
+"30 minut ruchu dziennie może całkowicie odmienić Twoje zdrowie" - podkreśla dietetyk kliniczny.
+
+## Wellbeing i mindfulness
+
+Praktyki uważności zyskują coraz więcej zwolenników. Medytacja, joga czy po prostu świadome oddychanie pomagają radzić sobie ze stresem współczesnego życia. Aplikacje do medytacji notują rekordowe liczby pobrań.
+
+Psychologowie zauważają pozytywny trend - Polacy coraz chętniej rozmawiają o zdrowiu psychicznym i szukają profesjonalnej pomocy.
+
+## Dom i wnętrza
+
+Pandemia zmieniła nasze podejście do przestrzeni domowej. Inwestujemy w wygodne meble, rośliny doniczkowe i elementy tworzące przytulną atmosferę. Trendem jest minimalizm - mniej rzeczy, więcej przestrzeni.
+
+Projektanci wnętrz polecają naturalne materiały i stonowane kolory. "Dom ma być oazą spokoju" - radzą specjaliści.
+
+## Podróże i odkrywanie
+
+Polacy coraz chętniej wybierają podróże po własnym kraju. Góry, morze, malownicze miasteczka - mamy wiele do odkrycia. Turystyka lokalna przeżywa renesans.
+
+Zachęcamy do eksplorowania i czerpania radości z małych przyjemności każdego dnia.
+`,
+  };
+
+  // Default content for unknown categories
+  const defaultContent = `
+${title}
+
+W dzisiejszym artykule przedstawiamy najważniejsze informacje na ten temat. Sprawa budzi duże zainteresowanie wśród czytelników, dlatego postanowiliśmy przyjrzeć się jej bliżej.
+
+## Szczegółowa analiza
+
+Eksperci zwracają uwagę na kilka kluczowych aspektów tego zagadnienia. Każdy z nich ma istotne znaczenie dla zrozumienia całości problemu. Przedstawiamy kompleksową analizę opartą na sprawdzonych źródłach.
+
+"To temat, który dotyczy wielu z nas" - komentuje specjalista w tej dziedzinie. "Warto być na bieżąco z najnowszymi informacjami."
+
+## Kontekst i tło
+
+Historia tego zagadnienia sięga wielu lat wstecz. Przez ten czas wiele się zmieniło, ale pewne fundamentalne kwestie pozostają aktualne. Zrozumienie kontekstu jest kluczowe dla właściwej oceny obecnej sytuacji.
+
+Dane statystyczne potwierdzają rosnące zainteresowanie tym tematem wśród Polaków.
+
+## Perspektywy na przyszłość
+
+Analitycy przewidują dalszy rozwój wydarzeń w nadchodzących miesiącach. Wiele będzie zależeć od decyzji podejmowanych na różnych szczeblach. Zachęcamy do śledzenia naszych publikacji.
+
+Redakcja pozostaje do dyspozycji czytelników w przypadku pytań i uwag.
 `;
+
+  return categoryContent[category] || defaultContent;
+};
 
 const Article = () => {
   const { id } = useParams<{ id: string }>();
@@ -81,7 +226,7 @@ const Article = () => {
     .filter((a) => a.category === article.category && a.id !== article.id)
     .slice(0, 4);
 
-  const content = getArticleContent(article.title);
+  const content = getArticleContent(article.title, article.category);
 
   return (
     <div className="min-h-screen bg-background">
