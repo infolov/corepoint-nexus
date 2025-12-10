@@ -75,9 +75,9 @@ export function Header() {
       <div className="bg-nav text-nav-foreground">
         <div className="container flex h-12 items-center justify-between">
           <div className="flex items-center gap-6">
-            <Link to="/" className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-hero-gradient">
-                <span className="text-lg font-bold text-primary-foreground">I</span>
+            <Link to="/" className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-hero-gradient shadow-lg">
+                <span className="text-xl font-black text-primary-foreground">i</span>
               </div>
               <span className="text-xl font-bold tracking-tight">
                 INFORMACJE<span className="text-primary">.PL</span>
