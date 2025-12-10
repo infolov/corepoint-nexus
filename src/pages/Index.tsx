@@ -1,13 +1,13 @@
 import { useState, useCallback, useMemo } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { CategoryBar } from "@/components/navigation/CategoryBar";
 import { MSNSlotGrid } from "@/components/news/MSNSlotGrid";
 import { NewsCard } from "@/components/news/NewsCard";
 import { AdBanner } from "@/components/widgets/AdBanner";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import { useDisplayMode } from "@/hooks/use-display-mode";
-import { Loader2, MapPin, RefreshCw } from "lucide-react";
-import { useUserSettings } from "@/hooks/use-user-settings";
+import { Loader2, RefreshCw } from "lucide-react";
 import { useArticles, formatArticleForCard } from "@/hooks/use-articles";
 import { useRSSArticles, formatRSSArticleForCard } from "@/hooks/use-rss-articles";
 import { Button } from "@/components/ui/button";
@@ -44,7 +44,7 @@ const GRIDS_PER_LOAD = 1;
 
 const Index = () => {
   const [visibleGrids, setVisibleGrids] = useState(INITIAL_GRIDS);
-  const { settings } = useUserSettings();
+  const [activeCategory, setActiveCategory] = useState("all");
   const { settings: displaySettings } = useDisplayMode();
   const { articles: dbArticles, loading: dbLoading } = useArticles({ limit: 100 });
   const { articles: rssArticles, loading: rssLoading, refetch: refetchRSS } = useRSSArticles();
@@ -67,19 +67,43 @@ const Index = () => {
     const formattedDbArticles = dbArticles.map(formatArticleForCard);
     
     // Prioritize RSS articles, then DB articles, then mock as fallback
+    let articles = [];
     if (formattedRSSArticles.length > 0) {
       // Combine RSS with DB articles for more variety
       const combined = [...formattedRSSArticles, ...formattedDbArticles];
-      return shuffleArray(combined);
+      articles = shuffleArray(combined);
+    } else if (formattedDbArticles.length > 0) {
+      articles = formattedDbArticles;
+    } else {
+      // Use shuffled mock data as fallback
+      articles = shuffleArray(allMockArticles);
     }
-    
-    if (formattedDbArticles.length > 0) {
-      return formattedDbArticles;
+
+    // Filter by category if not "all"
+    if (activeCategory !== "all") {
+      const categoryMap: Record<string, string[]> = {
+        wiadomosci: ["Wiadomości", "Polska", "News"],
+        biznes: ["Biznes", "Finanse", "Ekonomia"],
+        sport: ["Sport", "Piłka nożna", "Koszykówka"],
+        technologia: ["Technologia", "Tech", "IT"],
+        lifestyle: ["Lifestyle", "Moda", "Uroda"],
+        rozrywka: ["Rozrywka", "Film", "Muzyka"],
+        zdrowie: ["Zdrowie", "Medycyna"],
+        nauka: ["Nauka", "Edukacja"],
+        motoryzacja: ["Motoryzacja", "Auto"],
+        podroze: ["Podróże", "Turystyka"],
+        kultura: ["Kultura", "Sztuka"],
+        polityka: ["Polityka"],
+        swiat: ["Świat", "Zagranica"],
+      };
+      const categoryNames = categoryMap[activeCategory] || [];
+      articles = articles.filter(a => 
+        categoryNames.some(cat => a.category?.toLowerCase().includes(cat.toLowerCase()))
+      );
     }
-    
-    // Use shuffled mock data as fallback
-    return shuffleArray(allMockArticles);
-  }, [rssArticles, dbArticles]);
+
+    return articles;
+  }, [rssArticles, dbArticles, activeCategory]);
 
   // Generate enough articles for infinite scroll by cycling
   const getArticlesForDisplay = useMemo(() => {
@@ -92,26 +116,6 @@ const Index = () => {
     
     return result;
   }, [allArticles, visibleGrids]);
-
-  // Get region label for display
-  const regionLabels: Record<string, string> = {
-    mazowieckie: "Mazowieckie",
-    malopolskie: "Małopolskie",
-    slaskie: "Śląskie",
-    wielkopolskie: "Wielkopolskie",
-    pomorskie: "Pomorskie",
-    dolnoslaskie: "Dolnośląskie",
-    lodzkie: "Łódzkie",
-    "kujawsko-pomorskie": "Kujawsko-Pomorskie",
-    podkarpackie: "Podkarpackie",
-    lubelskie: "Lubelskie",
-    "warminsko-mazurskie": "Warmińsko-Mazurskie",
-    zachodniopomorskie: "Zachodniopomorskie",
-    podlaskie: "Podlaskie",
-    swietokrzyskie: "Świętokrzyskie",
-    opolskie: "Opolskie",
-    lubuskie: "Lubuskie",
-  };
 
   // First 12 articles for MSN-style hero section
   const heroArticles = getArticlesForDisplay.slice(0, 12);
@@ -132,6 +136,12 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
+      
+      {/* Floating Category Bar */}
+      <CategoryBar 
+        activeCategory={activeCategory} 
+        onCategoryChange={setActiveCategory} 
+      />
 
       <main className="container py-4 sm:py-6">
         {/* MSN-style Hero Section */}
@@ -139,23 +149,13 @@ const Index = () => {
           <MSNSlotGrid articles={heroArticles} />
         </section>
 
-        {/* Region indicator and RSS status */}
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-4">
-            {settings.voivodeship && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <MapPin className="h-4 w-4" />
-                <span className="text-senior-sm">
-                  Artykuły dla regionu: <strong className="text-foreground">{regionLabels[settings.voivodeship] || settings.voivodeship}</strong>
-                </span>
-              </div>
-            )}
-            {rssArticles.length > 0 && (
-              <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
-                {rssArticles.length} artykułów z RSS
-              </span>
-            )}
-          </div>
+        {/* RSS status and refresh */}
+        <div className="mb-4 flex items-center justify-end gap-2">
+          {rssArticles.length > 0 && (
+            <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+              {rssArticles.length} artykułów z RSS
+            </span>
+          )}
           <Button 
             variant="ghost" 
             size="sm" 
