@@ -87,7 +87,7 @@ export const newsArticles: Article[] = [
     id: "n9",
     title: "Nowe odkrycie archeologiczne w Polsce zaskakuje naukowców",
     category: "Wiadomości",
-    image: "https://images.unsplash.com/photo-1461360370896-922624d12a74?w=400&h=300&fit=crop",
+    image: "https://images.unsplash.com/photo-1599930113854-d6d7fd521f10?w=400&h=300&fit=crop",
     timestamp: "12 godz. temu",
     source: "Nauka w Polsce",
   },
