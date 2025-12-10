@@ -3,6 +3,9 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Play } from "lucide-react";
 
+// Fallback image for broken images
+const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=800&h=500&fit=crop";
+
 interface NewsCardProps {
   id?: string;
   title: string;
@@ -37,6 +40,21 @@ const getSourceInitials = (source: string) => {
   if (source.length <= 3) return source;
   return source.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 };
+
+// Image component with fallback
+const CardImage = ({ src, alt, className }: { src: string; alt: string; className?: string }) => (
+  <img
+    src={src}
+    alt={alt}
+    className={className}
+    onError={(e) => {
+      const target = e.target as HTMLImageElement;
+      if (target.src !== FALLBACK_IMAGE) {
+        target.src = FALLBACK_IMAGE;
+      }
+    }}
+  />
+);
 
 export function NewsCard({
   id,
@@ -76,8 +94,8 @@ export function NewsCard({
               {title}
             </h4>
           </div>
-          <div className="relative w-20 h-14 flex-shrink-0 overflow-hidden rounded-lg">
-            <img
+          <div className="relative w-20 h-14 flex-shrink-0 overflow-hidden rounded-lg bg-muted">
+            <CardImage
               src={image}
               alt={title}
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
@@ -102,8 +120,8 @@ export function NewsCard({
           "hover:bg-muted/50 transition-all duration-200",
           className
         )}>
-          <div className="relative w-32 h-24 md:w-40 md:h-28 flex-shrink-0 overflow-hidden rounded-xl">
-            <img
+          <div className="relative w-32 h-24 md:w-40 md:h-28 flex-shrink-0 overflow-hidden rounded-xl bg-muted">
+            <CardImage
               src={image}
               alt={title}
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
@@ -141,7 +159,7 @@ export function NewsCard({
           "aspect-[4/3] lg:aspect-auto lg:h-full",
           className
         )}>
-          <img
+          <CardImage
             src={image}
             alt={title}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -189,11 +207,11 @@ export function NewsCard({
       <Wrapper {...wrapperProps as any}>
         <article className={cn(
           "group cursor-pointer rounded-xl overflow-hidden relative",
-          "h-[95px] lg:h-[98px] shadow-sm",
+          "h-[95px] lg:h-[98px] shadow-sm bg-muted",
           "hover:shadow-md transition-shadow duration-200",
           className
         )}>
-          <img
+          <CardImage
             src={image}
             alt={title}
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
@@ -230,11 +248,11 @@ export function NewsCard({
     <Wrapper {...wrapperProps as any}>
       <article className={cn(
         "group cursor-pointer rounded-xl overflow-hidden relative",
-        "aspect-[16/9] min-h-[180px] max-h-[250px]",
+        "aspect-[16/9] min-h-[180px] max-h-[250px] bg-muted",
         "shadow-sm hover:shadow-lg transition-all duration-300",
         className
       )}>
-        <img
+        <CardImage
           src={image}
           alt={title}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
