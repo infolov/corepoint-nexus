@@ -74,7 +74,8 @@ export function Header() {
       {/* Top Bar */}
       <div className="bg-nav text-nav-foreground">
         <div className="container flex h-12 items-center justify-between">
-          <div className="flex items-center gap-6">
+          {/* Left: Logo + Partner Space + Search */}
+          <div className="flex items-center gap-4">
             <Link to="/" className="flex items-center gap-2.5">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-hero-gradient shadow-lg">
                 <span className="text-xl font-black text-primary-foreground">i</span>
@@ -83,21 +84,29 @@ export function Header() {
                 INFORMACJE<span className="text-primary">.PL</span>
               </span>
             </Link>
-          </div>
 
-          {/* Central Search Bar - MSN style */}
-          <form onSubmit={handleSearch} className="hidden sm:flex flex-1 max-w-md mx-4">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Szukaj wiadomości, tematów..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-10 pl-10 pr-4 rounded-full bg-background/90 border-border/50 text-foreground placeholder:text-muted-foreground focus:bg-background focus:border-primary/50 transition-all"
-              />
+            {/* Partner Space */}
+            <div className="hidden md:flex items-center gap-2 px-3 py-1 border-l border-nav-foreground/20">
+              <span className="text-xs text-nav-foreground/50">Partner:</span>
+              <div className="h-6 w-20 bg-nav-foreground/10 rounded flex items-center justify-center">
+                <span className="text-xs text-nav-foreground/40">Logo partnera</span>
+              </div>
             </div>
-          </form>
+
+            {/* Search Icon - Desktop */}
+            <form onSubmit={handleSearch} className="hidden sm:flex items-center">
+              <div className="relative">
+                <Input
+                  type="text"
+                  placeholder="Szukaj..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-48 h-9 pl-9 pr-3 rounded-full bg-background/90 border-border/50 text-foreground text-sm placeholder:text-muted-foreground focus:bg-background focus:border-primary/50 focus:w-64 transition-all"
+                />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              </div>
+            </form>
+          </div>
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center gap-1">
