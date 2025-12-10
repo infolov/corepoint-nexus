@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface RSSArticle {
@@ -13,13 +13,17 @@ export interface RSSArticle {
   content: string;
 }
 
+const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
+
 export function useRSSArticles() {
   const [articles, setArticles] = useState<RSSArticle[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const fetchArticles = useCallback(async () => {
-    setLoading(true);
+  const fetchArticles = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     setError(null);
 
     try {
@@ -34,6 +38,7 @@ export function useRSSArticles() {
 
       console.log("RSS data received:", data);
       setArticles(data?.articles || []);
+      setLastUpdated(new Date());
     } catch (err) {
       console.error("Error fetching RSS articles:", err);
       setError("Błąd podczas ładowania artykułów z RSS");
@@ -42,15 +47,28 @@ export function useRSSArticles() {
     }
   }, []);
 
+  // Initial fetch and auto-refresh setup
   useEffect(() => {
     fetchArticles();
+
+    // Set up auto-refresh every 5 minutes
+    intervalRef.current = setInterval(() => {
+      console.log("Auto-refreshing RSS articles...");
+      fetchArticles(false); // Don't show loading spinner for auto-refresh
+    }, REFRESH_INTERVAL);
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
   }, [fetchArticles]);
 
   const refetch = () => {
     fetchArticles();
   };
 
-  return { articles, loading, error, refetch };
+  return { articles, loading, error, refetch, lastUpdated };
 }
 
 // Helper to format RSS article for NewsCard component
