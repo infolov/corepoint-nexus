@@ -108,26 +108,7 @@ export function Header() {
             </form>
           </div>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-1">
-            {categories.slice(0, 1).map((cat) => (
-              <CategoryDropdown 
-                key={cat.name}
-                categoryName={cat.name} 
-                categorySlug={cat.slug} 
-                parentFilter={cat.parentFilter} 
-              />
-            ))}
-            <SportDropdown />
-            {categories.slice(1).map((cat) => (
-              <CategoryDropdown 
-                key={cat.name}
-                categoryName={cat.name} 
-                categorySlug={cat.slug} 
-                parentFilter={cat.parentFilter} 
-              />
-            ))}
-          </nav>
+          {/* Desktop Navigation - removed, using CategoryBar below */}
 
           {/* Actions */}
           <div className="flex items-center gap-2">
