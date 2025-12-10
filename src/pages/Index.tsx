@@ -3,8 +3,10 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { HeroSlider } from "@/components/news/HeroSlider";
 import { NewsSection } from "@/components/sections/NewsSection";
+import { MSNSlotGrid } from "@/components/news/MSNSlotGrid";
 import { AdBanner } from "@/components/widgets/AdBanner";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
+import { useDisplayMode } from "@/hooks/use-display-mode";
 import { Loader2, MapPin } from "lucide-react";
 import { useUserSettings } from "@/hooks/use-user-settings";
 import { useArticles, formatArticleForCard } from "@/hooks/use-articles";
@@ -49,6 +51,7 @@ const generateSections = (count: number) => {
 const Index = () => {
   const [visibleSections, setVisibleSections] = useState(INITIAL_SECTIONS);
   const { settings } = useUserSettings();
+  const { settings: displaySettings } = useDisplayMode();
   const { articles: dbArticles, loading: articlesLoading } = useArticles({ limit: 50 });
   
   // Always has more - infinite scroll
@@ -100,32 +103,42 @@ const Index = () => {
     lubuskie: "Lubuskie",
   };
 
+  // First section articles for MSN-style slot grid
+  const firstSectionArticles = getSectionArticles(
+    baseSections[0].category,
+    baseSections[0].articles
+  );
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
 
-      <main className="container py-6">
-        {/* Hero Section */}
-        <section className="mb-8">
-          <HeroSlider />
+      <main className="container py-4 sm:py-6">
+        {/* MSN-style Hero Section with Slot Grid (1 large + 4 small) */}
+        <section className="mb-6 sm:mb-8">
+          <MSNSlotGrid articles={firstSectionArticles} />
         </section>
 
-        {/* Ad Banner */}
-        <div className="mb-8">
-          <AdBanner variant="horizontal" className="w-full" />
-        </div>
+        {/* Ad Banner - hide in data saver mode */}
+        {!displaySettings.dataSaver && (
+          <div className="mb-6 sm:mb-8">
+            <AdBanner variant="horizontal" className="w-full" />
+          </div>
+        )}
 
         {/* Region indicator */}
         {settings.voivodeship && (
           <div className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
             <MapPin className="h-4 w-4" />
-            <span>Artykuły dla regionu: <strong className="text-foreground">{regionLabels[settings.voivodeship] || settings.voivodeship}</strong></span>
+            <span className="text-senior-sm">
+              Artykuły dla regionu: <strong className="text-foreground">{regionLabels[settings.voivodeship] || settings.voivodeship}</strong>
+            </span>
           </div>
         )}
 
         {/* Main Content - Full width news sections */}
-        <div className="space-y-8">
-          {sectionsToShow.map((section, index) => {
+        <div className="space-y-6 sm:space-y-8">
+          {sectionsToShow.slice(1).map((section, index) => {
             // Get articles for this section - prefer DB articles
             const sectionArticles = getSectionArticles(section.category, section.articles);
             
@@ -136,9 +149,9 @@ const Index = () => {
                   category={section.category}
                   articles={sectionArticles}
                 />
-                {/* Insert ad every 2 sections */}
-                {(index + 1) % 2 === 0 && index !== sectionsToShow.length - 1 && (
-                  <div className="my-8">
+                {/* Insert ad every 2 sections - skip in data saver mode */}
+                {!displaySettings.dataSaver && (index + 1) % 2 === 0 && index !== sectionsToShow.length - 2 && (
+                  <div className="my-6 sm:my-8">
                     <AdBanner variant="horizontal" className="w-full" />
                   </div>
                 )}
@@ -149,12 +162,12 @@ const Index = () => {
           {/* Load more trigger - infinite scroll */}
           <div 
             ref={loadMoreRef} 
-            className="py-8 sm:py-10 md:py-12 flex justify-center min-h-[80px]"
+            className="py-6 sm:py-8 md:py-10 flex justify-center min-h-[60px]"
           >
             {isLoading && (
               <div className="flex items-center gap-2 text-muted-foreground animate-pulse">
                 <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 animate-spin" />
-                <span className="text-sm sm:text-base">Ładowanie więcej artykułów...</span>
+                <span className="text-senior-sm">Ładowanie więcej artykułów...</span>
               </div>
             )}
           </div>

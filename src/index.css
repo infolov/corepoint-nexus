@@ -158,6 +158,46 @@
   .animate-slide-in-right {
     animation: slideInRight 0.3s ease-out forwards;
   }
+
+  /* UX for 40+ - Senior-friendly text sizes */
+  .text-senior {
+    @apply text-base;
+  }
+
+  .text-senior-sm {
+    @apply text-sm;
+  }
+
+  /* Font size modifiers for accessibility */
+  .font-large .text-senior {
+    @apply text-lg;
+  }
+
+  .font-large .text-senior-sm {
+    @apply text-base;
+  }
+
+  .font-extra-large .text-senior {
+    @apply text-xl;
+  }
+
+  .font-extra-large .text-senior-sm {
+    @apply text-lg;
+  }
+
+  /* Data saver mode - reduce image quality indicators */
+  .data-saver img {
+    image-rendering: optimizeSpeed;
+  }
+
+  /* MSN slot grid styles */
+  .msn-slot-main {
+    @apply rounded-xl overflow-hidden;
+  }
+
+  .msn-slot-secondary {
+    @apply rounded-lg overflow-hidden;
+  }
 }
 
 @keyframes fadeIn {

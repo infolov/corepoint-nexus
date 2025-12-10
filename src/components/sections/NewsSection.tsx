@@ -3,6 +3,7 @@ import { NewsCard } from "@/components/news/NewsCard";
 import { ChevronRight, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
+import { useDisplayMode } from "@/hooks/use-display-mode";
 
 interface NewsSectionProps {
   title: string;
@@ -31,6 +32,8 @@ export function NewsSection({
   enableInfiniteScroll = true
 }: NewsSectionProps) {
   const [visibleCount, setVisibleCount] = useState(initialCount);
+  const { settings: displaySettings } = useDisplayMode();
+  const isCompact = displaySettings.mode === "compact" || displaySettings.dataSaver;
   
   const hasMore = enableInfiniteScroll && visibleCount < articles.length;
   
@@ -45,32 +48,51 @@ export function NewsSection({
   return (
     <section className="mb-6 sm:mb-8">
       <div className="flex items-center justify-between mb-3 sm:mb-4">
-        <h2 className="text-lg sm:text-xl font-bold text-foreground">{title}</h2>
+        <h2 className="text-lg sm:text-xl font-bold text-foreground text-senior">{title}</h2>
         <Link
           to={`/${category}`}
-          className="flex items-center gap-1 text-xs sm:text-sm font-medium text-primary hover:underline"
+          className="flex items-center gap-1 text-xs sm:text-sm font-medium text-primary hover:underline text-senior-sm"
         >
           Więcej
           <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
         </Link>
       </div>
 
-      {/* MSN-style grid - 3 cards in a row on desktop, 2 on tablet, 1 on mobile */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {visibleArticles.map((article) => (
-          <NewsCard
-            key={article.id}
-            id={article.id}
-            title={article.title}
-            category={article.category}
-            image={article.image}
-            timestamp={article.timestamp}
-            source={article.source}
-            badge={article.badge}
-            variant="default"
-          />
-        ))}
-      </div>
+      {/* Compact mode - list view */}
+      {isCompact ? (
+        <div className="space-y-1">
+          {visibleArticles.map((article) => (
+            <NewsCard
+              key={article.id}
+              id={article.id}
+              title={article.title}
+              category={article.category}
+              image={article.image}
+              timestamp={article.timestamp}
+              source={article.source}
+              badge={article.badge}
+              variant="compact"
+            />
+          ))}
+        </div>
+      ) : (
+        /* Standard grid - 3 cards in a row on desktop, 2 on tablet, 1 on mobile */
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {visibleArticles.map((article) => (
+            <NewsCard
+              key={article.id}
+              id={article.id}
+              title={article.title}
+              category={article.category}
+              image={article.image}
+              timestamp={article.timestamp}
+              source={article.source}
+              badge={article.badge}
+              variant="default"
+            />
+          ))}
+        </div>
+      )}
 
       {/* Infinite scroll trigger for this section */}
       {enableInfiniteScroll && hasMore && (
@@ -81,7 +103,7 @@ export function NewsSection({
           {isLoading && (
             <div className="flex items-center gap-2 text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
-              <span className="text-xs sm:text-sm">Ładowanie...</span>
+              <span className="text-xs sm:text-sm text-senior-sm">Ładowanie...</span>
             </div>
           )}
         </div>
