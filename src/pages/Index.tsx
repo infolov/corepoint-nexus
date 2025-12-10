@@ -6,9 +6,11 @@ import { NewsCard } from "@/components/news/NewsCard";
 import { AdBanner } from "@/components/widgets/AdBanner";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import { useDisplayMode } from "@/hooks/use-display-mode";
-import { Loader2, MapPin } from "lucide-react";
+import { Loader2, MapPin, RefreshCw } from "lucide-react";
 import { useUserSettings } from "@/hooks/use-user-settings";
 import { useArticles, formatArticleForCard } from "@/hooks/use-articles";
+import { useRSSArticles, formatRSSArticleForCard } from "@/hooks/use-rss-articles";
+import { Button } from "@/components/ui/button";
 import {
   newsArticles,
   businessArticles,
@@ -17,7 +19,7 @@ import {
   lifestyleArticles,
 } from "@/data/mockNews";
 
-// Combine all mock articles
+// Combine all mock articles as fallback
 const allMockArticles = [
   ...newsArticles,
   ...businessArticles,
@@ -44,7 +46,8 @@ const Index = () => {
   const [visibleGrids, setVisibleGrids] = useState(INITIAL_GRIDS);
   const { settings } = useUserSettings();
   const { settings: displaySettings } = useDisplayMode();
-  const { articles: dbArticles, loading: articlesLoading } = useArticles({ limit: 100 });
+  const { articles: dbArticles, loading: dbLoading } = useArticles({ limit: 100 });
+  const { articles: rssArticles, loading: rssLoading, refetch: refetchRSS } = useRSSArticles();
 
   // Always has more - infinite scroll
   const hasMore = true;
@@ -55,9 +58,20 @@ const Index = () => {
 
   const { loadMoreRef, isLoading } = useInfiniteScroll(loadMore, hasMore);
 
-  // Combine and prepare all articles
+  // Combine RSS articles with DB articles, preferring RSS
   const allArticles = useMemo(() => {
+    // Format RSS articles
+    const formattedRSSArticles = rssArticles.map(formatRSSArticleForCard);
+    
+    // Format DB articles
     const formattedDbArticles = dbArticles.map(formatArticleForCard);
+    
+    // Prioritize RSS articles, then DB articles, then mock as fallback
+    if (formattedRSSArticles.length > 0) {
+      // Combine RSS with DB articles for more variety
+      const combined = [...formattedRSSArticles, ...formattedDbArticles];
+      return shuffleArray(combined);
+    }
     
     if (formattedDbArticles.length > 0) {
       return formattedDbArticles;
@@ -65,7 +79,7 @@ const Index = () => {
     
     // Use shuffled mock data as fallback
     return shuffleArray(allMockArticles);
-  }, [dbArticles]);
+  }, [rssArticles, dbArticles]);
 
   // Generate enough articles for infinite scroll by cycling
   const getArticlesForDisplay = useMemo(() => {
@@ -125,15 +139,34 @@ const Index = () => {
           <MSNSlotGrid articles={heroArticles} />
         </section>
 
-        {/* Region indicator */}
-        {settings.voivodeship && (
-          <div className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
-            <MapPin className="h-4 w-4" />
-            <span className="text-senior-sm">
-              Artykuły dla regionu: <strong className="text-foreground">{regionLabels[settings.voivodeship] || settings.voivodeship}</strong>
-            </span>
+        {/* Region indicator and RSS status */}
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-4">
+            {settings.voivodeship && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <MapPin className="h-4 w-4" />
+                <span className="text-senior-sm">
+                  Artykuły dla regionu: <strong className="text-foreground">{regionLabels[settings.voivodeship] || settings.voivodeship}</strong>
+                </span>
+              </div>
+            )}
+            {rssArticles.length > 0 && (
+              <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+                {rssArticles.length} artykułów z RSS
+              </span>
+            )}
           </div>
-        )}
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={refetchRSS}
+            disabled={rssLoading}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${rssLoading ? 'animate-spin' : ''}`} />
+            Odśwież
+          </Button>
+        </div>
 
         {/* Main Content - Unified feed without category divisions */}
         <div className="space-y-6 sm:space-y-8">
@@ -157,6 +190,8 @@ const Index = () => {
                     image={article.image}
                     timestamp={article.timestamp}
                     badge={article.badge}
+                    source={article.source}
+                    sourceUrl={article.sourceUrl}
                     variant="default"
                   />
                 ))}
