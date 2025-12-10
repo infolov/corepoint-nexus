@@ -18,27 +18,27 @@ import {
   Article,
 } from "@/data/mockNews";
 
-const categoryConfig: Record<string, { title: string; articles: Article[] }> = {
-  wiadomosci: { title: "Najnowsze Wiadomości", articles: newsArticles },
-  biznes: { title: "Biznes i Finanse", articles: businessArticles },
-  sport: { title: "Sport", articles: sportArticles },
-  technologia: { title: "Technologia", articles: techArticles },
-  lifestyle: { title: "Lifestyle", articles: lifestyleArticles },
-  rozrywka: { title: "Rozrywka", articles: lifestyleArticles },
-};
-
-// Generate more mock articles for each category
-const generateMoreArticles = (baseArticles: Article[], category: string): Article[] => {
+// Combine all articles from all categories
+const getAllArticles = (): Article[] => {
+  const allBaseArticles = [
+    ...newsArticles,
+    ...businessArticles,
+    ...sportArticles,
+    ...techArticles,
+    ...lifestyleArticles,
+  ];
+  
+  // Shuffle and generate more articles for infinite scroll
+  const shuffled = allBaseArticles.sort(() => Math.random() - 0.5);
   const additionalArticles: Article[] = [];
   
-  // Generate 5 cycles of articles for infinite scroll
   for (let cycle = 0; cycle < 5; cycle++) {
-    baseArticles.forEach((article, i) => {
+    shuffled.forEach((article, i) => {
       additionalArticles.push({
         ...article,
         id: `${article.id}-cycle-${cycle}-${i}`,
         title: cycle === 0 ? article.title : `${article.title} ${cycle > 0 ? `#${cycle + 1}` : ''}`,
-        timestamp: `${(cycle * baseArticles.length) + i + 1} godz. temu`,
+        timestamp: `${(cycle * shuffled.length) + i + 1} godz. temu`,
         badge: cycle === 0 ? article.badge : undefined,
       });
     });
@@ -61,8 +61,7 @@ export default function Category() {
   const { settings: displaySettings } = useDisplayMode();
   const isCompact = displaySettings.mode === "compact" || displaySettings.dataSaver;
   
-  const config = category ? categoryConfig[category] : null;
-  const allArticles = config ? generateMoreArticles(config.articles, category!) : [];
+  const allArticles = getAllArticles();
   
   const [visibleCount, setVisibleCount] = useState(getInitialCount);
   
@@ -74,18 +73,6 @@ export default function Category() {
 
   const { loadMoreRef, isLoading } = useInfiniteScroll(loadMore, hasMore);
   
-  if (!config) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <main className="max-w-7xl mx-auto px-4 py-8">
-          <h1 className="text-2xl font-bold text-foreground">Kategoria nie znaleziona</h1>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
   const heroArticle = allArticles[0];
   const gridArticles = allArticles.slice(1, visibleCount);
 
@@ -96,7 +83,7 @@ export default function Category() {
       <main className="max-w-7xl mx-auto px-4 py-6">
         {/* Page Title */}
         <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground mb-4 sm:mb-6 text-senior">
-          {config.title}
+          Wszystkie Artykuły
         </h1>
 
         <div className="flex gap-6">
