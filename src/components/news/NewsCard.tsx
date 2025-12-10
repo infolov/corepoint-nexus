@@ -112,6 +112,7 @@ export function NewsCard({
                 <span className="text-[9px] font-bold text-white">{getSourceInitials(source)}</span>
               </div>
               <span className="text-xs text-muted-foreground font-medium">{source}</span>
+              <span className="text-xs text-primary font-medium">· {category}</span>
               <span className="text-xs text-muted-foreground">· {timestamp}</span>
             </div>
             <h4 className="text-sm font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors leading-snug">
@@ -162,6 +163,7 @@ export function NewsCard({
                 <span className="text-[9px] font-bold text-white">{getSourceInitials(source)}</span>
               </div>
               <span className="text-xs text-muted-foreground font-medium">{source}</span>
+              <span className="text-xs text-primary font-medium">· {category}</span>
               <span className="text-xs text-muted-foreground">· {timestamp}</span>
             </div>
             <h3 className="font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors">
@@ -212,6 +214,7 @@ export function NewsCard({
                 <span className="text-[10px] font-bold text-white">{getSourceInitials(source)}</span>
               </div>
               <span className="text-sm text-white/90 font-medium">{source}</span>
+              <span className="text-sm text-primary-foreground/80 font-medium bg-primary/30 px-2 py-0.5 rounded">{category}</span>
               <span className="text-sm text-white/60">· {timestamp}</span>
             </div>
             
@@ -256,6 +259,7 @@ export function NewsCard({
                 <span className="text-[8px] font-bold text-white">{getSourceInitials(source)}</span>
               </div>
               <span className="text-[10px] text-white/80 font-medium">{source}</span>
+              <span className="text-[10px] text-primary-foreground/80 font-medium bg-primary/30 px-1.5 py-0.5 rounded text-[9px]">{category}</span>
               <span className="text-[10px] text-white/60">· {timestamp}</span>
             </div>
             <h4 className="font-semibold text-xs text-white line-clamp-2 leading-tight">
@@ -301,12 +305,13 @@ export function NewsCard({
         
         {/* Content overlay */}
         <div className="absolute inset-x-0 bottom-0 p-3 sm:p-4">
-          {/* Source and timestamp */}
-          <div className="flex items-center gap-1.5 sm:gap-2 mb-2">
+          {/* Source, category and timestamp */}
+          <div className="flex items-center gap-1.5 sm:gap-2 mb-2 flex-wrap">
             <div className={cn("w-5 h-5 sm:w-6 sm:h-6 rounded-md flex items-center justify-center shadow", getSourceColor(source))}>
               <span className="text-[9px] sm:text-[10px] font-bold text-white">{getSourceInitials(source)}</span>
             </div>
             <span className="text-[11px] sm:text-xs text-white/90 font-medium">{source}</span>
+            <span className="text-[10px] sm:text-[11px] text-primary-foreground/90 font-medium bg-primary/40 px-1.5 py-0.5 rounded">{category}</span>
             <span className="text-[11px] sm:text-xs text-white/60">· {timestamp}</span>
           </div>
           
