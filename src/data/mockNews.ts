@@ -50,6 +50,47 @@ export const newsArticles: Article[] = [
     source: "Polsat News",
     sourceUrl: "https://www.polsatnews.pl",
   },
+  {
+    id: "n5",
+    title: "Prezydent ogłosił nowe priorytety na przyszły rok",
+    category: "Wiadomości",
+    image: "https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?w=400&h=300&fit=crop",
+    timestamp: "8 godz. temu",
+    source: "Onet",
+  },
+  {
+    id: "n6",
+    title: "Fatalne wieści dla Polski po meczu Ligi Mistrzów",
+    category: "Wiadomości",
+    image: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=400&h=300&fit=crop",
+    timestamp: "9 godz. temu",
+    badge: "new",
+    source: "Gazeta.pl",
+  },
+  {
+    id: "n7",
+    title: "Siergiej Ławrow grozi Europie: Jesteśmy już przygotowani",
+    category: "Wiadomości",
+    image: "https://images.unsplash.com/photo-1532375810709-75b1da00537c?w=400&h=300&fit=crop",
+    timestamp: "10 godz. temu",
+    source: "Onet Wiadomości",
+  },
+  {
+    id: "n8",
+    title: "Pogoda na weekend: sprawdź prognozę dla swojego regionu",
+    category: "Wiadomości",
+    image: "https://images.unsplash.com/photo-1504608524841-42fe6f032b4b?w=400&h=300&fit=crop",
+    timestamp: "11 godz. temu",
+    source: "IMGW",
+  },
+  {
+    id: "n9",
+    title: "Nowe odkrycie archeologiczne w Polsce zaskakuje naukowców",
+    category: "Wiadomości",
+    image: "https://images.unsplash.com/photo-1461360370896-922624d12a74?w=400&h=300&fit=crop",
+    timestamp: "12 godz. temu",
+    source: "Nauka w Polsce",
+  },
 ];
 
 export const businessArticles: Article[] = [
