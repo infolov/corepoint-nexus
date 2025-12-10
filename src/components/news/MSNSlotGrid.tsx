@@ -13,6 +13,7 @@ interface Article {
   timestamp: string;
   badge?: "hot" | "trending" | "new" | "pilne";
   source?: string;
+  sourceUrl?: string;
 }
 
 interface MSNSlotGridProps {
@@ -50,6 +51,7 @@ export function MSNSlotGrid({ articles, className }: MSNSlotGridProps) {
             image={article.image}
             timestamp={article.timestamp}
             source={article.source}
+            sourceUrl={article.sourceUrl}
             badge={article.badge}
             variant="compact"
           />
@@ -71,6 +73,7 @@ export function MSNSlotGrid({ articles, className }: MSNSlotGridProps) {
             image={mainArticle.image}
             timestamp={mainArticle.timestamp}
             source={mainArticle.source}
+            sourceUrl={mainArticle.sourceUrl}
             badge={mainArticle.badge}
             variant="hero"
             className="h-[280px] sm:h-[320px] lg:h-[400px]"
@@ -93,6 +96,7 @@ export function MSNSlotGrid({ articles, className }: MSNSlotGridProps) {
                 image={article.image}
                 timestamp={article.timestamp}
                 source={article.source}
+                sourceUrl={article.sourceUrl}
                 badge={index === 0 ? "pilne" : article.badge}
                 variant="compact"
               />
@@ -118,6 +122,7 @@ export function MSNSlotGrid({ articles, className }: MSNSlotGridProps) {
               image={article.image}
               timestamp={article.timestamp}
               source={article.source}
+              sourceUrl={article.sourceUrl}
               badge={article.badge}
               variant="default"
               className="h-[180px] sm:h-[192px]"
@@ -138,6 +143,7 @@ export function MSNSlotGrid({ articles, className }: MSNSlotGridProps) {
               image={article.image}
               timestamp={article.timestamp}
               source={article.source}
+              sourceUrl={article.sourceUrl}
               badge={article.badge}
               variant="default"
             />

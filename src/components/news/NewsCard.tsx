@@ -14,6 +14,7 @@ interface NewsCardProps {
   image: string;
   timestamp: string;
   source?: string;
+  sourceUrl?: string; // External RSS article link
   badge?: "hot" | "trending" | "new" | "pilne";
   hasVideo?: boolean;
   variant?: "default" | "horizontal" | "compact" | "hero" | "msn-slot";
@@ -30,6 +31,16 @@ const sourceColors: Record<string, string> = {
   "Money.pl": "bg-green-500",
   "Forbes": "bg-slate-700",
   "Informacje.pl": "bg-primary",
+  "INFORMACJE.PL": "bg-primary",
+  "Bankier.pl": "bg-blue-600",
+  "Sportowe Fakty": "bg-orange-600",
+  "Chip.pl": "bg-cyan-600",
+  "Dobreprogramy": "bg-purple-600",
+  "Rzeczpospolita": "bg-red-700",
+  "Onet": "bg-blue-700",
+  "WP": "bg-red-600",
+  "Interia": "bg-indigo-600",
+  "Gazeta.pl": "bg-green-600",
 };
 
 const getSourceColor = (source: string) => {
@@ -64,13 +75,26 @@ export function NewsCard({
   image,
   timestamp,
   source = "Informacje.pl",
+  sourceUrl,
   badge,
   hasVideo,
   variant = "default",
   className,
 }: NewsCardProps) {
-  const Wrapper = id ? Link : "div";
-  const wrapperProps = id ? { to: `/artykul/${id}` } : {};
+  // If sourceUrl exists (RSS article), use external link; otherwise use internal Link
+  const isExternalLink = !!sourceUrl;
+  
+  const Wrapper = isExternalLink 
+    ? "a" 
+    : id 
+      ? Link 
+      : "div";
+  
+  const wrapperProps = isExternalLink 
+    ? { href: sourceUrl, target: "_blank", rel: "noopener noreferrer" } 
+    : id 
+      ? { to: `/artykul/${id}` } 
+      : {};
 
   // MSN-style compact list item (for sidebar/data saver)
   if (variant === "compact") {
