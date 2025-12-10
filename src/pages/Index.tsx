@@ -167,12 +167,14 @@ const Index = () => {
           {/* Load more trigger - infinite scroll */}
           <div 
             ref={loadMoreRef} 
-            className="py-8 sm:py-10 md:py-12 flex justify-center min-h-[100px] -mb-4"
+            className="py-10 sm:py-12 md:py-16 flex justify-center min-h-[150px]"
           >
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 animate-spin" />
-              <span className="text-senior-sm">Ładowanie więcej artykułów...</span>
-            </div>
+            {isLoading && (
+              <div className="flex items-center gap-2 text-muted-foreground animate-pulse">
+                <Loader2 className="h-6 w-6 sm:h-7 sm:w-7 animate-spin" />
+                <span className="text-senior-base">Ładowanie...</span>
+              </div>
+            )}
           </div>
         </div>
 
