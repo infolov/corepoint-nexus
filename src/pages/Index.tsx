@@ -1,9 +1,8 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { HeroSlider } from "@/components/news/HeroSlider";
-import { NewsSection } from "@/components/sections/NewsSection";
 import { MSNSlotGrid } from "@/components/news/MSNSlotGrid";
+import { NewsCard } from "@/components/news/NewsCard";
 import { AdBanner } from "@/components/widgets/AdBanner";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import { useDisplayMode } from "@/hooks/use-display-mode";
@@ -18,70 +17,67 @@ import {
   lifestyleArticles,
 } from "@/data/mockNews";
 
-// Base sections that cycle infinitely
-const baseSections = [
-  { title: "Najnowsze wiadomości", category: "wiadomosci", articles: newsArticles },
-  { title: "Biznes i finanse", category: "biznes", articles: businessArticles },
-  { title: "Sport", category: "sport", articles: sportArticles },
-  { title: "Technologia", category: "technologia", articles: techArticles },
-  { title: "Lifestyle", category: "lifestyle", articles: lifestyleArticles },
+// Combine all mock articles
+const allMockArticles = [
+  ...newsArticles,
+  ...businessArticles,
+  ...sportArticles,
+  ...techArticles,
+  ...lifestyleArticles,
 ];
 
-// Responsive initial sections based on device
-const INITIAL_SECTIONS = 3;
-const SECTIONS_PER_LOAD = 2;
-
-// Generate sections dynamically for infinite scroll
-const generateSections = (count: number) => {
-  const sections = [];
-  for (let i = 0; i < count; i++) {
-    const baseIndex = i % baseSections.length;
-    const cycle = Math.floor(i / baseSections.length);
-    const base = baseSections[baseIndex];
-    sections.push({
-      id: `${base.category}-${i}`,
-      title: cycle === 0 ? base.title : `${base.title} #${cycle + 1}`,
-      category: base.category,
-      articles: base.articles,
-    });
+// Shuffle articles for variety
+const shuffleArray = <T,>(array: T[]): T[] => {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
-  return sections;
+  return shuffled;
 };
 
+const ARTICLES_PER_GRID = 12; // 4x3 grid
+const INITIAL_GRIDS = 2;
+const GRIDS_PER_LOAD = 1;
+
 const Index = () => {
-  const [visibleSections, setVisibleSections] = useState(INITIAL_SECTIONS);
+  const [visibleGrids, setVisibleGrids] = useState(INITIAL_GRIDS);
   const { settings } = useUserSettings();
   const { settings: displaySettings } = useDisplayMode();
-  const { articles: dbArticles, loading: articlesLoading } = useArticles({ limit: 50 });
-  
+  const { articles: dbArticles, loading: articlesLoading } = useArticles({ limit: 100 });
+
   // Always has more - infinite scroll
   const hasMore = true;
-  
+
   const loadMore = useCallback(() => {
-    setVisibleSections((prev) => prev + SECTIONS_PER_LOAD);
+    setVisibleGrids((prev) => prev + GRIDS_PER_LOAD);
   }, []);
 
   const { loadMoreRef, isLoading } = useInfiniteScroll(loadMore, hasMore);
 
-  // Use database articles if available, otherwise use mock data
-  const formattedDbArticles = dbArticles.map(formatArticleForCard);
-  
-  // Group database articles by category
-  const articlesByCategory = formattedDbArticles.reduce((acc, article) => {
-    if (!acc[article.category]) {
-      acc[article.category] = [];
+  // Combine and prepare all articles
+  const allArticles = useMemo(() => {
+    const formattedDbArticles = dbArticles.map(formatArticleForCard);
+    
+    if (formattedDbArticles.length > 0) {
+      return formattedDbArticles;
     }
-    acc[article.category].push(article);
-    return acc;
-  }, {} as Record<string, typeof formattedDbArticles>);
+    
+    // Use shuffled mock data as fallback
+    return shuffleArray(allMockArticles);
+  }, [dbArticles]);
 
-  // Create sections with DB articles if available, fallback to mock data
-  const getSectionArticles = (category: string, mockArticles: typeof newsArticles) => {
-    const dbCategoryArticles = articlesByCategory[category];
-    return dbCategoryArticles && dbCategoryArticles.length > 0 ? dbCategoryArticles : mockArticles;
-  };
-
-  const sectionsToShow = generateSections(visibleSections);
+  // Generate enough articles for infinite scroll by cycling
+  const getArticlesForDisplay = useMemo(() => {
+    const totalNeeded = visibleGrids * ARTICLES_PER_GRID + 12; // +12 for hero section
+    const result = [];
+    
+    for (let i = 0; i < totalNeeded; i++) {
+      result.push(allArticles[i % allArticles.length]);
+    }
+    
+    return result;
+  }, [allArticles, visibleGrids]);
 
   // Get region label for display
   const regionLabels: Record<string, string> = {
@@ -103,28 +99,31 @@ const Index = () => {
     lubuskie: "Lubuskie",
   };
 
-  // First section articles for MSN-style slot grid
-  const firstSectionArticles = getSectionArticles(
-    baseSections[0].category,
-    baseSections[0].articles
-  );
+  // First 12 articles for MSN-style hero section
+  const heroArticles = getArticlesForDisplay.slice(0, 12);
+  
+  // Remaining articles for grid sections
+  const feedArticles = getArticlesForDisplay.slice(12);
+
+  // Split feed articles into grids of 12
+  const articleGrids = [];
+  for (let i = 0; i < visibleGrids; i++) {
+    const startIndex = i * ARTICLES_PER_GRID;
+    const gridArticles = feedArticles.slice(startIndex, startIndex + ARTICLES_PER_GRID);
+    if (gridArticles.length > 0) {
+      articleGrids.push(gridArticles);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
 
       <main className="container py-4 sm:py-6">
-        {/* MSN-style Hero Section with Slot Grid (1 large + 4 small) */}
+        {/* MSN-style Hero Section */}
         <section className="mb-6 sm:mb-8">
-          <MSNSlotGrid articles={firstSectionArticles} />
+          <MSNSlotGrid articles={heroArticles} />
         </section>
-
-        {/* Ad Banner - hide in data saver mode */}
-        {!displaySettings.dataSaver && (
-          <div className="mb-6 sm:mb-8">
-            <AdBanner variant="horizontal" className="w-full" />
-          </div>
-        )}
 
         {/* Region indicator */}
         {settings.voivodeship && (
@@ -136,28 +135,34 @@ const Index = () => {
           </div>
         )}
 
-        {/* Main Content - Full width news sections */}
+        {/* Main Content - Unified feed without category divisions */}
         <div className="space-y-6 sm:space-y-8">
-          {sectionsToShow.slice(1).map((section, index) => {
-            // Get articles for this section - prefer DB articles
-            const sectionArticles = getSectionArticles(section.category, section.articles);
-            
-            return (
-              <div key={section.id}>
-                <NewsSection
-                  title={section.title}
-                  category={section.category}
-                  articles={sectionArticles}
-                />
-                {/* Insert ad every 2 sections - skip in data saver mode */}
-                {!displaySettings.dataSaver && (index + 1) % 2 === 0 && index !== sectionsToShow.length - 2 && (
-                  <div className="my-6 sm:my-8">
-                    <AdBanner variant="horizontal" className="w-full" />
-                  </div>
-                )}
+          {articleGrids.map((gridArticles, gridIndex) => (
+            <div key={`grid-${gridIndex}`}>
+              {/* Ad Banner before each grid */}
+              {!displaySettings.dataSaver && (
+                <div className="mb-6 sm:mb-8">
+                  <AdBanner variant="horizontal" className="w-full" />
+                </div>
+              )}
+
+              {/* 4x3 Article Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {gridArticles.map((article, articleIndex) => (
+                  <NewsCard
+                    key={`${article.id}-${gridIndex}-${articleIndex}`}
+                    id={article.id}
+                    title={article.title}
+                    category={article.category}
+                    image={article.image}
+                    timestamp={article.timestamp}
+                    badge={article.badge}
+                    variant="default"
+                  />
+                ))}
               </div>
-            );
-          })}
+            </div>
+          ))}
 
           {/* Load more trigger - infinite scroll */}
           <div 
