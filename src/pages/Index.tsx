@@ -47,7 +47,7 @@ const Index = () => {
   const [activeCategory, setActiveCategory] = useState("all");
   const { settings: displaySettings } = useDisplayMode();
   const { articles: dbArticles, loading: dbLoading } = useArticles({ limit: 100 });
-  const { articles: rssArticles, loading: rssLoading, refetch: refetchRSS } = useRSSArticles();
+  const { articles: rssArticles, loading: rssLoading, refetch: refetchRSS, lastUpdated } = useRSSArticles();
 
   // Always has more - infinite scroll
   const hasMore = true;
@@ -150,7 +150,12 @@ const Index = () => {
         </section>
 
         {/* RSS status and refresh */}
-        <div className="mb-4 flex items-center justify-end gap-2">
+        <div className="mb-4 flex items-center justify-end gap-2 flex-wrap">
+          {lastUpdated && (
+            <span className="text-xs text-muted-foreground">
+              Zaktualizowano: {lastUpdated.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          )}
           {rssArticles.length > 0 && (
             <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
               {rssArticles.length} artykułów z RSS
