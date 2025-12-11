@@ -347,6 +347,41 @@ const Article = () => {
               })}
             </div>
 
+            {/* Source Link - After Article Content */}
+            <div className="mt-8 p-6 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 rounded-xl">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center shadow-lg flex-shrink-0">
+                    <span className="text-lg font-bold text-primary-foreground">
+                      {(article.source || "IP").substring(0, 2).toUpperCase()}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Źródło artykułu</p>
+                    <p className="font-semibold text-foreground text-lg">{article.source || "Informacje.pl"}</p>
+                  </div>
+                </div>
+                
+                {article.sourceUrl ? (
+                  <a 
+                    href={article.sourceUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                  >
+                    <Button size="lg" className="gap-2">
+                      <ExternalLink className="h-4 w-4" />
+                      Przeczytaj oryginalny artykuł
+                    </Button>
+                  </a>
+                ) : (
+                  <Button size="lg" variant="secondary" disabled>
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Brak odnośnika
+                  </Button>
+                )}
+              </div>
+            </div>
+
             {/* Tags */}
             <div className="mt-6 flex flex-wrap gap-2">
               <span className="text-sm text-muted-foreground">Tagi:</span>
