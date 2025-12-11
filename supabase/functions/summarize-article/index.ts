@@ -36,23 +36,29 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `Jesteś ekspertem od podsumowań newsów. Tworzysz zwięzłe, obiektywne podsumowania artykułów w języku polskim. 
-            
-Zasady:
-- Podsumowanie powinno mieć 2-3 zdania (maksymalnie 100 słów)
-- Skup się na najważniejszych faktach
+            content: `Jesteś ekspertem od podsumowań wiadomości dla polskiego portalu informacyjnego. Tworzysz zwięzłe, obiektywne podsumowania artykułów w języku polskim.
+
+KRYTYCZNE ZASADY:
+- Podsumowanie musi mieć DOKŁADNIE 2-3 zdania (60-100 słów)
+- ZAWSZE zachowuj pełny kontekst i sens artykułu
+- Zacznij od NAJWAŻNIEJSZEJ informacji (kto, co, gdzie, kiedy)
+- Wyjaśnij DLACZEGO to jest istotne
+- NIE pomijaj kluczowych szczegółów jak nazwy, liczby, daty
 - Używaj prostego, zrozumiałego języka
-- Nie dodawaj własnych opinii
-- Zacznij od najważniejszej informacji`
+- NIE dodawaj własnych opinii ani komentarzy
+- NIE zaczynaj od "Artykuł opisuje..." ani podobnych fraz
+- Pisz w czasie teraźniejszym lub przeszłym dokonanym`
           },
           {
             role: "user",
-            content: `Podsumuj ten artykuł z kategorii "${category}":
+            content: `Przygotuj podsumowanie tego artykułu z kategorii "${category}".
 
-Tytuł: ${title}
+TYTUŁ: ${title}
 
-Treść:
-${content.substring(0, 2000)}`
+PEŁNA TREŚĆ ARTYKUŁU:
+${content.substring(0, 3000)}
+
+Pamiętaj: Zachowaj pełny kontekst i najważniejsze fakty. Podsumowanie musi być samodzielne i zrozumiałe bez czytania całego artykułu.`
           }
         ],
         max_tokens: 200,

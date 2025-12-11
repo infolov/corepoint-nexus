@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Clock, Share2, Bookmark, ExternalLink, Volume2, VolumeX, Square, Loader2 } from "lucide-react";
 import { useRecentlyViewed } from "@/hooks/use-recently-viewed";
 import { ArticleSummary } from "@/components/article/ArticleSummary";
-import { SourcesCarousel } from "@/components/article/SourcesCarousel";
 import { useRSSArticles, formatRSSArticleForCard, RSSArticle } from "@/hooks/use-rss-articles";
 import {
   newsArticles,
@@ -179,8 +178,8 @@ const Article = () => {
               </div>
             </header>
 
-            {/* Featured Image */}
-            <div className="relative aspect-video rounded-xl overflow-hidden mb-6">
+            {/* Featured Image - smaller */}
+            <div className="relative aspect-[21/9] max-h-[300px] rounded-xl overflow-hidden mb-6">
               <img
                 src={article.image}
                 alt={article.title}
@@ -227,13 +226,6 @@ const Article = () => {
                 )}
               </div>
             )}
-
-            {/* Sources Carousel */}
-            <SourcesCarousel 
-              mainSource={source}
-              mainSourceUrl={sourceUrl}
-              category={article.category}
-            />
 
             {/* Action Buttons */}
             <div className="flex items-center justify-end border-b border-border pb-4 mb-6">

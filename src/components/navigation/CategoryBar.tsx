@@ -242,7 +242,7 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
   const currentExpandedCategory = categoriesWithSubs.find(c => c.slug === expandedCategory);
 
   return (
-    <div className="sticky top-12 z-40 bg-background/95 backdrop-blur-md border-b border-border/50">
+    <div className="sticky top-16 z-40 bg-background/95 backdrop-blur-md border-b border-border/50">
       <div className="container relative">
         {/* Left Arrow */}
         {showLeftArrow && (
