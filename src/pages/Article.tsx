@@ -347,39 +347,6 @@ const Article = () => {
               })}
             </div>
 
-            {/* Source Box */}
-            <div className="mt-8 p-4 bg-muted/50 rounded-xl border border-border">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
-                  <span className="text-sm font-bold text-primary-foreground">
-                    {(article.source || "IP").substring(0, 2).toUpperCase()}
-                  </span>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Źródło informacji</p>
-                  <p className="font-semibold text-foreground">{article.source || "Informacje.pl"}</p>
-                </div>
-                {article.sourceUrl ? (
-                  <a 
-                    href={article.sourceUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="ml-auto"
-                  >
-                    <Button variant="outline" size="sm">
-                      <ExternalLink className="h-4 w-4 mr-1" />
-                      Odwiedź źródło
-                    </Button>
-                  </a>
-                ) : (
-                  <Button variant="outline" size="sm" className="ml-auto" disabled>
-                    <ExternalLink className="h-4 w-4 mr-1" />
-                    Odwiedź źródło
-                  </Button>
-                )}
-              </div>
-            </div>
-
             {/* Tags */}
             <div className="mt-6 flex flex-wrap gap-2">
               <span className="text-sm text-muted-foreground">Tagi:</span>
@@ -393,32 +360,94 @@ const Article = () => {
 
           {/* Sidebar */}
           <aside className="space-y-6">
-            {/* Related Articles */}
-            <div className="bg-card rounded-xl p-5 shadow-sm">
-              <h3 className="font-bold text-lg mb-4">Powiązane artykuły</h3>
-              <div className="space-y-1">
-                {relatedArticles.map((relArticle) => (
-                  <Link key={relArticle.id} to={`/artykul/${relArticle.id}`}>
-                    <NewsCard
-                      title={relArticle.title}
-                      category={relArticle.category}
-                      image={relArticle.image}
-                      timestamp={relArticle.timestamp}
-                      source={relArticle.source}
-                      variant="compact"
-                    />
-                  </Link>
-                ))}
-              </div>
-            </div>
+            {/* Source Box - Sticky */}
+            <div className="lg:sticky lg:top-20 space-y-6">
+              {/* Main Source Widget */}
+              <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 rounded-xl p-5 shadow-sm">
+                <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                  <ExternalLink className="h-5 w-5 text-primary" />
+                  Źródło artykułu
+                </h3>
+                
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center shadow-lg">
+                    <span className="text-lg font-bold text-primary-foreground">
+                      {(article.source || "IP").substring(0, 2).toUpperCase()}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground text-lg">{article.source || "Informacje.pl"}</p>
+                    <p className="text-sm text-muted-foreground">Portal informacyjny</p>
+                  </div>
+                </div>
 
-            {/* Back to home */}
-            <Link to="/">
-              <Button variant="outline" className="w-full">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Wróć do strony głównej
-              </Button>
-            </Link>
+                {article.sourceUrl ? (
+                  <a 
+                    href={article.sourceUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="block"
+                  >
+                    <Button className="w-full" size="lg">
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Przejdź do oryginalnego artykułu
+                    </Button>
+                  </a>
+                ) : (
+                  <Button className="w-full" size="lg" disabled>
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Brak odnośnika
+                  </Button>
+                )}
+
+                {article.sourceUrl && (
+                  <p className="text-xs text-muted-foreground mt-3 text-center">
+                    Kliknij, aby przeczytać pełny artykuł w źródle
+                  </p>
+                )}
+              </div>
+
+              {/* Article Info */}
+              <div className="bg-card rounded-xl p-5 shadow-sm border border-border">
+                <h4 className="font-semibold text-sm text-muted-foreground mb-3">Informacje o artykule</h4>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-foreground">{article.timestamp}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Badge variant="outline">{article.category}</Badge>
+                  </div>
+                </div>
+              </div>
+
+              {/* Related Articles */}
+              <div className="bg-card rounded-xl p-5 shadow-sm border border-border">
+                <h3 className="font-bold text-lg mb-4">Powiązane artykuły</h3>
+                <div className="space-y-1">
+                  {relatedArticles.map((relArticle) => (
+                    <Link key={relArticle.id} to={`/artykul/${relArticle.id}`}>
+                      <NewsCard
+                        title={relArticle.title}
+                        category={relArticle.category}
+                        image={relArticle.image}
+                        timestamp={relArticle.timestamp}
+                        source={relArticle.source}
+                        variant="compact"
+                      />
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+              {/* Back to home */}
+              <Link to="/">
+                <Button variant="outline" className="w-full">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Wróć do strony głównej
+                </Button>
+              </Link>
+            </div>
           </aside>
         </div>
       </main>
