@@ -1,16 +1,17 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { CategoryBar } from "@/components/navigation/CategoryBar";
-import { MSNSlotGrid } from "@/components/news/MSNSlotGrid";
 import { NewsCard } from "@/components/news/NewsCard";
 import { AdBanner } from "@/components/widgets/AdBanner";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import { useDisplayMode } from "@/hooks/use-display-mode";
+import { useAuth } from "@/hooks/use-auth";
 import { Loader2, RefreshCw } from "lucide-react";
 import { useArticles, formatArticleForCard } from "@/hooks/use-articles";
 import { useRSSArticles, formatRSSArticleForCard } from "@/hooks/use-rss-articles";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 import {
   newsArticles,
   businessArticles,
@@ -48,6 +49,50 @@ const Index = () => {
   const { settings: displaySettings } = useDisplayMode();
   const { articles: dbArticles, loading: dbLoading } = useArticles({ limit: 100 });
   const { articles: rssArticles, loading: rssLoading, refetch: refetchRSS, lastUpdated } = useRSSArticles();
+  const { user } = useAuth();
+  const [userPreferences, setUserPreferences] = useState<string[]>([]);
+  const [recentCategories, setRecentCategories] = useState<string[]>([]);
+
+  // Load user preferences for personalization
+  useEffect(() => {
+    const loadUserPreferences = async () => {
+      if (!user) {
+        setUserPreferences([]);
+        setRecentCategories([]);
+        return;
+      }
+
+      try {
+        // Get notification preferences (selected categories)
+        const { data: prefData } = await supabase
+          .from("user_notification_preferences")
+          .select("categories")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (prefData?.categories) {
+          setUserPreferences(prefData.categories);
+        }
+
+        // Get recently viewed categories
+        const { data: recentData } = await supabase
+          .from("user_recently_viewed")
+          .select("category")
+          .eq("user_id", user.id)
+          .order("viewed_at", { ascending: false })
+          .limit(30);
+
+        if (recentData) {
+          const categories = [...new Set(recentData.map(item => item.category))];
+          setRecentCategories(categories);
+        }
+      } catch (error) {
+        console.error("Error loading user preferences:", error);
+      }
+    };
+
+    loadUserPreferences();
+  }, [user]);
 
   // Always has more - infinite scroll
   const hasMore = true;
@@ -105,29 +150,73 @@ const Index = () => {
     return articles;
   }, [rssArticles, dbArticles, activeCategory]);
 
+  // Personalize articles for logged-in users
+  const personalizedArticles = useMemo(() => {
+    if (!user || (userPreferences.length === 0 && recentCategories.length === 0)) {
+      return allArticles;
+    }
+
+    // Combine preferences and recent categories
+    const interestCategories = [...new Set([...userPreferences, ...recentCategories])];
+    
+    // Score articles based on user interests
+    const scoredArticles = allArticles.map(article => {
+      let score = 0;
+      const articleCategory = article.category?.toLowerCase() || "";
+      
+      interestCategories.forEach((interest, index) => {
+        if (articleCategory.includes(interest.toLowerCase())) {
+          // Higher score for earlier interests (more recent/important)
+          score += (interestCategories.length - index) * 2;
+        }
+      });
+      
+      return { article, score };
+    });
+
+    // Sort by score (highest first), then shuffle within same score for variety
+    scoredArticles.sort((a, b) => b.score - a.score);
+
+    // Mix personalized with general content (70% personalized, 30% general for variety)
+    const personalized = scoredArticles.filter(s => s.score > 0).map(s => s.article);
+    const general = scoredArticles.filter(s => s.score === 0).map(s => s.article);
+    
+    const result = [];
+    let pIndex = 0;
+    let gIndex = 0;
+    
+    for (let i = 0; i < allArticles.length; i++) {
+      // Every 4th article can be general for variety
+      if (i % 4 === 3 && gIndex < general.length) {
+        result.push(general[gIndex++]);
+      } else if (pIndex < personalized.length) {
+        result.push(personalized[pIndex++]);
+      } else if (gIndex < general.length) {
+        result.push(general[gIndex++]);
+      }
+    }
+
+    return result;
+  }, [allArticles, user, userPreferences, recentCategories]);
+
   // Generate enough articles for infinite scroll by cycling
   const getArticlesForDisplay = useMemo(() => {
-    const totalNeeded = visibleGrids * ARTICLES_PER_GRID + 12; // +12 for hero section
+    const articlesToUse = user ? personalizedArticles : allArticles;
+    const totalNeeded = visibleGrids * ARTICLES_PER_GRID;
     const result = [];
     
     for (let i = 0; i < totalNeeded; i++) {
-      result.push(allArticles[i % allArticles.length]);
+      result.push(articlesToUse[i % articlesToUse.length]);
     }
     
     return result;
-  }, [allArticles, visibleGrids]);
-
-  // First 12 articles for MSN-style hero section
-  const heroArticles = getArticlesForDisplay.slice(0, 12);
-  
-  // Remaining articles for grid sections
-  const feedArticles = getArticlesForDisplay.slice(12);
+  }, [allArticles, personalizedArticles, visibleGrids, user]);
 
   // Split feed articles into grids of 12
   const articleGrids = [];
   for (let i = 0; i < visibleGrids; i++) {
     const startIndex = i * ARTICLES_PER_GRID;
-    const gridArticles = feedArticles.slice(startIndex, startIndex + ARTICLES_PER_GRID);
+    const gridArticles = getArticlesForDisplay.slice(startIndex, startIndex + ARTICLES_PER_GRID);
     if (gridArticles.length > 0) {
       articleGrids.push(gridArticles);
     }
@@ -144,36 +233,40 @@ const Index = () => {
       />
 
       <main className="container py-4 sm:py-6">
-        {/* MSN-style Hero Section */}
-        <section className="mb-6 sm:mb-8">
-          <MSNSlotGrid articles={heroArticles} />
-        </section>
-
         {/* RSS status and refresh */}
-        <div className="mb-4 flex items-center justify-end gap-2 flex-wrap">
-          {lastUpdated && (
-            <span className="text-xs text-muted-foreground">
-              Zaktualizowano: {lastUpdated.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })}
-            </span>
-          )}
-          {rssArticles.length > 0 && (
-            <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
-              {rssArticles.length} artykułów z RSS
-            </span>
-          )}
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={refetchRSS}
-            disabled={rssLoading}
-            className="text-muted-foreground hover:text-foreground"
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${rssLoading ? 'animate-spin' : ''}`} />
-            Odśwież
-          </Button>
+        <div className="mb-4 flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            {user && (userPreferences.length > 0 || recentCategories.length > 0) && (
+              <span className="text-xs text-primary bg-primary/10 px-2 py-1 rounded">
+                Spersonalizowany feed
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {lastUpdated && (
+              <span className="text-xs text-muted-foreground">
+                Zaktualizowano: {lastUpdated.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            )}
+            {rssArticles.length > 0 && (
+              <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+                {rssArticles.length} artykułów z RSS
+              </span>
+            )}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={refetchRSS}
+              disabled={rssLoading}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${rssLoading ? 'animate-spin' : ''}`} />
+              Odśwież
+            </Button>
+          </div>
         </div>
 
-        {/* Main Content - Unified feed without category divisions */}
+        {/* Main Content - Ad + 4x3 Grid pattern */}
         <div className="space-y-6 sm:space-y-8">
           {articleGrids.map((gridArticles, gridIndex) => (
             <div key={`grid-${gridIndex}`}>
