@@ -74,7 +74,7 @@ export function Header() {
       {/* Top Bar */}
       <div className="bg-nav text-nav-foreground">
         <div className="container flex h-12 items-center justify-between">
-          {/* Left: Logo + Partner Space + Search */}
+          {/* Left: Logo + Partner Space */}
           <div className="flex items-center gap-4">
             <Link to="/" className="flex items-center gap-2.5">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-hero-gradient shadow-lg">
@@ -92,30 +92,14 @@ export function Header() {
                 <span className="text-xs text-nav-foreground/40">Logo partnera</span>
               </div>
             </div>
-
-            {/* Search Icon - Desktop */}
-            <form onSubmit={handleSearch} className="hidden sm:flex items-center">
-              <div className="relative">
-                <Input
-                  type="text"
-                  placeholder="Szukaj..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-48 h-9 pl-9 pr-3 rounded-full bg-background/90 border-border/50 text-foreground text-sm placeholder:text-muted-foreground focus:bg-background focus:border-primary/50 focus:w-64 transition-all"
-                />
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              </div>
-            </form>
           </div>
-
-          {/* Desktop Navigation - removed, using CategoryBar below */}
 
           {/* Actions */}
           <div className="flex items-center gap-2">
-            {/* Mobile Search Toggle */}
-            <div className="relative sm:hidden">
+            {/* Search Icon with expandable input */}
+            <div className="relative flex items-center">
               {isSearchOpen ? (
-                <form onSubmit={handleSearch} className="flex items-center">
+                <form onSubmit={handleSearch} className="flex items-center animate-fade-in">
                   <Input
                     ref={searchInputRef}
                     type="text"
@@ -123,19 +107,19 @@ export function Header() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyDown={handleSearchKeyDown}
-                    className="w-40 h-8 text-sm bg-nav-foreground/10 border-nav-foreground/20 text-nav-foreground placeholder:text-nav-foreground/50"
+                    className="w-40 sm:w-56 h-8 text-sm bg-background/90 border-border/50 text-foreground placeholder:text-muted-foreground rounded-full pr-8"
                   />
                   <Button
                     type="button"
-                    variant="nav"
+                    variant="ghost"
                     size="icon"
-                    className="ml-1"
+                    className="absolute right-0 h-8 w-8 hover:bg-transparent"
                     onClick={() => {
                       setIsSearchOpen(false);
                       setSearchQuery("");
                     }}
                   >
-                    <X className="h-4 w-4" />
+                    <X className="h-4 w-4 text-muted-foreground" />
                   </Button>
                 </form>
               ) : (
@@ -143,6 +127,7 @@ export function Header() {
                   variant="nav"
                   size="icon"
                   onClick={() => setIsSearchOpen(true)}
+                  title="Szukaj"
                 >
                   <Search className="h-4 w-4" />
                 </Button>
