@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Clock, Share2, Bookmark, ExternalLink } from "lucide-react";
 import { useRecentlyViewed } from "@/hooks/use-recently-viewed";
+import { ArticleSummary } from "@/components/article/ArticleSummary";
+import { SourcesCarousel } from "@/components/article/SourcesCarousel";
 import {
   newsArticles,
   businessArticles,
@@ -298,6 +300,20 @@ const Article = () => {
                 className="w-full h-full object-cover"
               />
             </div>
+
+            {/* AI Summary */}
+            <ArticleSummary 
+              title={article.title}
+              content={content}
+              category={article.category}
+            />
+
+            {/* Sources Carousel */}
+            <SourcesCarousel 
+              mainSource={article.source || "Informacje.pl"}
+              mainSourceUrl={article.sourceUrl}
+              category={article.category}
+            />
 
             {/* Action Buttons */}
             <div className="flex items-center justify-end border-b border-border pb-4 mb-6">
