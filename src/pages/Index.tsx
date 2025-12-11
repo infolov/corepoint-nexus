@@ -335,8 +335,8 @@ const Index = () => {
                 </div>
               )}
 
-              {/* 4x3 Article Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {/* 3x4 Article Grid (12 articles) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {gridArticles.map((article, articleIndex) => (
                   <NewsCard
                     key={`${article.id}-${gridIndex}-${articleIndex}`}
