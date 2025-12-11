@@ -11,6 +11,7 @@ interface NewsCardProps {
   id?: string;
   title: string;
   excerpt?: string;
+  content?: string;
   category: string;
   image: string;
   timestamp: string;
@@ -72,6 +73,7 @@ export function NewsCard({
   id,
   title,
   excerpt,
+  content,
   category,
   image,
   timestamp,
@@ -97,6 +99,7 @@ export function NewsCard({
     source,
     sourceUrl,
     excerpt,
+    content,
   };
 
   // MSN-style compact list item (for sidebar/data saver)
