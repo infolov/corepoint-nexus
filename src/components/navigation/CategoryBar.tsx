@@ -207,16 +207,13 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
   };
 
   const handleCategoryClick = (category: typeof categoriesWithSubs[0]) => {
-    if (category.subcategories.length > 0) {
-      // Toggle expanded state for categories with subcategories
-      setExpandedCategory(
-        expandedCategory === category.slug ? null : category.slug
-      );
-    } else {
-      // For categories without subcategories, select the category directly
-      onCategoryChange?.(category.slug);
-      setExpandedCategory(null);
-    }
+    // Click always navigates to the category
+    onCategoryChange?.(category.slug);
+    setExpandedCategory(null);
+  };
+
+  const handleCategoryHover = (categorySlug: string | null) => {
+    setExpandedCategory(categorySlug);
   };
 
   const handleSubcategoryClick = (categorySlug: string, subcategorySlug?: string) => {
@@ -254,6 +251,8 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
             <div 
               key={category.slug}
               className="relative flex-shrink-0"
+              onMouseEnter={() => category.subcategories.length > 0 && handleCategoryHover(category.slug)}
+              onMouseLeave={() => handleCategoryHover(null)}
             >
               <button
                 onClick={() => handleCategoryClick(category)}
@@ -291,7 +290,11 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
 
       {/* Expanded Subcategories Panel */}
       {currentExpandedCategory && currentExpandedCategory.subcategories.length > 0 && (
-        <div className="border-t border-border/50 bg-muted/30 animate-fade-in">
+        <div 
+          className="border-t border-border/50 bg-muted/30 animate-fade-in"
+          onMouseEnter={() => handleCategoryHover(currentExpandedCategory.slug)}
+          onMouseLeave={() => handleCategoryHover(null)}
+        >
           <div className="container py-3">
             {/* Main category link */}
             <div className="flex items-center gap-2 mb-3">
