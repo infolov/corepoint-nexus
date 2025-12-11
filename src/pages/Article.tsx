@@ -146,9 +146,9 @@ const Article = () => {
           <span className="text-foreground truncate max-w-[200px]">{article.title}</span>
         </nav>
 
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="max-w-4xl mx-auto">
           {/* Main Article Content */}
-          <article className="lg:col-span-2">
+          <article>
             {/* Article Header */}
             <header className="mb-6">
               <div className="flex items-center gap-2 mb-3">
@@ -314,100 +314,32 @@ const Article = () => {
               </div>
             </div>
 
-            {/* Tags */}
-            <div className="mt-6 flex flex-wrap gap-2">
-              <span className="text-sm text-muted-foreground">Tagi:</span>
-              {["Polska", article.category, "Aktualności"].map((tag) => (
-                <Badge key={tag} variant="secondary" className="text-xs">
-                  {tag}
-                </Badge>
-              ))}
-            </div>
-          </article>
-
-          {/* Sidebar */}
-          <aside className="lg:col-span-1">
-            <div className="sticky top-24 space-y-6">
-              {/* Source Card */}
-              <div className="bg-card rounded-xl border p-5">
-                <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-                  <ExternalLink className="h-5 w-5 text-primary" />
-                  Źródło artykułu
-                </h3>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center">
-                    <span className="text-lg font-bold text-primary-foreground">
-                      {source.substring(0, 2).toUpperCase()}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="font-semibold">{source}</p>
-                    <p className="text-sm text-muted-foreground">Źródło informacji</p>
-                  </div>
-                </div>
-                {sourceUrl ? (
-                  <a 
-                    href={sourceUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="block"
-                  >
-                    <Button className="w-full gap-2">
-                      <ExternalLink className="h-4 w-4" />
-                      Odwiedź źródło
-                    </Button>
-                  </a>
-                ) : (
-                  <Button className="w-full" variant="secondary" disabled>
-                    Brak odnośnika
-                  </Button>
-                )}
-              </div>
-
-              {/* Article Meta */}
-              <div className="bg-card rounded-xl border p-5">
-                <h3 className="font-bold text-lg mb-4">Informacje</h3>
-                <div className="space-y-3 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Kategoria</span>
-                    <Badge variant="outline">{article.category}</Badge>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Data publikacji</span>
-                    <span>{(article as any).timestamp || "Dzisiaj"}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Źródło</span>
-                    <span className="font-medium">{source}</span>
-                  </div>
+            {/* Related Articles */}
+            {relatedArticles.length > 0 && (
+              <div className="mt-8 pt-8 border-t border-border">
+                <h3 className="font-bold text-xl mb-6">Powiązane artykuły</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {relatedArticles.map((related) => (
+                    <NewsCard
+                      key={related.id}
+                      {...related}
+                      variant="compact"
+                    />
+                  ))}
                 </div>
               </div>
+            )}
 
-              {/* Related Articles */}
-              {relatedArticles.length > 0 && (
-                <div className="bg-card rounded-xl border p-5">
-                  <h3 className="font-bold text-lg mb-4">Powiązane artykuły</h3>
-                  <div className="space-y-4">
-                    {relatedArticles.map((related) => (
-                      <NewsCard
-                        key={related.id}
-                        {...related}
-                        variant="compact"
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Back to Home */}
+            {/* Back to Home */}
+            <div className="mt-8">
               <Link to="/">
-                <Button variant="outline" className="w-full gap-2">
+                <Button variant="outline" className="gap-2">
                   <ArrowLeft className="h-4 w-4" />
                   Wróć do strony głównej
                 </Button>
               </Link>
             </div>
-          </aside>
+          </article>
         </div>
       </main>
       
