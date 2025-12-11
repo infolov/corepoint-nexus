@@ -292,14 +292,7 @@ const Index = () => {
 
       <main className="container py-4 sm:py-6">
         {/* RSS status and refresh */}
-        <div className="mb-4 flex items-center justify-between flex-wrap gap-2">
-          <div className="flex items-center gap-2">
-            {user && (userPreferences.length > 0 || recentCategories.length > 0) && (
-              <span className="text-xs text-primary bg-primary/10 px-2 py-1 rounded">
-                Spersonalizowany feed
-              </span>
-            )}
-          </div>
+        <div className="mb-4 flex items-center justify-end flex-wrap gap-2">
           <div className="flex items-center gap-2">
             {lastUpdated && (
               <span className="text-xs text-muted-foreground">
