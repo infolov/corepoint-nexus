@@ -1,10 +1,11 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { NewsCard } from "@/components/news/NewsCard";
 import { useArticles, formatArticleForCard } from "@/hooks/use-articles";
-import { Search as SearchIcon, Filter, X, TrendingUp, Clock, Calendar } from "lucide-react";
+import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
+import { Search as SearchIcon, Filter, X, TrendingUp, Clock, Calendar, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -40,21 +41,30 @@ const sortOptions = [
   { value: "popular", label: "Najpopularniejsze", icon: TrendingUp },
 ];
 
+const ARTICLES_PER_LOAD = 12;
+
 export default function Search() {
   const [searchParams, setSearchParams] = useSearchParams();
   const query = searchParams.get("q") || "";
   const [searchInput, setSearchInput] = useState(query);
-  const { articles, loading } = useArticles({ limit: 100 });
+  const { articles, loading } = useArticles({ limit: 500 });
 
   // Filters state
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
   const [showFilters, setShowFilters] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(ARTICLES_PER_LOAD);
 
   useEffect(() => {
     setSearchInput(query);
+    setVisibleCount(ARTICLES_PER_LOAD); // Reset on new search
   }, [query]);
+
+  // Reset visible count when filters change
+  useEffect(() => {
+    setVisibleCount(ARTICLES_PER_LOAD);
+  }, [categoryFilter, dateFilter, sortBy]);
 
   const filteredAndSortedArticles = useMemo(() => {
     let results = articles.filter((article) => {
@@ -111,6 +121,15 @@ export default function Search() {
 
     return results;
   }, [articles, query, categoryFilter, dateFilter, sortBy]);
+
+  const visibleArticles = filteredAndSortedArticles.slice(0, visibleCount);
+  const hasMore = visibleCount < filteredAndSortedArticles.length;
+
+  const loadMore = useCallback(() => {
+    setVisibleCount((prev) => Math.min(prev + ARTICLES_PER_LOAD, filteredAndSortedArticles.length));
+  }, [filteredAndSortedArticles.length]);
+
+  const { loadMoreRef, isLoading: isLoadingMore } = useInfiniteScroll(loadMore, hasMore);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -290,7 +309,7 @@ export default function Search() {
 
         {/* Results */}
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="bg-card rounded-xl overflow-hidden animate-pulse">
                 <div className="aspect-video bg-muted" />
@@ -302,11 +321,26 @@ export default function Search() {
             ))}
           </div>
         ) : filteredAndSortedArticles.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredAndSortedArticles.map((article) => (
-              <NewsCard key={article.id} {...formatArticleForCard(article)} />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {visibleArticles.map((article) => (
+                <NewsCard key={article.id} {...formatArticleForCard(article)} />
+              ))}
+            </div>
+            
+            {/* Infinite scroll trigger */}
+            <div 
+              ref={loadMoreRef} 
+              className="py-6 sm:py-8 flex justify-center min-h-[60px]"
+            >
+              {isLoadingMore && (
+                <div className="flex items-center gap-2 text-muted-foreground animate-pulse">
+                  <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 animate-spin" />
+                  <span className="text-sm sm:text-base">Ładowanie więcej artykułów...</span>
+                </div>
+              )}
+            </div>
+          </>
         ) : query ? (
           <div className="text-center py-16">
             <SearchIcon className="h-16 w-16 mx-auto text-muted-foreground/50 mb-4" />
