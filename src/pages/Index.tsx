@@ -207,7 +207,8 @@ const Index = () => {
           {/* Load more trigger - infinite scroll */}
           <div 
             ref={loadMoreRef} 
-            className="py-10 sm:py-12 md:py-16 flex justify-center min-h-[150px]"
+            className="py-8 flex justify-center min-h-[200px] sm:min-h-[180px] md:min-h-[150px]"
+            style={{ touchAction: 'pan-y' }}
           >
             {isLoading && (
               <div className="flex items-center gap-2 text-muted-foreground animate-pulse">
