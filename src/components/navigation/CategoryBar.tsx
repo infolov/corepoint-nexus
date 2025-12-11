@@ -180,8 +180,7 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-  const [mobileExpandedCategory, setMobileExpandedCategory] = useState<string | null>(null);
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const isMobile = useIsMobile();
 
   const checkScroll = () => {
@@ -209,18 +208,28 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
   };
 
   const handleCategoryClick = (category: typeof categoriesWithSubs[0]) => {
-    if (isMobile && category.subcategories.length > 0) {
-      // On mobile, toggle expanded state for categories with subcategories
-      setMobileExpandedCategory(
-        mobileExpandedCategory === category.slug ? null : category.slug
+    if (category.subcategories.length > 0) {
+      // Toggle expanded state for categories with subcategories
+      setExpandedCategory(
+        expandedCategory === category.slug ? null : category.slug
       );
     } else {
-      // On desktop or categories without subcategories, select the category
+      // For categories without subcategories, select the category directly
       onCategoryChange?.(category.slug);
+      setExpandedCategory(null);
     }
   };
 
-  const expandedCategory = categoriesWithSubs.find(c => c.slug === mobileExpandedCategory);
+  const handleSubcategoryClick = (categorySlug: string, subcategorySlug?: string) => {
+    if (subcategorySlug) {
+      onCategoryChange?.(`${categorySlug}/${subcategorySlug}`);
+    } else {
+      onCategoryChange?.(categorySlug);
+    }
+    setExpandedCategory(null);
+  };
+
+  const currentExpandedCategory = categoriesWithSubs.find(c => c.slug === expandedCategory);
 
   return (
     <div className="sticky top-12 z-40 bg-background/95 backdrop-blur-md border-b border-border/50">
@@ -246,8 +255,6 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
             <div 
               key={category.slug}
               className="relative flex-shrink-0"
-              onMouseEnter={() => !isMobile && category.subcategories.length > 0 && setOpenDropdown(category.slug)}
-              onMouseLeave={() => !isMobile && setOpenDropdown(null)}
             >
               <button
                 onClick={() => handleCategoryClick(category)}
@@ -257,47 +264,17 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
                   activeCategory === category.slug
                     ? "bg-primary text-primary-foreground hover:bg-primary/90"
                     : "text-muted-foreground hover:text-foreground",
-                  isMobile && mobileExpandedCategory === category.slug && "bg-muted"
+                  expandedCategory === category.slug && "bg-muted ring-2 ring-primary/30"
                 )}
               >
                 {category.name}
                 {category.subcategories.length > 0 && (
                   <ChevronDown className={cn(
                     "h-3.5 w-3.5 transition-transform duration-200",
-                    (openDropdown === category.slug || (isMobile && mobileExpandedCategory === category.slug)) && "rotate-180"
+                    expandedCategory === category.slug && "rotate-180"
                   )} />
                 )}
               </button>
-
-              {/* Desktop Dropdown */}
-              {!isMobile && category.subcategories.length > 0 && openDropdown === category.slug && (
-                <div className="absolute top-full left-0 mt-1 min-w-[200px] bg-popover border border-border rounded-lg shadow-lg py-2 z-50 animate-fade-in">
-                  {/* Main category link */}
-                  <Link
-                    to={`/${category.slug}`}
-                    className="block px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
-                    onClick={() => {
-                      onCategoryChange?.(category.slug);
-                      setOpenDropdown(null);
-                    }}
-                  >
-                    Wszystkie {category.name}
-                  </Link>
-                  <div className="border-t border-border my-1" />
-                  <div className="max-h-[300px] overflow-y-auto">
-                    {category.subcategories.map((sub) => (
-                      <Link
-                        key={sub.slug}
-                        to={`/${category.slug}/${sub.slug}`}
-                        className="block px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                        onClick={() => setOpenDropdown(null)}
-                      >
-                        {sub.name}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           ))}
         </div>
@@ -313,29 +290,38 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
         )}
       </div>
 
-      {/* Mobile Expanded Subcategories Panel */}
-      {isMobile && expandedCategory && expandedCategory.subcategories.length > 0 && (
-        <div className="border-t border-border/50 bg-muted/50 animate-fade-in">
+      {/* Expanded Subcategories Panel */}
+      {currentExpandedCategory && currentExpandedCategory.subcategories.length > 0 && (
+        <div className="border-t border-border/50 bg-muted/30 animate-fade-in">
           <div className="container py-3">
             {/* Main category link */}
-            <Link
-              to={`/${expandedCategory.slug}`}
-              className="block px-3 py-2 mb-2 text-sm font-medium text-foreground bg-background rounded-lg"
-              onClick={() => {
-                onCategoryChange?.(expandedCategory.slug);
-                setMobileExpandedCategory(null);
-              }}
-            >
-              Wszystkie {expandedCategory.name}
-            </Link>
-            {/* Subcategories grid */}
-            <div className="grid grid-cols-2 gap-2">
-              {expandedCategory.subcategories.map((sub) => (
+            <div className="flex items-center gap-2 mb-3">
+              <Link
+                to={`/${currentExpandedCategory.slug}`}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-primary-foreground bg-primary rounded-full hover:bg-primary/90 transition-colors"
+                onClick={() => handleSubcategoryClick(currentExpandedCategory.slug)}
+              >
+                Wszystkie {currentExpandedCategory.name}
+              </Link>
+              <button
+                onClick={() => setExpandedCategory(null)}
+                className="ml-auto text-xs text-muted-foreground hover:text-foreground"
+              >
+                Zamknij
+              </button>
+            </div>
+            
+            {/* Subcategories grid - responsive */}
+            <div className={cn(
+              "grid gap-2",
+              isMobile ? "grid-cols-2" : "grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6"
+            )}>
+              {currentExpandedCategory.subcategories.map((sub) => (
                 <Link
                   key={sub.slug}
-                  to={`/${expandedCategory.slug}/${sub.slug}`}
-                  className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground bg-background rounded-lg transition-colors"
-                  onClick={() => setMobileExpandedCategory(null)}
+                  to={`/${currentExpandedCategory.slug}/${sub.slug}`}
+                  className="px-3 py-2.5 text-sm text-muted-foreground hover:text-foreground bg-background hover:bg-background/80 border border-border/50 rounded-lg transition-all hover:border-primary/30 hover:shadow-sm"
+                  onClick={() => handleSubcategoryClick(currentExpandedCategory.slug, sub.slug)}
                 >
                   {sub.name}
                 </Link>
