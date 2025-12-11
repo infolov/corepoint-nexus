@@ -87,7 +87,7 @@ export function Header() {
 
             {/* Partner Space */}
             <div className="hidden md:flex items-center gap-2 px-3 py-1 border-l border-nav-foreground/20">
-              <span className="text-xs text-nav-foreground/50">Partner:</span>
+              <span className="text-xs text-nav-foreground/50">Partner Serwisu:</span>
               <div className="h-6 w-20 bg-nav-foreground/10 rounded flex items-center justify-center">
                 <span className="text-xs text-nav-foreground/40">Logo partnera</span>
               </div>
