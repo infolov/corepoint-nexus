@@ -11,18 +11,18 @@ export function useInfiniteScroll(
   hasMore: boolean,
   options: UseInfiniteScrollOptions = {}
 ) {
-  // Responsive root margin - larger on mobile for earlier trigger
+  // Responsive root margin - much larger on mobile for earlier trigger
   const getResponsiveRootMargin = () => {
-    if (typeof window === "undefined") return "300px";
-    if (window.innerWidth < 640) return "400px"; // Mobile - load much earlier
-    if (window.innerWidth < 1024) return "350px"; // Tablet
-    return "300px"; // Desktop
+    if (typeof window === "undefined") return "400px";
+    if (window.innerWidth < 640) return "600px"; // Mobile - load much earlier
+    if (window.innerWidth < 1024) return "500px"; // Tablet
+    return "400px"; // Desktop
   };
 
   const { 
-    threshold = 0.01, 
+    threshold = 0.1, 
     rootMargin = getResponsiveRootMargin(),
-    debounceMs = 100
+    debounceMs = 50
   } = options;
   
   const [isLoading, setIsLoading] = useState(false);
