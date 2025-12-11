@@ -24,6 +24,7 @@ interface ArticlePreviewModalProps {
     source?: string;
     sourceUrl?: string;
     excerpt?: string;
+    content?: string;
   } | null;
 }
 
@@ -180,6 +181,19 @@ export function ArticlePreviewModal({ isOpen, onClose, article }: ArticlePreview
             }}
           />
         </div>
+
+        {/* Article Content */}
+        {article.content && (
+          <div className="space-y-3">
+            <h4 className="font-semibold text-sm text-muted-foreground flex items-center gap-2">
+              <span className="w-5 h-5 rounded bg-primary/10 flex items-center justify-center text-xs">📰</span>
+              Treść artykułu
+            </h4>
+            <div className="prose prose-sm max-w-none dark:prose-invert bg-muted/20 rounded-lg p-4 max-h-64 overflow-y-auto">
+              <p className="text-foreground/90 leading-relaxed m-0 whitespace-pre-wrap">{article.content}</p>
+            </div>
+          </div>
+        )}
 
         {/* Source Info */}
         <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">

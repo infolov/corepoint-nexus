@@ -6,6 +6,7 @@ export interface Article {
   id: string;
   title: string;
   excerpt: string | null;
+  content: string | null;
   category: string;
   image: string;
   badge: string | null;
@@ -33,7 +34,7 @@ export function useArticles(options: UseArticlesOptions = {}) {
     try {
       let query = supabase
         .from("articles")
-        .select("id, title, excerpt, category, image, badge, created_at, region, view_count")
+        .select("id, title, excerpt, content, category, image, badge, created_at, region, view_count")
         .eq("is_published", true)
         .order("created_at", { ascending: false })
         .limit(limit);
@@ -80,6 +81,7 @@ export function formatArticleForCard(article: Article) {
     id: article.id,
     title: article.title,
     excerpt: article.excerpt || undefined,
+    content: article.content || undefined,
     category: article.category,
     image: article.image,
     timestamp: formatTimestamp(article.created_at),

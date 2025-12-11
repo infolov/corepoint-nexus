@@ -77,6 +77,7 @@ export function formatRSSArticleForCard(article: RSSArticle) {
     id: article.id,
     title: article.title,
     excerpt: article.excerpt,
+    content: article.content,
     category: article.category,
     image: article.image,
     timestamp: article.timestamp,
