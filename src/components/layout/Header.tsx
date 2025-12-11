@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Menu, X, Search, User, Sun, Moon, Settings, CloudSun, LayoutDashboard, LogOut, Zap } from "lucide-react";
+import { Menu, X, Search, User, Sun, Moon, Settings, CloudSun, LayoutDashboard, LogOut, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -73,23 +73,23 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full">
       {/* Top Bar */}
       <div className="bg-nav text-nav-foreground">
-        <div className="container flex h-12 items-center justify-between">
+        <div className="container flex h-16 items-center justify-between">
           {/* Left: Logo + Partner Space */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
             <Link to="/" className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-hero-gradient shadow-lg">
-                <span className="text-xl font-black text-primary-foreground">i</span>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-hero-gradient shadow-lg">
+                <span className="text-2xl font-black text-primary-foreground">i</span>
               </div>
-              <span className="text-xl font-bold tracking-tight">
+              <span className="text-2xl font-bold tracking-tight">
                 INFORMACJE<span className="text-primary">.PL</span>
               </span>
             </Link>
 
-            {/* Partner Space */}
-            <div className="hidden md:flex items-center gap-2 px-3 py-1 border-l border-nav-foreground/20">
-              <span className="text-xs text-nav-foreground/50">Partner Serwisu:</span>
-              <div className="h-6 w-20 bg-nav-foreground/10 rounded flex items-center justify-center">
-                <span className="text-xs text-nav-foreground/40">Logo partnera</span>
+            {/* Partner Space - enlarged */}
+            <div className="hidden md:flex items-center gap-3 px-4 py-2 border-l border-nav-foreground/20">
+              <span className="text-sm text-nav-foreground/60">Partner Serwisu:</span>
+              <div className="h-10 w-28 bg-nav-foreground/10 rounded-lg flex items-center justify-center">
+                <span className="text-sm text-nav-foreground/50">Logo partnera</span>
               </div>
             </div>
           </div>
@@ -134,25 +134,21 @@ export function Header() {
               )}
             </div>
 
-            {/* Weather */}
-            <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 text-nav-foreground/80 text-sm">
-              <CloudSun className="h-4 w-4 text-weather-sunny" />
-              <span className="font-medium">22°C</span>
-            </div>
+            {/* Weather - clickable with location */}
+            <Link 
+              to="/pogoda"
+              className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-nav-foreground/80 text-sm hover:bg-nav-foreground/10 rounded-lg transition-colors"
+            >
+              <CloudSun className="h-5 w-5 text-weather-sunny" />
+              <span className="font-semibold">22°C</span>
+              <span className="text-xs text-nav-foreground/60 flex items-center gap-1">
+                <MapPin className="h-3 w-3" />
+                Warszawa
+              </span>
+            </Link>
 
             {/* Notifications */}
             <NotificationBell />
-
-            {/* Data Saver Toggle */}
-            <Button 
-              variant="nav" 
-              size="icon" 
-              onClick={toggleDataSaver}
-              className={cn(displaySettings.dataSaver && "text-primary")}
-              title={displaySettings.dataSaver ? "Tryb oszczędzania włączony" : "Włącz oszczędzanie danych"}
-            >
-              <Zap className="h-4 w-4" />
-            </Button>
 
             {/* Theme toggle */}
             <Button variant="nav" size="icon" onClick={toggleTheme}>
@@ -186,17 +182,6 @@ export function Header() {
                     <Button variant="ghost" className="w-full justify-start text-senior-sm" onClick={toggleTheme}>
                       {isDark ? <Sun className="h-5 w-5 mr-2" /> : <Moon className="h-5 w-5 mr-2" />}
                       {isDark ? "Tryb jasny" : "Tryb ciemny"}
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      className={cn(
-                        "w-full justify-start text-senior-sm",
-                        displaySettings.dataSaver && "text-primary"
-                      )}
-                      onClick={toggleDataSaver}
-                    >
-                      <Zap className="h-5 w-5 mr-2" />
-                      Oszczędzanie danych {displaySettings.dataSaver ? "(włączone)" : ""}
                     </Button>
                     <Button 
                       variant="ghost" 
