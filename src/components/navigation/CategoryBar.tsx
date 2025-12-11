@@ -1,7 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Link } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const categoriesWithSubs = [
@@ -296,13 +295,17 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
           <div className="container py-3">
             {/* Main category link */}
             <div className="flex items-center gap-2 mb-3">
-              <Link
-                to={`/${currentExpandedCategory.slug}`}
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-primary-foreground bg-primary rounded-full hover:bg-primary/90 transition-colors"
+              <button
+                className={cn(
+                  "inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-full transition-colors",
+                  activeCategory === currentExpandedCategory.slug
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-primary/80 text-primary-foreground hover:bg-primary"
+                )}
                 onClick={() => handleSubcategoryClick(currentExpandedCategory.slug)}
               >
                 Wszystkie {currentExpandedCategory.name}
-              </Link>
+              </button>
               <button
                 onClick={() => setExpandedCategory(null)}
                 className="ml-auto text-xs text-muted-foreground hover:text-foreground"
@@ -316,16 +319,24 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
               "grid gap-2",
               isMobile ? "grid-cols-2" : "grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6"
             )}>
-              {currentExpandedCategory.subcategories.map((sub) => (
-                <Link
-                  key={sub.slug}
-                  to={`/${currentExpandedCategory.slug}/${sub.slug}`}
-                  className="px-3 py-2.5 text-sm text-muted-foreground hover:text-foreground bg-background hover:bg-background/80 border border-border/50 rounded-lg transition-all hover:border-primary/30 hover:shadow-sm"
-                  onClick={() => handleSubcategoryClick(currentExpandedCategory.slug, sub.slug)}
-                >
-                  {sub.name}
-                </Link>
-              ))}
+              {currentExpandedCategory.subcategories.map((sub) => {
+                const fullSlug = `${currentExpandedCategory.slug}/${sub.slug}`;
+                const isActive = activeCategory === fullSlug;
+                return (
+                  <button
+                    key={sub.slug}
+                    className={cn(
+                      "px-3 py-2.5 text-sm text-left rounded-lg transition-all",
+                      isActive
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:text-foreground bg-background hover:bg-background/80 border border-border/50 hover:border-primary/30 hover:shadow-sm"
+                    )}
+                    onClick={() => handleSubcategoryClick(currentExpandedCategory.slug, sub.slug)}
+                  >
+                    {sub.name}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>

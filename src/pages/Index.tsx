@@ -126,25 +126,83 @@ const Index = () => {
 
     // Filter by category if not "all"
     if (activeCategory !== "all") {
+      // Check if it's a subcategory (format: category/subcategory)
+      const [mainCategory, subCategory] = activeCategory.split("/");
+      
       const categoryMap: Record<string, string[]> = {
-        wiadomosci: ["Wiadomości", "Polska", "News"],
-        biznes: ["Biznes", "Finanse", "Ekonomia"],
-        sport: ["Sport", "Piłka nożna", "Koszykówka"],
-        technologia: ["Technologia", "Tech", "IT"],
-        lifestyle: ["Lifestyle", "Moda", "Uroda"],
-        rozrywka: ["Rozrywka", "Film", "Muzyka"],
-        zdrowie: ["Zdrowie", "Medycyna"],
-        nauka: ["Nauka", "Edukacja"],
-        motoryzacja: ["Motoryzacja", "Auto"],
-        podroze: ["Podróże", "Turystyka"],
-        kultura: ["Kultura", "Sztuka"],
-        polityka: ["Polityka"],
-        swiat: ["Świat", "Zagranica"],
+        wiadomosci: ["Wiadomości", "Polska", "News", "Polityka", "Społeczeństwo"],
+        biznes: ["Biznes", "Finanse", "Ekonomia", "Giełda", "Gospodarka", "Money"],
+        sport: ["Sport", "Piłka nożna", "Koszykówka", "Siatkówka", "Tenis", "F1", "MMA", "Sportowe"],
+        technologia: ["Technologia", "Tech", "IT", "AI", "Gaming", "Smartfon", "Chip"],
+        lifestyle: ["Lifestyle", "Moda", "Uroda", "Dom", "Podróże"],
+        rozrywka: ["Rozrywka", "Film", "Muzyka", "Seriale", "Gwiazdy", "TV"],
+        zdrowie: ["Zdrowie", "Medycyna", "Dieta", "Fitness"],
+        nauka: ["Nauka", "Edukacja", "Kosmos", "Historia", "Odkrycia"],
+        motoryzacja: ["Motoryzacja", "Auto", "Samochód"],
+        kultura: ["Kultura", "Sztuka", "Teatr", "Literatura"],
       };
-      const categoryNames = categoryMap[activeCategory] || [];
-      articles = articles.filter(a => 
-        categoryNames.some(cat => a.category?.toLowerCase().includes(cat.toLowerCase()))
-      );
+
+      const subcategoryMap: Record<string, string[]> = {
+        // Wiadomości
+        "wiadomosci/polska": ["Polska"],
+        "wiadomosci/swiat": ["Świat", "Zagranica"],
+        "wiadomosci/polityka": ["Polityka"],
+        "wiadomosci/spoleczenstwo": ["Społeczeństwo"],
+        // Sport
+        "sport/pilka-nozna": ["Piłka nożna", "Ekstraklasa", "Liga", "UEFA", "Lech", "Legia"],
+        "sport/koszykowka": ["Koszykówka", "NBA", "Euroliga"],
+        "sport/siatkowka": ["Siatkówka", "PlusLiga"],
+        "sport/tenis": ["Tenis", "ATP", "WTA"],
+        "sport/sporty-motorowe": ["F1", "MotoGP", "Rajdy", "Żużel"],
+        "sport/sporty-walki": ["MMA", "UFC", "KSW", "Boks"],
+        "sport/e-sport": ["E-sport", "CS2", "League of Legends", "Valorant"],
+        // Biznes
+        "biznes/finanse-osobiste": ["Finanse osobiste", "Oszczędności"],
+        "biznes/gielda": ["Giełda", "GPW", "Akcje", "Inwestycje"],
+        "biznes/nieruchomosci": ["Nieruchomości", "Mieszkania"],
+        "biznes/gospodarka": ["Gospodarka", "PKB", "Inflacja"],
+        "biznes/kryptowaluty": ["Kryptowaluty", "Bitcoin", "Crypto"],
+        // Technologia
+        "technologia/smartfony": ["Smartfon", "iPhone", "Samsung", "Telefon"],
+        "technologia/gaming": ["Gaming", "Gry", "PlayStation", "Xbox", "PC"],
+        "technologia/ai": ["AI", "Sztuczna inteligencja", "ChatGPT", "GPT"],
+        "technologia/cyberbezpieczenstwo": ["Cyberbezpieczeństwo", "Haker", "Bezpieczeństwo"],
+        // Lifestyle
+        "lifestyle/moda": ["Moda", "Fashion"],
+        "lifestyle/podroze": ["Podróże", "Turystyka", "Wakacje"],
+        "lifestyle/gotowanie": ["Gotowanie", "Przepisy", "Kuchnia"],
+        // Rozrywka
+        "rozrywka/film": ["Film", "Kino", "Netflix"],
+        "rozrywka/muzyka": ["Muzyka", "Koncert", "Album"],
+        "rozrywka/seriale": ["Serial", "HBO", "Netflix"],
+        "rozrywka/gwiazdy": ["Gwiazdy", "Celebryci"],
+        // Zdrowie
+        "zdrowie/dieta": ["Dieta", "Odżywianie", "Odchudzanie"],
+        "zdrowie/fitness": ["Fitness", "Trening", "Ćwiczenia"],
+        // Nauka
+        "nauka/kosmos": ["Kosmos", "Astronomia", "NASA", "Kometa", "Gwiazda"],
+        "nauka/historia": ["Historia"],
+        "nauka/ekologia": ["Ekologia", "Klimat", "Środowisko"],
+      };
+
+      let categoryNames: string[] = [];
+      
+      if (subCategory) {
+        // Use subcategory filter
+        categoryNames = subcategoryMap[activeCategory] || [];
+      } else {
+        // Use main category filter
+        categoryNames = categoryMap[mainCategory] || [];
+      }
+      
+      if (categoryNames.length > 0) {
+        articles = articles.filter(a => 
+          categoryNames.some(cat => 
+            a.category?.toLowerCase().includes(cat.toLowerCase()) ||
+            a.title?.toLowerCase().includes(cat.toLowerCase())
+          )
+        );
+      }
     }
 
     return articles;
