@@ -176,14 +176,6 @@ const Article = () => {
                   <Clock className="h-4 w-4" />
                   <span>{(article as any).timestamp || "Dzisiaj"}</span>
                 </div>
-                
-                {/* Source */}
-                <div className="flex items-center gap-1.5 bg-primary/10 px-3 py-1 rounded-full">
-                  <ExternalLink className="h-3.5 w-3.5 text-primary" />
-                  <span className="font-medium text-primary">
-                    Źródło: {source}
-                  </span>
-                </div>
               </div>
             </header>
 
