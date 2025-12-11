@@ -214,7 +214,7 @@ export function NewsCard({
                 <span className="text-[10px] font-bold text-white">{getSourceInitials(source)}</span>
               </div>
               <span className="text-sm text-white/90 font-medium">{source}</span>
-              <span className="text-sm text-primary-foreground/80 font-medium bg-primary/30 px-2 py-0.5 rounded">{category}</span>
+              <span className="text-sm font-semibold bg-white/20 backdrop-blur-sm text-white px-2.5 py-1 rounded-full border border-white/30">{category}</span>
               <span className="text-sm text-white/60">· {timestamp}</span>
             </div>
             
@@ -259,7 +259,7 @@ export function NewsCard({
                 <span className="text-[8px] font-bold text-white">{getSourceInitials(source)}</span>
               </div>
               <span className="text-[10px] text-white/80 font-medium">{source}</span>
-              <span className="text-[10px] text-primary-foreground/80 font-medium bg-primary/30 px-1.5 py-0.5 rounded text-[9px]">{category}</span>
+              <span className="text-[9px] font-semibold bg-white/20 backdrop-blur-sm text-white px-1.5 py-0.5 rounded-full border border-white/30">{category}</span>
               <span className="text-[10px] text-white/60">· {timestamp}</span>
             </div>
             <h4 className="font-semibold text-xs text-white line-clamp-2 leading-tight">
@@ -311,7 +311,7 @@ export function NewsCard({
               <span className="text-[9px] sm:text-[10px] font-bold text-white">{getSourceInitials(source)}</span>
             </div>
             <span className="text-[11px] sm:text-xs text-white/90 font-medium">{source}</span>
-            <span className="text-[10px] sm:text-[11px] text-primary-foreground/90 font-medium bg-primary/40 px-1.5 py-0.5 rounded">{category}</span>
+            <span className="text-[10px] sm:text-[11px] font-semibold bg-white/20 backdrop-blur-sm text-white px-2 py-0.5 rounded-full border border-white/30">{category}</span>
             <span className="text-[11px] sm:text-xs text-white/60">· {timestamp}</span>
           </div>
           
