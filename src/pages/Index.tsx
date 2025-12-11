@@ -37,7 +37,9 @@ const Index = () => {
   } = useDisplayMode();
   const {
     articles: dbArticles,
-    loading: dbLoading
+    loading: dbLoading,
+    refetch: refetchDB,
+    lastUpdated: dbLastUpdated
   } = useArticles({
     limit: 100
   });
@@ -45,8 +47,18 @@ const Index = () => {
     articles: rssArticles,
     loading: rssLoading,
     refetch: refetchRSS,
-    lastUpdated
+    lastUpdated: rssLastUpdated
   } = useRSSArticles();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    refetchRSS();
+    refetchDB();
+    setTimeout(() => setIsRefreshing(false), 1000);
+  };
+
+  const lastUpdated = rssLastUpdated || dbLastUpdated;
   const {
     user
   } = useAuth();
@@ -267,7 +279,21 @@ const Index = () => {
       <main className="container py-4 sm:py-6">
         {/* RSS status and refresh */}
         <div className="mb-4 flex items-center justify-end flex-wrap gap-2">
-          
+          {lastUpdated && (
+            <span className="text-xs text-muted-foreground">
+              Ostatnia aktualizacja: {lastUpdated.toLocaleTimeString("pl-PL")}
+            </span>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isRefreshing || rssLoading || dbLoading}
+            className="gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+            Odśwież
+          </Button>
         </div>
 
         {/* Main Content - Ad + 4x3 Grid pattern */}
