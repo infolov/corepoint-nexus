@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserSettings } from "@/hooks/use-user-settings";
 
@@ -20,15 +20,19 @@ interface UseArticlesOptions {
   limit?: number;
 }
 
+const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
+
 export function useArticles(options: UseArticlesOptions = {}) {
   const { category, limit = 20 } = options;
   const { settings, loading: settingsLoading } = useUserSettings();
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const fetchArticles = useCallback(async () => {
-    setLoading(true);
+  const fetchArticles = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     setError(null);
 
     try {
@@ -54,6 +58,7 @@ export function useArticles(options: UseArticlesOptions = {}) {
       if (fetchError) throw fetchError;
 
       setArticles(data || []);
+      setLastUpdated(new Date());
     } catch (err) {
       console.error("Error fetching articles:", err);
       setError("Błąd podczas ładowania artykułów");
@@ -65,6 +70,18 @@ export function useArticles(options: UseArticlesOptions = {}) {
   useEffect(() => {
     if (!settingsLoading) {
       fetchArticles();
+
+      // Set up auto-refresh every 5 minutes
+      intervalRef.current = setInterval(() => {
+        console.log("Auto-refreshing database articles...");
+        fetchArticles(false); // Don't show loading spinner for auto-refresh
+      }, REFRESH_INTERVAL);
+
+      return () => {
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+        }
+      };
     }
   }, [fetchArticles, settingsLoading]);
 
@@ -72,7 +89,7 @@ export function useArticles(options: UseArticlesOptions = {}) {
     fetchArticles();
   };
 
-  return { articles, loading: loading || settingsLoading, error, refetch };
+  return { articles, loading: loading || settingsLoading, error, refetch, lastUpdated };
 }
 
 // Helper to format article for NewsCard component
