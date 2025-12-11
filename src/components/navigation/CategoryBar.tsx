@@ -180,6 +180,7 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+  const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
   const isMobile = useIsMobile();
 
   const checkScroll = () => {
@@ -210,13 +211,26 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
     // Click always navigates to the category
     onCategoryChange?.(category.slug);
     setExpandedCategory(null);
+    if (hoverTimeout) clearTimeout(hoverTimeout);
   };
 
   const handleCategoryHover = (categorySlug: string | null) => {
-    setExpandedCategory(categorySlug);
+    if (hoverTimeout) clearTimeout(hoverTimeout);
+    
+    if (categorySlug) {
+      // Immediately show on hover
+      setExpandedCategory(categorySlug);
+    } else {
+      // Delay hiding to allow moving to panel
+      const timeout = setTimeout(() => {
+        setExpandedCategory(null);
+      }, 150);
+      setHoverTimeout(timeout);
+    }
   };
 
   const handleSubcategoryClick = (categorySlug: string, subcategorySlug?: string) => {
+    if (hoverTimeout) clearTimeout(hoverTimeout);
     if (subcategorySlug) {
       onCategoryChange?.(`${categorySlug}/${subcategorySlug}`);
     } else {
@@ -292,7 +306,10 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
       {currentExpandedCategory && currentExpandedCategory.subcategories.length > 0 && (
         <div 
           className="border-t border-border/50 bg-muted/30 animate-fade-in"
-          onMouseEnter={() => handleCategoryHover(currentExpandedCategory.slug)}
+          onMouseEnter={() => {
+            if (hoverTimeout) clearTimeout(hoverTimeout);
+            setExpandedCategory(currentExpandedCategory.slug);
+          }}
           onMouseLeave={() => handleCategoryHover(null)}
         >
           <div className="container py-3">
