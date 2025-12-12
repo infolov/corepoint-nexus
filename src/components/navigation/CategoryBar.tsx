@@ -288,51 +288,6 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
                 )}
               </button>
 
-              {/* Flyout dropdown menu */}
-              {expandedCategory === category.slug && category.subcategories.length > 0 && (
-                <div 
-                  className="absolute top-full left-0 mt-1 w-56 bg-background border border-border rounded-lg shadow-lg z-50 py-2 max-h-[60vh] overflow-y-auto animate-fade-in"
-                  onMouseEnter={() => {
-                    if (hoverTimeout) clearTimeout(hoverTimeout);
-                    setExpandedCategory(category.slug);
-                  }}
-                  onMouseLeave={() => handleCategoryHover(null)}
-                >
-                  {/* All category link */}
-                  <button
-                    className={cn(
-                      "w-full px-3 py-2 text-sm font-semibold text-left hover:bg-muted transition-colors",
-                      activeCategory === category.slug
-                        ? "bg-primary/10 text-primary"
-                        : "text-foreground"
-                    )}
-                    onClick={() => handleSubcategoryClick(category.slug)}
-                  >
-                    Wszystkie {category.name}
-                  </button>
-                  
-                  <div className="h-px bg-border my-1" />
-                  
-                  {category.subcategories.map((sub) => {
-                    const fullSlug = `${category.slug}/${sub.slug}`;
-                    const isActive = activeCategory === fullSlug;
-                    return (
-                      <button
-                        key={sub.slug}
-                        className={cn(
-                          "w-full px-3 py-2 text-sm text-left hover:bg-muted transition-colors",
-                          isActive
-                            ? "bg-primary/10 text-primary font-medium"
-                            : "text-foreground"
-                        )}
-                        onClick={() => handleSubcategoryClick(category.slug, sub.slug)}
-                      >
-                        {sub.name}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
             </div>
           ))}
         </div>
@@ -347,6 +302,52 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
           </button>
         )}
       </div>
+
+      {/* Subcategories panel - expands below */}
+      {currentExpandedCategory && currentExpandedCategory.subcategories.length > 0 && (
+        <div 
+          className="border-t border-border/50 bg-muted/30 animate-fade-in"
+          onMouseEnter={() => {
+            if (hoverTimeout) clearTimeout(hoverTimeout);
+            setExpandedCategory(currentExpandedCategory.slug);
+          }}
+          onMouseLeave={() => handleCategoryHover(null)}
+        >
+          <div className="container py-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                className={cn(
+                  "px-3 py-1.5 rounded-full text-sm font-medium transition-colors",
+                  activeCategory === currentExpandedCategory.slug
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-background hover:bg-muted text-foreground border border-border"
+                )}
+                onClick={() => handleSubcategoryClick(currentExpandedCategory.slug)}
+              >
+                Wszystkie
+              </button>
+              {currentExpandedCategory.subcategories.map((sub) => {
+                const fullSlug = `${currentExpandedCategory.slug}/${sub.slug}`;
+                const isActive = activeCategory === fullSlug;
+                return (
+                  <button
+                    key={sub.slug}
+                    className={cn(
+                      "px-3 py-1.5 rounded-full text-sm transition-colors",
+                      isActive
+                        ? "bg-primary text-primary-foreground font-medium"
+                        : "bg-background hover:bg-muted text-muted-foreground hover:text-foreground border border-border"
+                    )}
+                    onClick={() => handleSubcategoryClick(currentExpandedCategory.slug, sub.slug)}
+                  >
+                    {sub.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
