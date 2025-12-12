@@ -2,11 +2,18 @@ import { useState, useEffect } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { X, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { DisplaySettings } from "./DisplaySettings";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
 
 interface SettingsPanelProps {
   isOpen: boolean;
@@ -143,35 +150,20 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
     onClose();
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      
-      {/* Panel */}
-      <div className="relative bg-card rounded-xl shadow-xl max-w-lg w-full mx-4 max-h-[80vh] overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-border">
-          <div>
-            <h2 className="text-xl font-bold">Ustawienia</h2>
-            {!user && (
-              <p className="text-xs text-muted-foreground mt-1">
-                Zaloguj się, aby zapisać ustawienia na koncie
-              </p>
-            )}
-          </div>
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="h-5 w-5" />
-          </Button>
-        </div>
+    <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle className="text-xl font-bold">Ustawienia</SheetTitle>
+          {!user && (
+            <SheetDescription>
+              Zaloguj się, aby zapisać ustawienia na koncie
+            </SheetDescription>
+          )}
+        </SheetHeader>
 
         {/* Content */}
-        <div className="p-4 overflow-y-auto max-h-[60vh]">
+        <div className="py-6">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -233,7 +225,7 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-border flex justify-end gap-2">
+        <div className="pt-4 border-t border-border flex justify-end gap-2">
           <Button variant="outline" onClick={onClose}>
             Anuluj
           </Button>
@@ -248,7 +240,7 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
             )}
           </Button>
         </div>
-      </div>
-    </div>
+      </SheetContent>
+    </Sheet>
   );
 }
