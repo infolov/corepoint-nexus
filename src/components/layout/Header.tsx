@@ -193,22 +193,6 @@ export function Header() {
                     </Button>
                   </div>
                 </div>
-
-                {/* Categories */}
-                <div>
-                  <h3 className="text-sm font-semibold text-muted-foreground mb-3">Kategorie</h3>
-                  <nav className="flex flex-col gap-1">
-                    {categories.map((cat) => (
-                      <Link
-                        key={cat.name}
-                        to={`/${cat.slug}`}
-                        className="px-3 py-3 text-senior-sm font-medium rounded-lg hover:bg-muted transition-colors"
-                      >
-                        {cat.name}
-                      </Link>
-                    ))}
-                  </nav>
-                </div>
               </div>
               </SheetContent>
             </Sheet>
