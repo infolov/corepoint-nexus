@@ -37,7 +37,7 @@ export function Header() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { settings: displaySettings, toggleDataSaver } = useDisplayMode();
-  const { data: weatherData, isLoading: weatherLoading } = useWeather("12375"); // Warszawa
+  const { data: weatherData, isLoading: weatherLoading } = useWeather("12500"); // Jelenia Góra
 
   const handleSignOut = async () => {
     await signOut();
