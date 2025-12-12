@@ -7,10 +7,10 @@ import { AdBanner } from "@/components/widgets/AdBanner";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import { useDisplayMode } from "@/hooks/use-display-mode";
 import { useAuth } from "@/hooks/use-auth";
-import { Loader2, RefreshCw } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useArticles, formatArticleForCard } from "@/hooks/use-articles";
 import { useRSSArticles, formatRSSArticleForCard } from "@/hooks/use-rss-articles";
-import { Button } from "@/components/ui/button";
+
 import { supabase } from "@/integrations/supabase/client";
 import { newsArticles, businessArticles, sportArticles, techArticles, lifestyleArticles } from "@/data/mockNews";
 
@@ -49,16 +49,6 @@ const Index = () => {
     refetch: refetchRSS,
     lastUpdated: rssLastUpdated
   } = useRSSArticles();
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    refetchRSS();
-    refetchDB();
-    setTimeout(() => setIsRefreshing(false), 1000);
-  };
-
-  const lastUpdated = rssLastUpdated || dbLastUpdated;
   const {
     user
   } = useAuth();
@@ -277,24 +267,6 @@ const Index = () => {
       <CategoryBar activeCategory={activeCategory} onCategoryChange={setActiveCategory} />
 
       <main className="container py-4 sm:py-6">
-        {/* RSS status and refresh */}
-        <div className="mb-4 flex items-center justify-end flex-wrap gap-2">
-          {lastUpdated && (
-            <span className="text-xs text-muted-foreground">
-              Ostatnia aktualizacja: {lastUpdated.toLocaleTimeString("pl-PL")}
-            </span>
-          )}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={isRefreshing || rssLoading || dbLoading}
-            className="gap-2"
-          >
-            <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
-            Odśwież
-          </Button>
-        </div>
 
         {/* Main Content - Ad + 4x3 Grid pattern */}
         <div className="space-y-6 sm:space-y-8">
