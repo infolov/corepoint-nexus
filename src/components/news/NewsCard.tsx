@@ -193,11 +193,11 @@ export function NewsCard({
             
             <div className="flex items-center gap-2 mb-3">
               <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center shadow-lg", getSourceColor(source))}>
-                <span className="text-[10px] font-bold text-white">{getSourceInitials(source)}</span>
+                <span className="text-[10px] font-bold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">{getSourceInitials(source)}</span>
               </div>
-              <span className="text-sm text-white/90 font-medium">{source}</span>
-              <span className="text-sm font-semibold bg-white/20 backdrop-blur-sm text-white px-2.5 py-1 rounded-full border border-white/30">{category}</span>
-              <span className="text-sm text-white/60">· {timestamp}</span>
+              <span className="text-sm text-white/90 font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">{source}</span>
+              <span className="text-sm font-semibold bg-white/20 backdrop-blur-sm text-white px-2.5 py-1 rounded-full border border-white/30 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">{category}</span>
+              <span className="text-sm text-white/60 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">· {timestamp}</span>
             </div>
             
             <h3 className="font-bold text-xl md:text-2xl text-white line-clamp-3 leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
@@ -235,11 +235,11 @@ export function NewsCard({
           <div className="absolute inset-x-0 bottom-0 p-2.5">
             <div className="flex items-center gap-1.5 mb-1">
               <div className={cn("w-4 h-4 rounded flex items-center justify-center", getSourceColor(source))}>
-                <span className="text-[8px] font-bold text-white">{getSourceInitials(source)}</span>
+                <span className="text-[8px] font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">{getSourceInitials(source)}</span>
               </div>
-              <span className="text-[10px] text-white/80 font-medium">{source}</span>
-              <span className="text-[9px] font-semibold bg-white/20 backdrop-blur-sm text-white px-1.5 py-0.5 rounded-full border border-white/30">{category}</span>
-              <span className="text-[10px] text-white/60">· {timestamp}</span>
+              <span className="text-[10px] text-white/80 font-medium drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">{source}</span>
+              <span className="text-[9px] font-semibold bg-white/20 backdrop-blur-sm text-white px-1.5 py-0.5 rounded-full border border-white/30 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">{category}</span>
+              <span className="text-[10px] text-white/60 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">· {timestamp}</span>
             </div>
             <h4 className="font-semibold text-xs text-white line-clamp-2 leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
               {title}
@@ -283,11 +283,11 @@ export function NewsCard({
         <div className="absolute inset-x-0 bottom-0 p-3 sm:p-4">
           <div className="flex items-center gap-1.5 sm:gap-2 mb-2 flex-wrap">
             <div className={cn("w-5 h-5 sm:w-6 sm:h-6 rounded-md flex items-center justify-center shadow", getSourceColor(source))}>
-              <span className="text-[9px] sm:text-[10px] font-bold text-white">{getSourceInitials(source)}</span>
+              <span className="text-[9px] sm:text-[10px] font-bold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">{getSourceInitials(source)}</span>
             </div>
-            <span className="text-[11px] sm:text-xs text-white/90 font-medium">{source}</span>
-            <span className="text-[10px] sm:text-[11px] font-semibold bg-white/20 backdrop-blur-sm text-white px-2 py-0.5 rounded-full border border-white/30">{category}</span>
-            <span className="text-[11px] sm:text-xs text-white/60">· {timestamp}</span>
+            <span className="text-[11px] sm:text-xs text-white/90 font-medium drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">{source}</span>
+            <span className="text-[10px] sm:text-[11px] font-semibold bg-white/20 backdrop-blur-sm text-white px-2 py-0.5 rounded-full border border-white/30 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">{category}</span>
+            <span className="text-[11px] sm:text-xs text-white/60 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">· {timestamp}</span>
           </div>
           
           <h3 className="font-semibold text-sm sm:text-base text-white line-clamp-2 leading-snug drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
