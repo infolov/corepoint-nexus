@@ -243,9 +243,6 @@ const Article = () => {
 
             {/* Article Content */}
             <div className="prose prose-lg max-w-none dark:prose-invert">
-              <h2 className="text-xl font-bold mt-4 mb-4 text-foreground">
-                Treść artykułu
-              </h2>
               {content ? (
                 content.split('\n\n').map((paragraph, index) => {
                   if (paragraph.startsWith('## ')) {
