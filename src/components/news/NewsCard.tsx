@@ -1,6 +1,14 @@
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { Play } from "lucide-react";
+import { Play, Plus, Ban, Star, Share2, HelpCircle, Flag } from "lucide-react";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
+import { toast } from "sonner";
 
 // Fallback image for broken images
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=800&h=500&fit=crop";
@@ -82,9 +90,80 @@ export function NewsCard({
   // Generate article URL - opens in new tab
   const articleUrl = id ? `/artykul/${id}` : "#";
 
+  // Context menu handlers
+  const handleFollow = () => {
+    toast.success(`Obserwujesz ${source}`);
+  };
+
+  const handleBlock = () => {
+    toast.success(`Zablokowano ${source}`);
+  };
+
+  const handleManageInterests = () => {
+    toast.info("Zarządzanie zainteresowaniami będzie dostępne wkrótce");
+  };
+
+  const handleShare = async () => {
+    const url = window.location.origin + articleUrl;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, url });
+      } catch {
+        // User cancelled
+      }
+    } else {
+      await navigator.clipboard.writeText(url);
+      toast.success("Link skopiowany do schowka");
+    }
+  };
+
+  const handleWhySeeing = () => {
+    toast.info(`Widzisz to na podstawie kategorii: ${category}`);
+  };
+
+  const handleReport = () => {
+    toast.success("Dziękujemy za zgłoszenie problemu");
+  };
+
+  // Render context menu wrapper
+  const renderWithContextMenu = (content: React.ReactNode) => (
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        {content}
+      </ContextMenuTrigger>
+      <ContextMenuContent className="w-56 bg-popover/95 backdrop-blur-md border-border">
+        <ContextMenuItem onClick={handleFollow} className="gap-3 cursor-pointer">
+          <Plus className="w-4 h-4" />
+          <span>Obserwuj {source}</span>
+        </ContextMenuItem>
+        <ContextMenuItem onClick={handleBlock} className="gap-3 cursor-pointer">
+          <Ban className="w-4 h-4" />
+          <span>Zablokuj {source}</span>
+        </ContextMenuItem>
+        <ContextMenuItem onClick={handleManageInterests} className="gap-3 cursor-pointer">
+          <Star className="w-4 h-4" />
+          <span>Zarządzaj zainteresowaniami</span>
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem onClick={handleShare} className="gap-3 cursor-pointer">
+          <Share2 className="w-4 h-4" />
+          <span>Udostępnij</span>
+        </ContextMenuItem>
+        <ContextMenuItem onClick={handleWhySeeing} className="gap-3 cursor-pointer">
+          <HelpCircle className="w-4 h-4" />
+          <span>Dlaczego to widzę?</span>
+        </ContextMenuItem>
+        <ContextMenuItem onClick={handleReport} className="gap-3 cursor-pointer">
+          <Flag className="w-4 h-4" />
+          <span>Zgłoś problem</span>
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
+  );
+
   // MSN-style compact list item (for sidebar/data saver)
   if (variant === "compact") {
-    return (
+    return renderWithContextMenu(
       <a href={articleUrl} target="_blank" rel="noopener noreferrer" className="block">
         <article className={cn(
           "group flex gap-3 py-3 px-3 -mx-3",
@@ -124,7 +203,7 @@ export function NewsCard({
 
   // MSN-style horizontal card
   if (variant === "horizontal") {
-    return (
+    return renderWithContextMenu(
       <a href={articleUrl} target="_blank" rel="noopener noreferrer" className="block">
         <article className={cn(
           "group flex gap-4 p-2 -m-2 rounded-xl",
@@ -163,7 +242,7 @@ export function NewsCard({
 
   // MSN-style hero card (large featured card)
   if (variant === "hero") {
-    return (
+    return renderWithContextMenu(
       <a href={articleUrl} target="_blank" rel="noopener noreferrer" className="block h-full">
         <article className={cn(
           "group relative overflow-hidden",
@@ -211,7 +290,7 @@ export function NewsCard({
 
   // MSN-style slot card (for slots 2-5 in sidebar)
   if (variant === "msn-slot") {
-    return (
+    return renderWithContextMenu(
       <a href={articleUrl} target="_blank" rel="noopener noreferrer" className="block">
         <article className={cn(
           "group rounded-xl overflow-hidden relative",
@@ -251,7 +330,7 @@ export function NewsCard({
   }
 
   // MSN-style default card (grid item) - 16:9 aspect ratio with proper height
-  return (
+  return renderWithContextMenu(
     <a href={articleUrl} target="_blank" rel="noopener noreferrer" className="block">
       <article className={cn(
         "group rounded-xl overflow-hidden relative",
