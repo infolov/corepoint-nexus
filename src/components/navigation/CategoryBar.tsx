@@ -314,7 +314,7 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
           onMouseLeave={() => handleCategoryHover(null)}
         >
           <div className="container py-3">
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-col items-start gap-1">
               <button
                 className={cn(
                   "px-3 py-1.5 rounded-full text-sm font-medium transition-colors",
