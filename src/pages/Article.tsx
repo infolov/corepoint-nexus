@@ -309,13 +309,13 @@ const Article = () => {
             {/* Related Articles */}
             {relatedArticles.length > 0 && (
               <div className="mt-8 pt-8 border-t border-border">
-                <h3 className="font-bold text-xl mb-6">Powiązane artykuły</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <h3 className="font-bold text-2xl mb-6">Powiązane artykuły</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   {relatedArticles.map((related) => (
                     <NewsCard
                       key={related.id}
                       {...related}
-                      variant="compact"
+                      variant="default"
                     />
                   ))}
                 </div>
