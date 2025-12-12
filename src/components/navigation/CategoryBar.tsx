@@ -287,6 +287,52 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
                   )} />
                 )}
               </button>
+
+              {/* Flyout dropdown menu */}
+              {expandedCategory === category.slug && category.subcategories.length > 0 && (
+                <div 
+                  className="absolute top-full left-0 mt-1 w-56 bg-background border border-border rounded-lg shadow-lg z-50 py-2 max-h-[60vh] overflow-y-auto animate-fade-in"
+                  onMouseEnter={() => {
+                    if (hoverTimeout) clearTimeout(hoverTimeout);
+                    setExpandedCategory(category.slug);
+                  }}
+                  onMouseLeave={() => handleCategoryHover(null)}
+                >
+                  {/* All category link */}
+                  <button
+                    className={cn(
+                      "w-full px-3 py-2 text-sm font-semibold text-left hover:bg-muted transition-colors",
+                      activeCategory === category.slug
+                        ? "bg-primary/10 text-primary"
+                        : "text-foreground"
+                    )}
+                    onClick={() => handleSubcategoryClick(category.slug)}
+                  >
+                    Wszystkie {category.name}
+                  </button>
+                  
+                  <div className="h-px bg-border my-1" />
+                  
+                  {category.subcategories.map((sub) => {
+                    const fullSlug = `${category.slug}/${sub.slug}`;
+                    const isActive = activeCategory === fullSlug;
+                    return (
+                      <button
+                        key={sub.slug}
+                        className={cn(
+                          "w-full px-3 py-2 text-sm text-left hover:bg-muted transition-colors",
+                          isActive
+                            ? "bg-primary/10 text-primary font-medium"
+                            : "text-foreground"
+                        )}
+                        onClick={() => handleSubcategoryClick(category.slug, sub.slug)}
+                      >
+                        {sub.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -301,66 +347,6 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
           </button>
         )}
       </div>
-
-      {/* Expanded Subcategories Panel */}
-      {currentExpandedCategory && currentExpandedCategory.subcategories.length > 0 && (
-        <div 
-          className="border-t border-border/50 bg-muted/30 animate-fade-in"
-          onMouseEnter={() => {
-            if (hoverTimeout) clearTimeout(hoverTimeout);
-            setExpandedCategory(currentExpandedCategory.slug);
-          }}
-          onMouseLeave={() => handleCategoryHover(null)}
-        >
-          <div className="container py-3">
-            {/* Main category link */}
-            <div className="flex items-center gap-2 mb-3">
-              <button
-                className={cn(
-                  "inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-full transition-colors",
-                  activeCategory === currentExpandedCategory.slug
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-primary/80 text-primary-foreground hover:bg-primary"
-                )}
-                onClick={() => handleSubcategoryClick(currentExpandedCategory.slug)}
-              >
-                Wszystkie {currentExpandedCategory.name}
-              </button>
-              <button
-                onClick={() => setExpandedCategory(null)}
-                className="ml-auto text-xs text-muted-foreground hover:text-foreground"
-              >
-                Zamknij
-              </button>
-            </div>
-            
-            {/* Subcategories grid - responsive */}
-            <div className={cn(
-              "grid gap-2",
-              isMobile ? "grid-cols-2" : "grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6"
-            )}>
-              {currentExpandedCategory.subcategories.map((sub) => {
-                const fullSlug = `${currentExpandedCategory.slug}/${sub.slug}`;
-                const isActive = activeCategory === fullSlug;
-                return (
-                  <button
-                    key={sub.slug}
-                    className={cn(
-                      "px-3 py-2.5 text-sm text-left rounded-lg transition-all",
-                      isActive
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:text-foreground bg-background hover:bg-background/80 border border-border/50 hover:border-primary/30 hover:shadow-sm"
-                    )}
-                    onClick={() => handleSubcategoryClick(currentExpandedCategory.slug, sub.slug)}
-                  >
-                    {sub.name}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
