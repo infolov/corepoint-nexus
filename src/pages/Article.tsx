@@ -5,7 +5,7 @@ import { Footer } from "@/components/layout/Footer";
 import { NewsCard } from "@/components/news/NewsCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Clock, Share2, Bookmark, ExternalLink, Loader2 } from "lucide-react";
+import { ArrowLeft, Clock, Share2, Bookmark, ExternalLink, Loader2, ThumbsUp, ThumbsDown } from "lucide-react";
 import { useRecentlyViewed } from "@/hooks/use-recently-viewed";
 import { ArticleSummary } from "@/components/article/ArticleSummary";
 import { useRSSArticles, formatRSSArticleForCard } from "@/hooks/use-rss-articles";
@@ -165,6 +165,12 @@ const Article = () => {
             {/* Action Buttons */}
             <div className="flex items-center justify-end border-b border-border pb-4 mb-6">
               <div className="flex items-center gap-2">
+                <Button variant="ghost" size="sm">
+                  <ThumbsUp className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="sm">
+                  <ThumbsDown className="h-4 w-4" />
+                </Button>
                 <Button variant="ghost" size="sm">
                   <Bookmark className="h-4 w-4 mr-1" />
                   Zapisz
