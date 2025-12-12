@@ -306,7 +306,7 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
       {/* Subcategories panel - expands below */}
       {currentExpandedCategory && currentExpandedCategory.subcategories.length > 0 && (
         <div 
-          className="border-t border-border/50 bg-muted/30 animate-fade-in"
+          className="border-t border-border/50 bg-muted/30 animate-slide-down"
           onMouseEnter={() => {
             if (hoverTimeout) clearTimeout(hoverTimeout);
             setExpandedCategory(currentExpandedCategory.slug);
