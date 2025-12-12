@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Menu, X, Search, User, Sun, Moon, Settings, CloudSun, LayoutDashboard, LogOut, MapPin } from "lucide-react";
+import { Menu, X, Search, User, Sun, Moon, Settings, CloudSun, LayoutDashboard, LogOut, MapPin, Loader2 } from "lucide-react";
+import { useWeather } from "@/hooks/use-weather";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -36,6 +37,7 @@ export function Header() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { settings: displaySettings, toggleDataSaver } = useDisplayMode();
+  const { data: weatherData, isLoading: weatherLoading } = useWeather("12375"); // Warszawa
 
   const handleSignOut = async () => {
     await signOut();
@@ -140,11 +142,19 @@ export function Header() {
               className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-nav-foreground/80 text-sm hover:bg-nav-foreground/10 rounded-lg transition-colors"
             >
               <CloudSun className="h-5 w-5 text-weather-sunny" />
-              <span className="text-xs text-nav-foreground/60 flex items-center gap-1">
-                <MapPin className="h-3 w-3" />
-                Warszawa
-              </span>
-              <span className="font-semibold">22°C</span>
+              {weatherLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : weatherData ? (
+                <>
+                  <span className="text-xs text-nav-foreground/60 flex items-center gap-1">
+                    <MapPin className="h-3 w-3" />
+                    {weatherData.stacja}
+                  </span>
+                  <span className="font-semibold">{Math.round(parseFloat(weatherData.temperatura))}°C</span>
+                </>
+              ) : (
+                <span className="text-xs text-nav-foreground/60">Brak danych</span>
+              )}
             </Link>
 
             {/* Notifications */}
