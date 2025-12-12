@@ -3,7 +3,24 @@ import { ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-const categoriesWithSubs = [
+interface SubSubCategory {
+  name: string;
+  slug: string;
+}
+
+interface SubCategory {
+  name: string;
+  slug: string;
+  subcategories?: SubSubCategory[];
+}
+
+interface Category {
+  name: string;
+  slug: string;
+  subcategories: SubCategory[];
+}
+
+const categoriesWithSubs: Category[] = [
   { 
     name: "Wszystko", 
     slug: "all",
@@ -13,13 +30,25 @@ const categoriesWithSubs = [
     name: "Wiadomości", 
     slug: "wiadomosci",
     subcategories: [
-      { name: "Polska", slug: "polska" },
-      { name: "Świat", slug: "swiat" },
-      { name: "Polityka", slug: "polityka" },
-      { name: "Społeczeństwo", slug: "spoleczenstwo" },
+      { name: "Polska", slug: "polska", subcategories: [
+        { name: "Polityka krajowa", slug: "polityka-krajowa" },
+        { name: "Samorządy", slug: "samorzady" },
+        { name: "Społeczeństwo", slug: "spoleczenstwo" },
+      ]},
+      { name: "Świat", slug: "swiat", subcategories: [
+        { name: "Europa", slug: "europa" },
+        { name: "USA", slug: "usa" },
+        { name: "Azja", slug: "azja" },
+        { name: "Bliski Wschód", slug: "bliski-wschod" },
+      ]},
+      { name: "Polityka", slug: "polityka", subcategories: [
+        { name: "Sejm", slug: "sejm" },
+        { name: "Senat", slug: "senat" },
+        { name: "Rząd", slug: "rzad" },
+        { name: "Partie polityczne", slug: "partie" },
+      ]},
       { name: "Wypadki i zdarzenia", slug: "wypadki" },
       { name: "Pogoda", slug: "pogoda" },
-      { name: "Samorząd", slug: "samorzad" },
       { name: "Prawo", slug: "prawo" },
       { name: "Edukacja", slug: "edukacja" },
       { name: "Wojsko i obronność", slug: "wojsko" },
@@ -29,43 +58,105 @@ const categoriesWithSubs = [
     name: "Sport", 
     slug: "sport",
     subcategories: [
-      { name: "Piłka nożna", slug: "pilka-nozna" },
-      { name: "Koszykówka", slug: "koszykowka" },
-      { name: "Siatkówka", slug: "siatkowka" },
-      { name: "Tenis", slug: "tenis" },
-      { name: "Sporty motorowe", slug: "sporty-motorowe" },
-      { name: "Sporty walki", slug: "sporty-walki" },
+      { name: "Piłka nożna", slug: "pilka-nozna", subcategories: [
+        { name: "Ekstraklasa", slug: "ekstraklasa" },
+        { name: "Premier League", slug: "premier-league" },
+        { name: "La Liga", slug: "la-liga" },
+        { name: "Serie A", slug: "serie-a" },
+        { name: "Bundesliga", slug: "bundesliga" },
+        { name: "Liga Mistrzów", slug: "liga-mistrzow" },
+        { name: "Reprezentacja Polski", slug: "reprezentacja" },
+        { name: "Transfery", slug: "transfery" },
+      ]},
+      { name: "Koszykówka", slug: "koszykowka", subcategories: [
+        { name: "NBA", slug: "nba" },
+        { name: "Euroliga", slug: "euroliga" },
+        { name: "PLK", slug: "plk" },
+      ]},
+      { name: "Siatkówka", slug: "siatkowka", subcategories: [
+        { name: "PlusLiga", slug: "plusliga" },
+        { name: "Liga Mistrzów", slug: "liga-mistrzow-siatka" },
+        { name: "Reprezentacja", slug: "reprezentacja-siatka" },
+      ]},
+      { name: "Tenis", slug: "tenis", subcategories: [
+        { name: "ATP", slug: "atp" },
+        { name: "WTA", slug: "wta" },
+        { name: "Wielki Szlem", slug: "wielki-szlem" },
+      ]},
+      { name: "Sporty motorowe", slug: "sporty-motorowe", subcategories: [
+        { name: "Formuła 1", slug: "f1" },
+        { name: "MotoGP", slug: "motogp" },
+        { name: "WRC", slug: "wrc" },
+        { name: "Żużel", slug: "zuzel" },
+      ]},
+      { name: "Sporty walki", slug: "sporty-walki", subcategories: [
+        { name: "MMA/UFC", slug: "mma" },
+        { name: "KSW", slug: "ksw" },
+        { name: "Boks", slug: "boks" },
+      ]},
       { name: "Hokej", slug: "hokej" },
       { name: "Lekkoatletyka", slug: "lekkoatletyka" },
-      { name: "Sporty zimowe", slug: "sporty-zimowe" },
-      { name: "E-sport", slug: "e-sport" },
-      { name: "Inne sporty", slug: "inne-sporty" },
+      { name: "Sporty zimowe", slug: "sporty-zimowe", subcategories: [
+        { name: "Skoki narciarskie", slug: "skoki" },
+        { name: "Biegi narciarskie", slug: "biegi" },
+        { name: "Biathlon", slug: "biathlon" },
+      ]},
+      { name: "E-sport", slug: "e-sport", subcategories: [
+        { name: "CS2", slug: "cs2" },
+        { name: "League of Legends", slug: "lol" },
+        { name: "Valorant", slug: "valorant" },
+      ]},
     ]
   },
   { 
     name: "Biznes", 
     slug: "biznes",
     subcategories: [
-      { name: "Finanse osobiste", slug: "finanse-osobiste" },
-      { name: "Giełda i inwestycje", slug: "gielda" },
+      { name: "Finanse osobiste", slug: "finanse-osobiste", subcategories: [
+        { name: "Oszczędzanie", slug: "oszczedzanie" },
+        { name: "Kredyty", slug: "kredyty" },
+        { name: "Lokaty", slug: "lokaty" },
+      ]},
+      { name: "Giełda i inwestycje", slug: "gielda", subcategories: [
+        { name: "GPW", slug: "gpw" },
+        { name: "Wall Street", slug: "wall-street" },
+        { name: "Fundusze", slug: "fundusze" },
+      ]},
       { name: "Nieruchomości", slug: "nieruchomosci" },
       { name: "Praca i kariera", slug: "praca" },
       { name: "Podatki", slug: "podatki" },
       { name: "Firmy i startupy", slug: "firmy" },
       { name: "Gospodarka", slug: "gospodarka" },
       { name: "Bankowość", slug: "bankowosc" },
-      { name: "Ubezpieczenia", slug: "ubezpieczenia" },
-      { name: "Kryptowaluty", slug: "kryptowaluty" },
+      { name: "Kryptowaluty", slug: "kryptowaluty", subcategories: [
+        { name: "Bitcoin", slug: "bitcoin" },
+        { name: "Ethereum", slug: "ethereum" },
+        { name: "Altcoiny", slug: "altcoiny" },
+      ]},
     ]
   },
   { 
     name: "Technologia", 
     slug: "technologia",
     subcategories: [
-      { name: "Smartfony", slug: "smartfony" },
+      { name: "Smartfony", slug: "smartfony", subcategories: [
+        { name: "iPhone", slug: "iphone" },
+        { name: "Samsung", slug: "samsung" },
+        { name: "Xiaomi", slug: "xiaomi" },
+      ]},
       { name: "Komputery i laptopy", slug: "komputery" },
-      { name: "Gaming", slug: "gaming" },
-      { name: "Sztuczna inteligencja", slug: "ai" },
+      { name: "Gaming", slug: "gaming", subcategories: [
+        { name: "PC", slug: "pc" },
+        { name: "PlayStation", slug: "playstation" },
+        { name: "Xbox", slug: "xbox" },
+        { name: "Nintendo", slug: "nintendo" },
+      ]},
+      { name: "Sztuczna inteligencja", slug: "ai", subcategories: [
+        { name: "ChatGPT", slug: "chatgpt" },
+        { name: "Gemini", slug: "gemini" },
+        { name: "Claude", slug: "claude" },
+        { name: "Midjourney", slug: "midjourney" },
+      ]},
       { name: "Internet i social media", slug: "internet" },
       { name: "Recenzje i testy", slug: "recenzje" },
       { name: "Aplikacje", slug: "aplikacje" },
@@ -78,80 +169,115 @@ const categoriesWithSubs = [
     name: "Lifestyle", 
     slug: "lifestyle",
     subcategories: [
-      { name: "Moda", slug: "moda" },
-      { name: "Uroda", slug: "uroda" },
+      { name: "Moda", slug: "moda", subcategories: [
+        { name: "Damska", slug: "damska" },
+        { name: "Męska", slug: "meska" },
+        { name: "Trendy", slug: "trendy" },
+      ]},
+      { name: "Uroda", slug: "uroda", subcategories: [
+        { name: "Makijaż", slug: "makijaz" },
+        { name: "Pielęgnacja", slug: "pielegnacja" },
+        { name: "Fryzury", slug: "fryzury" },
+      ]},
       { name: "Związki i relacje", slug: "zwiazki" },
       { name: "Dom i wnętrza", slug: "dom" },
-      { name: "Gotowanie i przepisy", slug: "gotowanie" },
-      { name: "Podróże", slug: "podroze" },
+      { name: "Gotowanie i przepisy", slug: "gotowanie", subcategories: [
+        { name: "Obiady", slug: "obiady" },
+        { name: "Desery", slug: "desery" },
+        { name: "Fit przepisy", slug: "fit" },
+      ]},
+      { name: "Podróże", slug: "podroze", subcategories: [
+        { name: "Europa", slug: "europa-podroze" },
+        { name: "Egzotyka", slug: "egzotyka" },
+        { name: "Polska", slug: "polska-podroze" },
+      ]},
       { name: "Zakupy", slug: "zakupy" },
       { name: "Ogród", slug: "ogrod" },
       { name: "Zwierzęta", slug: "zwierzeta" },
-      { name: "DIY i rękodzieło", slug: "diy" },
     ]
   },
   { 
     name: "Rozrywka", 
     slug: "rozrywka",
     subcategories: [
-      { name: "Film", slug: "film" },
-      { name: "Muzyka", slug: "muzyka" },
-      { name: "Seriale", slug: "seriale" },
+      { name: "Film", slug: "film", subcategories: [
+        { name: "Premiery", slug: "premiery" },
+        { name: "Recenzje", slug: "recenzje-film" },
+        { name: "Box office", slug: "box-office" },
+      ]},
+      { name: "Muzyka", slug: "muzyka", subcategories: [
+        { name: "Pop", slug: "pop" },
+        { name: "Rock", slug: "rock" },
+        { name: "Hip-hop", slug: "hip-hop" },
+        { name: "Elektroniczna", slug: "elektroniczna" },
+      ]},
+      { name: "Seriale", slug: "seriale", subcategories: [
+        { name: "Netflix", slug: "netflix" },
+        { name: "HBO Max", slug: "hbo" },
+        { name: "Disney+", slug: "disney" },
+      ]},
       { name: "Gwiazdy i celebryci", slug: "gwiazdy" },
       { name: "Telewizja", slug: "tv" },
       { name: "Książki", slug: "ksiazki" },
       { name: "Streaming", slug: "streaming" },
       { name: "Koncerty i wydarzenia", slug: "wydarzenia" },
-      { name: "Memy i viral", slug: "memy" },
-      { name: "Plotki", slug: "plotki" },
     ]
   },
   { 
     name: "Zdrowie", 
     slug: "zdrowie",
     subcategories: [
-      { name: "Dieta i odżywianie", slug: "dieta" },
-      { name: "Fitness i trening", slug: "fitness" },
+      { name: "Dieta i odżywianie", slug: "dieta", subcategories: [
+        { name: "Keto", slug: "keto" },
+        { name: "Weganizm", slug: "weganizm" },
+        { name: "Intermittent fasting", slug: "if" },
+      ]},
+      { name: "Fitness i trening", slug: "fitness", subcategories: [
+        { name: "Siłownia", slug: "silownia" },
+        { name: "Cardio", slug: "cardio" },
+        { name: "Joga", slug: "joga" },
+      ]},
       { name: "Psychologia", slug: "psychologia" },
       { name: "Medycyna", slug: "medycyna" },
       { name: "Ciąża i macierzyństwo", slug: "ciaza" },
       { name: "Zdrowie dziecka", slug: "zdrowie-dziecka" },
-      { name: "Zdrowie seniora", slug: "zdrowie-seniora" },
       { name: "Naturalne metody", slug: "naturalne" },
-      { name: "Seksualność", slug: "seksualnosc" },
-      { name: "Uzależnienia", slug: "uzaleznienia" },
     ]
   },
   { 
     name: "Nauka", 
     slug: "nauka",
     subcategories: [
-      { name: "Kosmos i astronomia", slug: "kosmos" },
+      { name: "Kosmos i astronomia", slug: "kosmos", subcategories: [
+        { name: "NASA", slug: "nasa" },
+        { name: "SpaceX", slug: "spacex" },
+        { name: "Planety", slug: "planety" },
+      ]},
       { name: "Natura i przyroda", slug: "natura" },
       { name: "Historia", slug: "historia" },
       { name: "Odkrycia naukowe", slug: "odkrycia" },
       { name: "Ekologia i klimat", slug: "ekologia" },
       { name: "Archeologia", slug: "archeologia" },
-      { name: "Fizyka", slug: "fizyka" },
-      { name: "Biologia", slug: "biologia" },
-      { name: "Chemia", slug: "chemia" },
-      { name: "Matematyka", slug: "matematyka" },
     ]
   },
   { 
     name: "Motoryzacja", 
     slug: "motoryzacja",
     subcategories: [
-      { name: "Testy samochodów", slug: "testy" },
-      { name: "Nowości motoryzacyjne", slug: "nowosci" },
-      { name: "Porady i poradniki", slug: "porady" },
-      { name: "Samochody elektryczne", slug: "elektryczne" },
+      { name: "Testy samochodów", slug: "testy", subcategories: [
+        { name: "SUV", slug: "suv" },
+        { name: "Sedany", slug: "sedany" },
+        { name: "Hatchbacki", slug: "hatchbacki" },
+      ]},
+      { name: "Samochody elektryczne", slug: "elektryczne", subcategories: [
+        { name: "Tesla", slug: "tesla" },
+        { name: "BYD", slug: "byd" },
+        { name: "Polskie EV", slug: "polskie-ev" },
+      ]},
       { name: "Motocykle", slug: "motocykle" },
-      { name: "Prawo jazdy", slug: "prawo-jazdy" },
-      { name: "Ubezpieczenia OC/AC", slug: "ubezpieczenia-auto" },
+      { name: "Porady", slug: "porady-moto" },
       { name: "Tuning", slug: "tuning" },
       { name: "Klasyki", slug: "klasyki" },
-      { name: "Wypadki drogowe", slug: "wypadki-drogowe" },
     ]
   },
   { 
@@ -163,9 +289,7 @@ const categoriesWithSubs = [
       { name: "Literatura", slug: "literatura" },
       { name: "Muzea i wystawy", slug: "muzea" },
       { name: "Architektura", slug: "architektura" },
-      { name: "Fotografia", slug: "fotografia" },
       { name: "Design", slug: "design" },
-      { name: "Historia kultury", slug: "historia-kultury" },
     ]
   },
 ];
@@ -229,15 +353,20 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
     }
   };
 
-  const handleSubcategoryClick = (categorySlug: string, subcategorySlug?: string) => {
+  const handleSubcategoryClick = (categorySlug: string, subcategorySlug?: string, subSubSlug?: string) => {
     if (hoverTimeout) clearTimeout(hoverTimeout);
-    if (subcategorySlug) {
+    if (subSubSlug && subcategorySlug) {
+      onCategoryChange?.(`${categorySlug}/${subcategorySlug}/${subSubSlug}`);
+    } else if (subcategorySlug) {
       onCategoryChange?.(`${categorySlug}/${subcategorySlug}`);
     } else {
       onCategoryChange?.(categorySlug);
     }
     setExpandedCategory(null);
+    setExpandedSubcategory(null);
   };
+
+  const [expandedSubcategory, setExpandedSubcategory] = useState<string | null>(null);
 
   const currentExpandedCategory = categoriesWithSubs.find(c => c.slug === expandedCategory);
 
@@ -313,35 +442,68 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
           }}
           onMouseLeave={() => handleCategoryHover(null)}
         >
-          <div className="container py-3">
-            <div className="flex flex-col items-start gap-1">
-              <button
-                className={cn(
-                  "px-3 py-1.5 rounded-full text-sm font-medium transition-colors",
-                  activeCategory === currentExpandedCategory.slug
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-background hover:bg-muted text-foreground border border-border"
-                )}
-                onClick={() => handleSubcategoryClick(currentExpandedCategory.slug)}
-              >
-                Wszystkie
-              </button>
+          <div className="container py-4">
+            <div className="flex flex-wrap gap-6">
+              {/* All button */}
+              <div className="flex flex-col gap-1">
+                <button
+                  className={cn(
+                    "px-4 py-2 rounded-lg text-sm font-semibold transition-colors",
+                    activeCategory === currentExpandedCategory.slug
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-background hover:bg-muted text-foreground border border-border"
+                  )}
+                  onClick={() => handleSubcategoryClick(currentExpandedCategory.slug)}
+                >
+                  Wszystkie {currentExpandedCategory.name}
+                </button>
+              </div>
+              
+              {/* Subcategories with their sub-subcategories */}
               {currentExpandedCategory.subcategories.map((sub) => {
                 const fullSlug = `${currentExpandedCategory.slug}/${sub.slug}`;
-                const isActive = activeCategory === fullSlug;
+                const isActive = activeCategory === fullSlug || activeCategory.startsWith(fullSlug + '/');
+                const hasSubSubs = sub.subcategories && sub.subcategories.length > 0;
+                
                 return (
-                  <button
-                    key={sub.slug}
-                    className={cn(
-                      "px-3 py-1.5 rounded-full text-sm transition-colors",
-                      isActive
-                        ? "bg-primary text-primary-foreground font-medium"
-                        : "bg-background hover:bg-muted text-muted-foreground hover:text-foreground border border-border"
+                  <div key={sub.slug} className="flex flex-col gap-1">
+                    <button
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors text-left flex items-center gap-1",
+                        isActive
+                          ? "bg-primary text-primary-foreground"
+                          : "text-foreground hover:text-primary"
+                      )}
+                      onClick={() => handleSubcategoryClick(currentExpandedCategory.slug, sub.slug)}
+                    >
+                      {sub.name}
+                      {hasSubSubs && <ChevronDown className="h-3 w-3" />}
+                    </button>
+                    
+                    {/* Sub-subcategories */}
+                    {hasSubSubs && (
+                      <div className="flex flex-col gap-0.5 pl-2 border-l-2 border-border/50">
+                        {sub.subcategories!.map((subSub) => {
+                          const subSubSlug = `${fullSlug}/${subSub.slug}`;
+                          const isSubSubActive = activeCategory === subSubSlug;
+                          return (
+                            <button
+                              key={subSub.slug}
+                              className={cn(
+                                "px-2 py-1 rounded text-xs transition-colors text-left",
+                                isSubSubActive
+                                  ? "bg-primary/20 text-primary font-medium"
+                                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                              )}
+                              onClick={() => handleSubcategoryClick(currentExpandedCategory.slug, sub.slug, subSub.slug)}
+                            >
+                              {subSub.name}
+                            </button>
+                          );
+                        })}
+                      </div>
                     )}
-                    onClick={() => handleSubcategoryClick(currentExpandedCategory.slug, sub.slug)}
-                  >
-                    {sub.name}
-                  </button>
+                  </div>
                 );
               })}
             </div>
