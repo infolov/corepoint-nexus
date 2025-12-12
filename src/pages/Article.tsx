@@ -1,14 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { NewsCard } from "@/components/news/NewsCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Clock, Share2, Bookmark, ExternalLink, Volume2, VolumeX, Square, Loader2 } from "lucide-react";
+import { ArrowLeft, Clock, Share2, Bookmark, ExternalLink, Loader2 } from "lucide-react";
 import { useRecentlyViewed } from "@/hooks/use-recently-viewed";
 import { ArticleSummary } from "@/components/article/ArticleSummary";
-import { useRSSArticles, formatRSSArticleForCard, RSSArticle } from "@/hooks/use-rss-articles";
+import { useRSSArticles, formatRSSArticleForCard } from "@/hooks/use-rss-articles";
 import {
   newsArticles,
   businessArticles,
@@ -30,9 +30,6 @@ const Article = () => {
   const { id } = useParams<{ id: string }>();
   const { trackArticleView } = useRecentlyViewed();
   const { articles: rssArticles, loading: rssLoading } = useRSSArticles();
-  
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [speechUtterance, setSpeechUtterance] = useState<SpeechSynthesisUtterance | null>(null);
 
   // Find article from RSS or mock data
   const rssArticle = rssArticles.find((a) => a.id === id);
@@ -46,35 +43,6 @@ const Article = () => {
       trackArticleView(id, article.category);
     }
   }, [id, article?.category]);
-
-  // Cleanup speech synthesis on unmount
-  useEffect(() => {
-    return () => {
-      window.speechSynthesis.cancel();
-    };
-  }, []);
-
-  const handlePlayAudio = (text: string) => {
-    if (isPlaying) {
-      window.speechSynthesis.cancel();
-      setIsPlaying(false);
-      return;
-    }
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'pl-PL';
-    utterance.onend = () => setIsPlaying(false);
-    utterance.onerror = () => setIsPlaying(false);
-    
-    setSpeechUtterance(utterance);
-    window.speechSynthesis.speak(utterance);
-    setIsPlaying(true);
-  };
-
-  const handleStopAudio = () => {
-    window.speechSynthesis.cancel();
-    setIsPlaying(false);
-  };
 
   // Show loading while fetching RSS
   if (rssLoading && !mockArticle) {
@@ -187,45 +155,12 @@ const Article = () => {
               />
             </div>
 
-            {/* AI Summary */}
+            {/* AI Summary with Audio Controls */}
             <ArticleSummary 
               title={article.title}
               content={content}
               category={article.category}
             />
-
-            {/* Audio Controls */}
-            {content && (
-              <div className="flex items-center gap-2 mb-6">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => handlePlayAudio(content)}
-                  className="gap-2"
-                >
-                  {isPlaying ? (
-                    <>
-                      <VolumeX className="h-4 w-4" />
-                      Pauza
-                    </>
-                  ) : (
-                    <>
-                      <Volume2 className="h-4 w-4" />
-                      Odsłuchaj artykuł
-                    </>
-                  )}
-                </Button>
-                {isPlaying && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={handleStopAudio}
-                  >
-                    <Square className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-            )}
 
             {/* Action Buttons */}
             <div className="flex items-center justify-end border-b border-border pb-4 mb-6">
@@ -239,33 +174,6 @@ const Article = () => {
                   Udostępnij
                 </Button>
               </div>
-            </div>
-
-            {/* Article Content */}
-            <div className="prose prose-lg max-w-none dark:prose-invert">
-              {content ? (
-                content.split('\n\n').map((paragraph, index) => {
-                  if (paragraph.startsWith('## ')) {
-                    return (
-                      <h2 key={index} className="text-xl font-bold mt-8 mb-4 text-foreground">
-                        {paragraph.replace('## ', '')}
-                      </h2>
-                    );
-                  }
-                  if (paragraph.trim()) {
-                    return (
-                      <p key={index} className="text-foreground/90 leading-relaxed mb-4">
-                        {paragraph}
-                      </p>
-                    );
-                  }
-                  return null;
-                })
-              ) : (
-                <p className="text-muted-foreground italic">
-                  Treść artykułu nie jest dostępna. Odwiedź oryginalny artykuł, aby przeczytać więcej.
-                </p>
-              )}
             </div>
 
             {/* Source Link - After Article Content */}
