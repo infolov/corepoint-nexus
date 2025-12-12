@@ -442,57 +442,59 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
           }}
           onMouseLeave={() => handleCategoryHover(null)}
         >
-          <div className="container py-4">
-            <div className="flex flex-wrap gap-6">
-              {/* All button */}
-              <div className="flex flex-col gap-1">
+          <div className="container py-6">
+            {/* Grid layout for thematic grouping */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+              {/* All button as first column */}
+              <div className="flex flex-col gap-2">
                 <button
                   className={cn(
-                    "px-4 py-2 rounded-lg text-sm font-semibold transition-colors",
+                    "px-4 py-2 rounded-lg text-sm font-bold transition-colors text-left",
                     activeCategory === currentExpandedCategory.slug
                       ? "bg-primary text-primary-foreground"
                       : "bg-background hover:bg-muted text-foreground border border-border"
                   )}
                   onClick={() => handleSubcategoryClick(currentExpandedCategory.slug)}
                 >
-                  Wszystkie {currentExpandedCategory.name}
+                  📌 Wszystko
                 </button>
               </div>
               
-              {/* Subcategories with their sub-subcategories */}
+              {/* Each subcategory as a thematic column */}
               {currentExpandedCategory.subcategories.map((sub) => {
                 const fullSlug = `${currentExpandedCategory.slug}/${sub.slug}`;
                 const isActive = activeCategory === fullSlug || activeCategory.startsWith(fullSlug + '/');
                 const hasSubSubs = sub.subcategories && sub.subcategories.length > 0;
                 
                 return (
-                  <div key={sub.slug} className="flex flex-col gap-1">
+                  <div key={sub.slug} className="flex flex-col gap-1.5">
+                    {/* Main subcategory header */}
                     <button
                       className={cn(
-                        "px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors text-left flex items-center gap-1",
+                        "px-3 py-1.5 rounded-md text-sm font-bold transition-colors text-left border-b-2 border-primary/30 pb-2 mb-1",
                         isActive
-                          ? "bg-primary text-primary-foreground"
+                          ? "text-primary"
                           : "text-foreground hover:text-primary"
                       )}
                       onClick={() => handleSubcategoryClick(currentExpandedCategory.slug, sub.slug)}
                     >
                       {sub.name}
-                      {hasSubSubs && <ChevronDown className="h-3 w-3" />}
                     </button>
                     
-                    {/* Sub-subcategories */}
+                    {/* Sub-subcategories as vertical list */}
                     {hasSubSubs && (
-                      <div className="flex flex-col gap-0.5 pl-2 border-l-2 border-border/50">
+                      <div className="flex flex-col gap-0.5">
                         {sub.subcategories!.map((subSub) => {
-                          const subSubSlug = `${fullSlug}/${subSub.slug}`;
-                          const isSubSubActive = activeCategory === subSubSlug;
+                          const subSubFullSlug = `${currentExpandedCategory.slug}/${sub.slug}/${subSub.slug}`;
+                          const isSubSubActive = activeCategory === subSubFullSlug;
+                          
                           return (
                             <button
                               key={subSub.slug}
                               className={cn(
-                                "px-2 py-1 rounded text-xs transition-colors text-left",
+                                "px-3 py-1 rounded text-xs transition-colors text-left",
                                 isSubSubActive
-                                  ? "bg-primary/20 text-primary font-medium"
+                                  ? "bg-primary/10 text-primary font-medium"
                                   : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                               )}
                               onClick={() => handleSubcategoryClick(currentExpandedCategory.slug, sub.slug, subSub.slug)}
