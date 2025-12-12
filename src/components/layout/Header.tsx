@@ -140,11 +140,11 @@ export function Header() {
               className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-nav-foreground/80 text-sm hover:bg-nav-foreground/10 rounded-lg transition-colors"
             >
               <CloudSun className="h-5 w-5 text-weather-sunny" />
-              <span className="font-semibold">22°C</span>
               <span className="text-xs text-nav-foreground/60 flex items-center gap-1">
                 <MapPin className="h-3 w-3" />
                 Warszawa
               </span>
+              <span className="font-semibold">22°C</span>
             </Link>
 
             {/* Notifications */}
