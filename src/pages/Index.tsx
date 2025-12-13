@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { CategoryBar } from "@/components/navigation/CategoryBar";
@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
 import { useArticles, formatArticleForCard } from "@/hooks/use-articles";
 import { useRSSArticles, formatRSSArticleForCard } from "@/hooks/use-rss-articles";
+import { FloatingRefreshButton } from "@/components/ui/FloatingRefreshButton";
 
 import { supabase } from "@/integrations/supabase/client";
 import { newsArticles, businessArticles, sportArticles, techArticles, lifestyleArticles } from "@/data/mockNews";
@@ -54,6 +55,33 @@ const Index = () => {
   } = useAuth();
   const [userPreferences, setUserPreferences] = useState<string[]>([]);
   const [recentCategories, setRecentCategories] = useState<string[]>([]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Auto-refresh every 5 minutes
+  useEffect(() => {
+    refreshIntervalRef.current = setInterval(() => {
+      console.log("Auto-refreshing articles...");
+      refetchRSS();
+      refetchDB();
+    }, 5 * 60 * 1000);
+
+    return () => {
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+      }
+    };
+  }, [refetchRSS, refetchDB]);
+
+  // Manual refresh handler
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await Promise.all([refetchRSS(), refetchDB()]);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [refetchRSS, refetchDB]);
 
   // Load user preferences for personalization
   useEffect(() => {
@@ -265,6 +293,9 @@ const Index = () => {
       
       {/* Floating Category Bar */}
       <CategoryBar activeCategory={activeCategory} onCategoryChange={setActiveCategory} />
+
+      {/* Floating Refresh Button */}
+      <FloatingRefreshButton onClick={handleRefresh} isLoading={isRefreshing || rssLoading || dbLoading} />
 
       <main className="container py-4 sm:py-6">
 
