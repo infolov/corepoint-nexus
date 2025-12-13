@@ -253,10 +253,12 @@ export function NewsCard({
           <CardImage
             src={image}
             alt={title}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 brightness-125 contrast-105"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 brightness-125 contrast-105 sm:brightness-125 brightness-150"
           />
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 via-50% to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
+        {/* Desktop: gradient from bottom, Mobile: gradient from top */}
+        <div className="hidden sm:block absolute inset-0 bg-gradient-to-t from-black via-black/70 via-50% to-transparent" />
+        <div className="hidden sm:block absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
+        <div className="sm:hidden absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-transparent" />
           
           {hasVideo && (
             <div className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
