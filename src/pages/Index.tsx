@@ -271,15 +271,15 @@ const Index = () => {
         {/* Main Content - Ad + 4x3 Grid pattern */}
         <div className="space-y-6 sm:space-y-8">
           {articleGrids.map((gridArticles, gridIndex) => <div key={`grid-${gridIndex}`}>
-              {/* Ad Banner before each grid */}
-              {!displaySettings.dataSaver && <div className="mb-6 sm:mb-8">
-                  <AdBanner variant="horizontal" className="w-full" />
-                </div>}
-
               {/* 3x4 Article Grid (12 articles) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {gridArticles.map((article, articleIndex) => <NewsCard key={`${article.id}-${gridIndex}-${articleIndex}`} id={article.id} title={article.title} category={article.category} image={article.image} timestamp={article.timestamp} badge={article.badge} source={article.source} sourceUrl={article.sourceUrl} variant="default" />)}
               </div>
+
+              {/* Ad Banner after each grid of 12 articles */}
+              {!displaySettings.dataSaver && <div className="mt-6 sm:mt-8">
+                  <AdBanner variant="horizontal" className="w-full" />
+                </div>}
             </div>)}
 
           {/* Load more trigger - infinite scroll */}
