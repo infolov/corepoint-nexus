@@ -253,10 +253,10 @@ export function NewsCard({
           <CardImage
             src={image}
             alt={title}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 brightness-110"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 brightness-125 contrast-105"
           />
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 via-40% to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 via-50% to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
           
           {hasVideo && (
             <div className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
@@ -280,7 +280,7 @@ export function NewsCard({
               <span className="text-sm text-white/60 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">· {timestamp}</span>
             </div>
             
-            <h3 className="font-bold text-xl md:text-2xl text-white line-clamp-3 leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+            <h3 className="font-medium text-xl md:text-2xl text-white line-clamp-3 leading-tight drop-shadow-[0_3px_6px_rgba(0,0,0,0.9)]">
               {title}
             </h3>
           </div>
@@ -302,10 +302,10 @@ export function NewsCard({
           <CardImage
             src={image}
             alt={title}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 brightness-110"
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 brightness-125 contrast-105"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 via-40% to-transparent" />
-          <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 via-50% to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
           
           {hasVideo && (
             <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
@@ -322,7 +322,7 @@ export function NewsCard({
               <span className="text-[9px] font-semibold bg-white/20 backdrop-blur-sm text-white px-1.5 py-0.5 rounded-full border border-white/30 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">{category}</span>
               <span className="text-[10px] text-white/60 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">· {timestamp}</span>
             </div>
-            <h4 className="font-semibold text-xs text-white line-clamp-2 leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+            <h4 className="font-medium text-xs text-white line-clamp-2 leading-tight drop-shadow-[0_3px_6px_rgba(0,0,0,0.9)]">
               {title}
             </h4>
           </div>
@@ -343,10 +343,10 @@ export function NewsCard({
         <CardImage
           src={image}
           alt={title}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 brightness-110"
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 brightness-125 contrast-105"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 via-40% to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 via-50% to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
         
         {hasVideo && (
           <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
@@ -372,7 +372,7 @@ export function NewsCard({
             <span className="text-[11px] sm:text-xs text-white/60 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">· {timestamp}</span>
           </div>
           
-          <h3 className="font-semibold text-sm sm:text-base text-white line-clamp-2 leading-snug drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+          <h3 className="font-normal text-sm sm:text-base text-white line-clamp-2 leading-snug drop-shadow-[0_3px_6px_rgba(0,0,0,0.9)]">
             {title}
           </h3>
         </div>

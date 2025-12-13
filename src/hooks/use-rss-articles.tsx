@@ -21,6 +21,7 @@ export function useRSSArticles() {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const articlesRef = useRef<RSSArticle[]>([]);
 
   const fetchArticles = useCallback(async (showLoading = true) => {
     if (showLoading) setLoading(true);
@@ -37,7 +38,23 @@ export function useRSSArticles() {
       }
 
       console.log("RSS data received:", data);
-      setArticles(data?.articles || []);
+      const newArticles = data?.articles || [];
+      
+      // Merge new articles with existing ones, preserving order for stability
+      // but adding new articles at the beginning
+      const existingIds = new Set(articlesRef.current.map(a => a.id));
+      const trulyNewArticles = newArticles.filter((a: RSSArticle) => !existingIds.has(a.id));
+      
+      // Update existing articles and add new ones at the start
+      const mergedArticles = [...trulyNewArticles, ...articlesRef.current.filter((existing: RSSArticle) => 
+        newArticles.some((newA: RSSArticle) => newA.id === existing.id)
+      )];
+      
+      // If we have no existing articles, just use the new ones
+      const finalArticles = articlesRef.current.length === 0 ? newArticles : mergedArticles;
+      
+      articlesRef.current = finalArticles;
+      setArticles(finalArticles);
       setLastUpdated(new Date());
     } catch (err) {
       console.error("Error fetching RSS articles:", err);
