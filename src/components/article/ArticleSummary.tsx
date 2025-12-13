@@ -65,6 +65,20 @@ export const ArticleSummary = ({ title, content, category }: ArticleSummaryProps
 
     const utterance = new SpeechSynthesisUtterance(summary);
     utterance.lang = 'pl-PL';
+    utterance.rate = 0.9;
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+    
+    // Find the best Polish voice
+    const voices = window.speechSynthesis.getVoices();
+    const polishVoice = voices.find(v => 
+      v.lang === 'pl-PL' && (v.name.includes('Google') || v.name.includes('Microsoft') || v.name.includes('Paulina') || v.name.includes('Zosia'))
+    ) || voices.find(v => v.lang === 'pl-PL') || voices.find(v => v.lang.startsWith('pl'));
+    
+    if (polishVoice) {
+      utterance.voice = polishVoice;
+    }
+    
     utterance.onend = () => setIsPlaying(false);
     utterance.onerror = () => setIsPlaying(false);
     
