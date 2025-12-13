@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
-import { Sparkles, Loader2, AlertCircle, Volume2, VolumeX, Square } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Sparkles, Loader2, AlertCircle, Volume2, Square, Pause, Play } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface ArticleSummaryProps {
   title: string;
@@ -14,6 +15,9 @@ export const ArticleSummary = ({ title, content, category }: ArticleSummaryProps
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [isLoadingAudio, setIsLoadingAudio] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     const fetchSummary = async () => {
@@ -47,34 +51,83 @@ export const ArticleSummary = ({ title, content, category }: ArticleSummaryProps
     }
   }, [title, content, category]);
 
-  // Cleanup speech synthesis on unmount
+  // Cleanup audio on unmount
   useEffect(() => {
     return () => {
-      window.speechSynthesis.cancel();
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
     };
   }, []);
 
-  const handlePlayAudio = () => {
+  const handlePlayAudio = async () => {
     if (!summary) return;
-    
-    if (isPlaying) {
-      window.speechSynthesis.cancel();
-      setIsPlaying(false);
+
+    // If already playing, pause
+    if (isPlaying && !isPaused && audioRef.current) {
+      audioRef.current.pause();
+      setIsPaused(true);
       return;
     }
 
-    const utterance = new SpeechSynthesisUtterance(summary);
-    utterance.lang = 'pl-PL';
-    utterance.onend = () => setIsPlaying(false);
-    utterance.onerror = () => setIsPlaying(false);
-    
-    window.speechSynthesis.speak(utterance);
-    setIsPlaying(true);
+    // If paused, resume
+    if (isPaused && audioRef.current) {
+      audioRef.current.play();
+      setIsPaused(false);
+      return;
+    }
+
+    // Generate new audio with ElevenLabs
+    setIsLoadingAudio(true);
+    try {
+      const response = await supabase.functions.invoke("elevenlabs-tts", {
+        body: { text: summary },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      // Create blob from response data
+      const audioBlob = new Blob([response.data], { type: "audio/mpeg" });
+      const audioUrl = URL.createObjectURL(audioBlob);
+
+      // Create and play audio
+      const audio = new Audio(audioUrl);
+      audioRef.current = audio;
+
+      audio.onended = () => {
+        setIsPlaying(false);
+        setIsPaused(false);
+        URL.revokeObjectURL(audioUrl);
+      };
+
+      audio.onerror = () => {
+        setIsPlaying(false);
+        setIsPaused(false);
+        toast.error("Błąd podczas odtwarzania audio");
+      };
+
+      await audio.play();
+      setIsPlaying(true);
+      setIsPaused(false);
+    } catch (err) {
+      console.error("Error generating audio:", err);
+      toast.error("Nie udało się wygenerować audio");
+    } finally {
+      setIsLoadingAudio(false);
+    }
   };
 
   const handleStopAudio = () => {
-    window.speechSynthesis.cancel();
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      audioRef.current = null;
+    }
     setIsPlaying(false);
+    setIsPaused(false);
   };
 
   return (
@@ -94,12 +147,23 @@ export const ArticleSummary = ({ title, content, category }: ArticleSummaryProps
               variant="outline" 
               size="sm" 
               onClick={handlePlayAudio}
+              disabled={isLoadingAudio}
               className="gap-2"
             >
-              {isPlaying ? (
+              {isLoadingAudio ? (
                 <>
-                  <VolumeX className="h-4 w-4" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Generowanie...
+                </>
+              ) : isPlaying && !isPaused ? (
+                <>
+                  <Pause className="h-4 w-4" />
                   Pauza
+                </>
+              ) : isPaused ? (
+                <>
+                  <Play className="h-4 w-4" />
+                  Wznów
                 </>
               ) : (
                 <>
