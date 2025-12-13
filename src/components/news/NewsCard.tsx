@@ -255,7 +255,7 @@ export function NewsCard({
             alt={title}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 brightness-110"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 via-40% to-transparent" />
           
           {hasVideo && (
             <div className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
@@ -303,7 +303,7 @@ export function NewsCard({
             alt={title}
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 brightness-110"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 via-40% to-transparent" />
           
           {hasVideo && (
             <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
@@ -343,7 +343,7 @@ export function NewsCard({
           alt={title}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 brightness-110"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 via-40% to-transparent" />
         
         {hasVideo && (
           <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
