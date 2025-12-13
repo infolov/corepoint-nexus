@@ -277,9 +277,9 @@ const Index = () => {
               </div>
 
               {/* Ad Banner after each grid of 12 articles */}
-              {!displaySettings.dataSaver && <div className="mt-6 sm:mt-8">
-                  <AdBanner variant="horizontal" className="w-full" />
-                </div>}
+              <div className="mt-6 sm:mt-8">
+                <AdBanner variant="horizontal" className="w-full" />
+              </div>
             </div>)}
 
           {/* Load more trigger - infinite scroll */}
