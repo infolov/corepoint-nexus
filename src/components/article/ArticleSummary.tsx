@@ -1,7 +1,14 @@
 import { useState, useEffect } from "react";
-import { Sparkles, Loader2, AlertCircle, Volume2, VolumeX, Square } from "lucide-react";
+import { Sparkles, Loader2, AlertCircle, Volume2, VolumeX, Square, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface ArticleSummaryProps {
   title: string;
@@ -9,11 +16,31 @@ interface ArticleSummaryProps {
   category: string;
 }
 
+type VoiceGender = "female" | "male";
+
 export const ArticleSummary = ({ title, content, category }: ArticleSummaryProps) => {
   const [summary, setSummary] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [voiceGender, setVoiceGender] = useState<VoiceGender>("female");
+  const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
+
+  // Load voices
+  useEffect(() => {
+    const loadVoices = () => {
+      const voices = window.speechSynthesis.getVoices();
+      const polishVoices = voices.filter(v => v.lang === 'pl-PL' || v.lang.startsWith('pl'));
+      setAvailableVoices(polishVoices);
+    };
+
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+
+    return () => {
+      window.speechSynthesis.onvoiceschanged = null;
+    };
+  }, []);
 
   useEffect(() => {
     const fetchSummary = async () => {
@@ -54,6 +81,42 @@ export const ArticleSummary = ({ title, content, category }: ArticleSummaryProps
     };
   }, []);
 
+  const getVoiceByGender = (gender: VoiceGender): SpeechSynthesisVoice | undefined => {
+    const voices = window.speechSynthesis.getVoices();
+    
+    // Female voice names commonly used
+    const femaleNames = ['Paulina', 'Zosia', 'Ewa', 'Anna', 'female', 'Female', 'kobieta'];
+    // Male voice names commonly used
+    const maleNames = ['Adam', 'Krzysztof', 'Jacek', 'male', 'Male', 'mężczyzna'];
+    
+    const targetNames = gender === 'female' ? femaleNames : maleNames;
+    
+    // Try to find a Polish voice matching the gender
+    let voice = voices.find(v => 
+      (v.lang === 'pl-PL' || v.lang.startsWith('pl')) && 
+      targetNames.some(name => v.name.toLowerCase().includes(name.toLowerCase()))
+    );
+    
+    // If not found, try Google/Microsoft voices
+    if (!voice) {
+      const prefixes = gender === 'female' 
+        ? ['Google', 'Microsoft Paulina', 'Microsoft Zosia']
+        : ['Microsoft Adam', 'Microsoft Krzysztof'];
+      
+      voice = voices.find(v => 
+        (v.lang === 'pl-PL' || v.lang.startsWith('pl')) && 
+        prefixes.some(prefix => v.name.includes(prefix))
+      );
+    }
+    
+    // Fallback to any Polish voice
+    if (!voice) {
+      voice = voices.find(v => v.lang === 'pl-PL') || voices.find(v => v.lang.startsWith('pl'));
+    }
+    
+    return voice;
+  };
+
   const handlePlayAudio = () => {
     if (!summary) return;
     
@@ -66,17 +129,12 @@ export const ArticleSummary = ({ title, content, category }: ArticleSummaryProps
     const utterance = new SpeechSynthesisUtterance(summary);
     utterance.lang = 'pl-PL';
     utterance.rate = 0.9;
-    utterance.pitch = 1.0;
+    utterance.pitch = voiceGender === 'female' ? 1.1 : 0.9;
     utterance.volume = 1.0;
     
-    // Find the best Polish voice
-    const voices = window.speechSynthesis.getVoices();
-    const polishVoice = voices.find(v => 
-      v.lang === 'pl-PL' && (v.name.includes('Google') || v.name.includes('Microsoft') || v.name.includes('Paulina') || v.name.includes('Zosia'))
-    ) || voices.find(v => v.lang === 'pl-PL') || voices.find(v => v.lang.startsWith('pl'));
-    
-    if (polishVoice) {
-      utterance.voice = polishVoice;
+    const voice = getVoiceByGender(voiceGender);
+    if (voice) {
+      utterance.voice = voice;
     }
     
     utterance.onend = () => setIsPlaying(false);
@@ -104,6 +162,16 @@ export const ArticleSummary = ({ title, content, category }: ArticleSummaryProps
         {/* Audio Controls */}
         {summary && !loading && !error && (
           <div className="flex items-center gap-2">
+            <Select value={voiceGender} onValueChange={(v: VoiceGender) => setVoiceGender(v)}>
+              <SelectTrigger className="w-[120px] h-8 text-xs">
+                <User className="h-3 w-3 mr-1" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="female">Żeński</SelectItem>
+                <SelectItem value="male">Męski</SelectItem>
+              </SelectContent>
+            </Select>
             <Button 
               variant="outline" 
               size="sm" 
