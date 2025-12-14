@@ -4,7 +4,7 @@ import { ChevronRight, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import { useDisplayMode } from "@/hooks/use-display-mode";
-
+import { decodeHTMLEntities } from "@/lib/utils";
 interface NewsSectionProps {
   title: string;
   category: string;
@@ -48,7 +48,7 @@ export function NewsSection({
   return (
     <section className="mb-6 sm:mb-8">
       <div className="flex items-center justify-between mb-3 sm:mb-4">
-        <h2 className="text-lg sm:text-xl font-bold text-foreground text-senior">{title}</h2>
+        <h2 className="text-lg sm:text-xl font-bold text-foreground text-senior">{decodeHTMLEntities(title)}</h2>
         <Link
           to={`/${category}`}
           className="flex items-center gap-1 text-xs sm:text-sm font-medium text-primary hover:underline text-senior-sm"
