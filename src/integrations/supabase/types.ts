@@ -290,6 +290,160 @@ export type Database = {
           },
         ]
       }
+      local_ad_campaigns: {
+        Row: {
+          ad_type: string
+          budget_credits: number
+          clicks: number | null
+          content_text: string | null
+          content_url: string | null
+          cpm_rate: number
+          created_at: string
+          end_date: string
+          id: string
+          impressions: number | null
+          name: string
+          placement_id: string
+          rejection_reason: string | null
+          spent_credits: number | null
+          start_date: string
+          status: string
+          target_regions: Json
+          target_url: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ad_type: string
+          budget_credits: number
+          clicks?: number | null
+          content_text?: string | null
+          content_url?: string | null
+          cpm_rate: number
+          created_at?: string
+          end_date: string
+          id?: string
+          impressions?: number | null
+          name: string
+          placement_id: string
+          rejection_reason?: string | null
+          spent_credits?: number | null
+          start_date: string
+          status?: string
+          target_regions?: Json
+          target_url: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ad_type?: string
+          budget_credits?: number
+          clicks?: number | null
+          content_text?: string | null
+          content_url?: string | null
+          cpm_rate?: number
+          created_at?: string
+          end_date?: string
+          id?: string
+          impressions?: number | null
+          name?: string
+          placement_id?: string
+          rejection_reason?: string | null
+          spent_credits?: number | null
+          start_date?: string
+          status?: string
+          target_regions?: Json
+          target_url?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "local_ad_campaigns_placement_id_fkey"
+            columns: ["placement_id"]
+            isOneToOne: false
+            referencedRelation: "local_ad_placements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      local_ad_placements: {
+        Row: {
+          base_cpm_pln: number
+          created_at: string
+          description: string | null
+          dimensions: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          placement_type: string
+          slug: string
+        }
+        Insert: {
+          base_cpm_pln?: number
+          created_at?: string
+          description?: string | null
+          dimensions?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          placement_type: string
+          slug: string
+        }
+        Update: {
+          base_cpm_pln?: number
+          created_at?: string
+          description?: string | null
+          dimensions?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          placement_type?: string
+          slug?: string
+        }
+        Relationships: []
+      }
+      local_campaign_stats: {
+        Row: {
+          campaign_id: string
+          clicks: number | null
+          created_at: string
+          credits_spent: number | null
+          date: string
+          id: string
+          impressions: number | null
+          region_slug: string
+        }
+        Insert: {
+          campaign_id: string
+          clicks?: number | null
+          created_at?: string
+          credits_spent?: number | null
+          date: string
+          id?: string
+          impressions?: number | null
+          region_slug: string
+        }
+        Update: {
+          campaign_id?: string
+          clicks?: number | null
+          created_at?: string
+          credits_spent?: number | null
+          date?: string
+          id?: string
+          impressions?: number | null
+          region_slug?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "local_campaign_stats_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "local_ad_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -323,6 +477,42 @@ export type Database = {
           phone?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      regional_pricing: {
+        Row: {
+          cpm_multiplier: number
+          created_at: string
+          id: string
+          is_active: boolean | null
+          parent_voivodeship: string | null
+          population_tier: string | null
+          region_name: string
+          region_slug: string
+          region_type: string
+        }
+        Insert: {
+          cpm_multiplier?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          parent_voivodeship?: string | null
+          population_tier?: string | null
+          region_name: string
+          region_slug: string
+          region_type: string
+        }
+        Update: {
+          cpm_multiplier?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          parent_voivodeship?: string | null
+          population_tier?: string | null
+          region_name?: string
+          region_slug?: string
+          region_type?: string
         }
         Relationships: []
       }
