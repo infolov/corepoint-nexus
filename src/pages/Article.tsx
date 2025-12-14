@@ -1,14 +1,22 @@
 import { useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { NewsCard } from "@/components/news/NewsCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Clock, Share2, Bookmark, ExternalLink, Loader2, ThumbsUp, ThumbsDown } from "lucide-react";
+import { ArrowLeft, Clock, Share2, Bookmark, ExternalLink, Loader2, ThumbsUp, ThumbsDown, ChevronRight, Home } from "lucide-react";
 import { useRecentlyViewed } from "@/hooks/use-recently-viewed";
 import { ArticleSummary } from "@/components/article/ArticleSummary";
 import { useRSSArticles, formatRSSArticleForCard } from "@/hooks/use-rss-articles";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import {
   newsArticles,
   businessArticles,
@@ -28,8 +36,18 @@ const allMockArticles = [
 
 const Article = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { trackArticleView } = useRecentlyViewed();
   const { articles: rssArticles, loading: rssLoading } = useRSSArticles();
+
+  // Handle back navigation - go back in history to preserve scroll position
+  const handleGoBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/");
+    }
+  };
 
   // Find article from RSS or mock data
   const rssArticle = rssArticles.find((a) => a.id === id);
@@ -96,22 +114,38 @@ const Article = () => {
     <div className="min-h-screen bg-background">
       <Header />
       
-      <main className="container py-6">
-        {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
-          <Link to="/" className="hover:text-primary transition-colors">
-            Strona główna
-          </Link>
-          <span>/</span>
-          <Link 
-            to={`/${article.category.toLowerCase()}`} 
-            className="hover:text-primary transition-colors"
-          >
-            {article.category}
-          </Link>
-          <span>/</span>
-          <span className="text-foreground truncate max-w-[200px]">{article.title}</span>
-        </nav>
+      <main className="container py-4 md:py-6">
+        {/* Breadcrumb Navigation */}
+        <Breadcrumb className="mb-4 md:mb-6">
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link to="/" className="flex items-center gap-1">
+                  <Home className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Strona główna</span>
+                </Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator>
+              <ChevronRight className="h-3.5 w-3.5" />
+            </BreadcrumbSeparator>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link to={`/${article.category.toLowerCase()}`}>
+                  {article.category}
+                </Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator>
+              <ChevronRight className="h-3.5 w-3.5" />
+            </BreadcrumbSeparator>
+            <BreadcrumbItem>
+              <BreadcrumbPage className="truncate max-w-[150px] sm:max-w-[300px]">
+                {article.title}
+              </BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
 
         <div className="max-w-4xl mx-auto">
           {/* Main Article Content */}
@@ -127,7 +161,7 @@ const Article = () => {
                 <Badge variant="outline">{article.category}</Badge>
               </div>
               
-              <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-4 leading-tight">
+              <h1 className="text-xl md:text-2xl lg:text-3xl font-medium text-foreground mb-4 leading-tight">
                 {article.title}
               </h1>
               
@@ -146,12 +180,12 @@ const Article = () => {
               </div>
             </header>
 
-            {/* Featured Image - smaller */}
-            <div className="relative aspect-[21/9] max-h-[300px] rounded-xl overflow-hidden mb-6">
+            {/* Featured Image - proper sizing and centering */}
+            <div className="relative w-full max-w-3xl mx-auto rounded-xl overflow-hidden mb-6">
               <img
                 src={article.image}
                 alt={article.title}
-                className="w-full h-full object-cover"
+                className="w-full h-auto max-h-[350px] object-contain mx-auto"
               />
             </div>
 
@@ -217,11 +251,24 @@ const Article = () => {
               </div>
             </div>
 
+            {/* Back Button - before related articles */}
+            <div className="mt-8 flex justify-center">
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="gap-2"
+                onClick={handleGoBack}
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Wróć do listy artykułów
+              </Button>
+            </div>
+
             {/* Related Articles */}
             {relatedArticles.length > 0 && (
               <div className="mt-8 pt-8 border-t border-border">
-                <h3 className="font-bold text-2xl mb-6">Powiązane artykuły</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <h3 className="font-semibold text-xl md:text-2xl mb-6">Powiązane artykuły</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                   {relatedArticles.map((related) => (
                     <NewsCard
                       key={related.id}
@@ -233,12 +280,12 @@ const Article = () => {
               </div>
             )}
 
-            {/* Back to Home */}
-            <div className="mt-8">
+            {/* Back to Home - bottom */}
+            <div className="mt-8 text-center">
               <Link to="/">
-                <Button variant="outline" className="gap-2">
-                  <ArrowLeft className="h-4 w-4" />
-                  Wróć do strony głównej
+                <Button variant="ghost" className="gap-2 text-muted-foreground hover:text-foreground">
+                  <Home className="h-4 w-4" />
+                  Strona główna
                 </Button>
               </Link>
             </div>
