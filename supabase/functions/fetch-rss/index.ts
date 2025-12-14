@@ -197,12 +197,9 @@ serve(async (req) => {
     // Sort by publication date (newest first) - deterministic ordering
     allArticles.sort((a, b) => b.pubDateMs - a.pubDateMs);
 
-    // Remove pubDateMs from response (internal use only)
-    const articlesForResponse = allArticles.map(({ pubDateMs, ...rest }) => rest);
+    console.log(`Total articles fetched: ${allArticles.length}`);
 
-    console.log(`Total articles fetched: ${articlesForResponse.length}`);
-
-    return new Response(JSON.stringify({ articles: articlesForResponse }), {
+    return new Response(JSON.stringify({ articles: allArticles }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error: unknown) {
