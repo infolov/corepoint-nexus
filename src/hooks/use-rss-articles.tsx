@@ -12,6 +12,7 @@ export interface RSSArticle {
   sourceUrl: string;
   timestamp: string;
   content: string;
+  pubDateMs?: number; // For sorting by publication date
 }
 
 const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes

@@ -19,14 +19,22 @@ import { newsArticles, businessArticles, sportArticles, techArticles, lifestyleA
 // Combine all mock articles as fallback
 const allMockArticles = [...newsArticles, ...businessArticles, ...sportArticles, ...techArticles, ...lifestyleArticles];
 
-// Shuffle articles for variety
-const shuffleArray = <T,>(array: T[]): T[] => {
-  const shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
+// Sort articles by popularity (view_count) and publication date
+const sortByPopularityAndDate = <T extends { pubDateMs?: number; createdAt?: string; viewCount?: number }>(array: T[]): T[] => {
+  return [...array].sort((a, b) => {
+    // First sort by view count (popularity) - higher views first
+    const viewsA = a.viewCount || 0;
+    const viewsB = b.viewCount || 0;
+    if (viewsB !== viewsA) {
+      return viewsB - viewsA;
+    }
+    
+    // Then sort by date - newer articles first
+    // Use pubDateMs for RSS articles, createdAt for DB articles
+    const dateA = a.pubDateMs || (a.createdAt ? new Date(a.createdAt).getTime() : 0);
+    const dateB = b.pubDateMs || (b.createdAt ? new Date(b.createdAt).getTime() : 0);
+    return dateB - dateA;
+  });
 };
 const ARTICLES_PER_GRID = 12; // 4x3 grid
 const INITIAL_GRIDS = 2;
@@ -130,23 +138,28 @@ const Index = () => {
 
   // Combine RSS articles with DB articles, preferring RSS
   const allArticles = useMemo(() => {
-    // Format RSS articles
-    const formattedRSSArticles = rssArticles.map(formatRSSArticleForCard);
+    // Format RSS articles with viewCount and pubDateMs for sorting
+    const formattedRSSArticles = rssArticles.map(article => ({
+      ...formatRSSArticleForCard(article),
+      viewCount: 0, // RSS articles don't have view count, use 0
+      pubDateMs: article.pubDateMs || Date.now(),
+    }));
 
-    // Format DB articles
-    const formattedDbArticles = dbArticles.map(formatArticleForCard);
+    // Format DB articles with viewCount and createdAt for sorting
+    const formattedDbArticles = dbArticles.map(article => ({
+      ...formatArticleForCard(article),
+      viewCount: article.view_count || 0,
+      createdAt: article.created_at,
+    }));
 
-    // Prioritize RSS articles, then DB articles, then mock as fallback
+    // Combine RSS with DB articles and sort by popularity/date
     let articles = [];
-    if (formattedRSSArticles.length > 0) {
-      // Combine RSS with DB articles for more variety
+    if (formattedRSSArticles.length > 0 || formattedDbArticles.length > 0) {
       const combined = [...formattedRSSArticles, ...formattedDbArticles];
-      articles = shuffleArray(combined);
-    } else if (formattedDbArticles.length > 0) {
-      articles = formattedDbArticles;
+      articles = sortByPopularityAndDate(combined);
     } else {
-      // Use shuffled mock data as fallback
-      articles = shuffleArray(allMockArticles);
+      // Use mock data as fallback, sorted by date
+      articles = sortByPopularityAndDate(allMockArticles.map(a => ({ ...a, viewCount: 0 })));
     }
 
     // Filter by category if not "all"
