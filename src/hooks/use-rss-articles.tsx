@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { decodeHTMLEntities } from "@/lib/utils";
 
 export interface RSSArticle {
   id: string;
@@ -92,9 +93,9 @@ export function useRSSArticles() {
 export function formatRSSArticleForCard(article: RSSArticle) {
   return {
     id: article.id,
-    title: article.title,
-    excerpt: article.excerpt,
-    content: article.content,
+    title: decodeHTMLEntities(article.title),
+    excerpt: decodeHTMLEntities(article.excerpt),
+    content: decodeHTMLEntities(article.content),
     category: article.category,
     image: article.image,
     timestamp: article.timestamp,
