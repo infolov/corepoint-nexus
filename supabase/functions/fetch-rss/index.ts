@@ -78,8 +78,8 @@ function parseRSSItem(item: string, source: string, category: string): Article |
 
     if (!title || !link) return null;
 
-    // Generate unique ID from link
-    const id = btoa(link).replace(/[^a-zA-Z0-9]/g, '').substring(0, 20);
+    // Generate unique ID from link - use full base64 encoding for uniqueness
+    const id = btoa(encodeURIComponent(link)).replace(/[^a-zA-Z0-9]/g, '');
 
     // Format timestamp
     let timestamp = 'Przed chwilą';
