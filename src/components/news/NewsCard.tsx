@@ -253,18 +253,23 @@ export function NewsCard({
           <CardImage
             src={image}
             alt={title}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 brightness-125 contrast-105 sm:brightness-125 brightness-150"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
-        {/* Desktop: gradient from bottom, Mobile: gradient from top */}
-        <div className="hidden sm:block absolute inset-0 bg-gradient-to-t from-black via-black/70 via-50% to-transparent" />
-        <div className="hidden sm:block absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
-        <div className="sm:hidden absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-transparent" />
+          {/* Gradient only under text - bottom area */}
+          <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/95 via-black/60 to-transparent" />
           
           {hasVideo && (
             <div className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
               <Play className="w-5 h-5 text-white fill-white" />
             </div>
           )}
+
+          {/* Category badge - top left */}
+          <div className="absolute top-3 left-3">
+            <Badge variant="secondary" className="bg-primary/90 text-primary-foreground text-xs font-medium px-2.5 py-1">
+              {category}
+            </Badge>
+          </div>
           
           <div className="absolute inset-x-0 bottom-0 p-5 lg:p-6">
             {badge && (
@@ -277,12 +282,11 @@ export function NewsCard({
               <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center shadow-lg", getSourceColor(source))}>
                 <span className="text-[10px] font-bold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">{getSourceInitials(source)}</span>
               </div>
-              <span className="text-sm text-white/90 font-medium drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">{source}</span>
-              <span className="text-sm font-semibold bg-white/20 backdrop-blur-sm text-white px-2.5 py-1 rounded-full border border-white/30 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">{category}</span>
-              <span className="text-sm text-white/60 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">· {timestamp}</span>
+              <span className="text-sm text-white/90 font-light drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">{source}</span>
+              <span className="text-sm text-white/60 font-light drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">· {timestamp}</span>
             </div>
             
-            <h3 className="font-medium text-xl md:text-2xl text-white line-clamp-3 leading-tight drop-shadow-[0_3px_6px_rgba(0,0,0,0.9)]">
+            <h3 className="font-light text-xl md:text-2xl text-white line-clamp-3 leading-tight drop-shadow-[0_3px_6px_rgba(0,0,0,0.9)]">
               {title}
             </h3>
           </div>
@@ -304,27 +308,33 @@ export function NewsCard({
           <CardImage
             src={image}
             alt={title}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 brightness-125 contrast-105"
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 via-50% to-transparent" />
-          <div className="absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
+          {/* Gradient only under text - bottom area */}
+          <div className="absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-black/95 via-black/60 to-transparent" />
           
           {hasVideo && (
             <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
               <Play className="w-3 h-3 text-white fill-white" />
             </div>
           )}
+
+          {/* Category badge - top left */}
+          <div className="absolute top-2 left-2">
+            <Badge variant="secondary" className="bg-primary/90 text-primary-foreground text-[8px] font-medium px-1.5 py-0.5">
+              {category}
+            </Badge>
+          </div>
           
           <div className="absolute inset-x-0 bottom-0 p-2.5">
             <div className="flex items-center gap-1.5 mb-1">
               <div className={cn("w-4 h-4 rounded flex items-center justify-center", getSourceColor(source))}>
                 <span className="text-[8px] font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">{getSourceInitials(source)}</span>
               </div>
-              <span className="text-[10px] text-white/80 font-medium drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">{source}</span>
-              <span className="text-[9px] font-semibold bg-white/20 backdrop-blur-sm text-white px-1.5 py-0.5 rounded-full border border-white/30 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">{category}</span>
-              <span className="text-[10px] text-white/60 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">· {timestamp}</span>
+              <span className="text-[10px] text-white/80 font-light drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">{source}</span>
+              <span className="text-[10px] text-white/60 font-light drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">· {timestamp}</span>
             </div>
-            <h4 className="font-medium text-xs text-white line-clamp-2 leading-tight drop-shadow-[0_3px_6px_rgba(0,0,0,0.9)]">
+            <h4 className="font-light text-xs text-white line-clamp-2 leading-tight drop-shadow-[0_3px_6px_rgba(0,0,0,0.9)]">
               {title}
             </h4>
           </div>
@@ -345,19 +355,26 @@ export function NewsCard({
         <CardImage
           src={image}
           alt={title}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 brightness-125 contrast-105"
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 via-50% to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
+        {/* Gradient only under text - bottom area */}
+        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/95 via-black/70 to-transparent" />
         
         {hasVideo && (
           <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
             <Play className="w-4 h-4 text-white fill-white" />
           </div>
         )}
+
+        {/* Category badge - top left */}
+        <div className="absolute top-3 left-3">
+          <Badge variant="secondary" className="bg-primary/90 text-primary-foreground text-[10px] font-medium px-2 py-0.5">
+            {category}
+          </Badge>
+        </div>
         
         {badge && (
-          <div className="absolute top-3 left-3">
+          <div className="absolute top-3 left-20">
             <Badge variant={badge === "pilne" ? "destructive" : badge} className="text-[10px] px-2 py-0.5">
               {badge === "pilne" ? "PILNE" : badge === "hot" ? "🔥" : badge === "trending" ? "📈" : "✨"}
             </Badge>
@@ -369,12 +386,11 @@ export function NewsCard({
             <div className={cn("w-5 h-5 sm:w-6 sm:h-6 rounded-md flex items-center justify-center shadow", getSourceColor(source))}>
               <span className="text-[9px] sm:text-[10px] font-bold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">{getSourceInitials(source)}</span>
             </div>
-            <span className="text-[11px] sm:text-xs text-white/90 font-medium drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">{source}</span>
-            <span className="text-[10px] sm:text-[11px] font-semibold bg-white/20 backdrop-blur-sm text-white px-2 py-0.5 rounded-full border border-white/30 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">{category}</span>
-            <span className="text-[11px] sm:text-xs text-white/60 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">· {timestamp}</span>
+            <span className="text-[11px] sm:text-xs text-white/90 font-light drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">{source}</span>
+            <span className="text-[11px] sm:text-xs text-white/60 font-light drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">· {timestamp}</span>
           </div>
           
-          <h3 className="font-normal text-sm sm:text-base text-white line-clamp-2 leading-snug drop-shadow-[0_3px_6px_rgba(0,0,0,0.9)]">
+          <h3 className="font-light text-sm sm:text-base text-white line-clamp-2 leading-snug drop-shadow-[0_3px_6px_rgba(0,0,0,0.9)]">
             {title}
           </h3>
         </div>

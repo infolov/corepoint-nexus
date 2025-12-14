@@ -77,17 +77,26 @@ export function Header() {
       <div className="bg-nav text-nav-foreground">
         <div className="container flex h-16 items-center justify-between">
           {/* Left: Logo + Partner Space */}
-          <div className="flex items-center gap-6">
-            <Link to="/" className="flex items-center gap-2.5">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-hero-gradient shadow-lg">
-                <span className="text-2xl font-black text-primary-foreground">i</span>
+          <div className="flex items-center gap-4 md:gap-6">
+            <Link to="/" className="flex flex-col md:flex-row items-start md:items-center gap-0.5 md:gap-2.5">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-xl bg-hero-gradient shadow-lg">
+                  <span className="text-xl md:text-2xl font-black text-primary-foreground">i</span>
+                </div>
+                <span className="text-lg md:text-2xl font-bold tracking-tight">
+                  INFORMACJE<span className="text-primary">.PL</span>
+                </span>
               </div>
-              <span className="text-2xl font-bold tracking-tight">
-                INFORMACJE<span className="text-primary">.PL</span>
-              </span>
+              {/* Mobile Partner - below logo */}
+              <div className="flex md:hidden items-center gap-1.5 pl-10">
+                <span className="text-[10px] text-nav-foreground/60">Partner:</span>
+                <div className="h-5 w-16 bg-nav-foreground/10 rounded flex items-center justify-center">
+                  <span className="text-[8px] text-nav-foreground/50">Logo</span>
+                </div>
+              </div>
             </Link>
 
-            {/* Partner Space - enlarged */}
+            {/* Desktop Partner Space */}
             <div className="hidden md:flex items-center gap-3 px-4 py-2 border-l border-nav-foreground/20">
               <span className="text-sm text-nav-foreground/60">Partner Serwisu:</span>
               <div className="h-10 w-28 bg-nav-foreground/10 rounded-lg flex items-center justify-center">
@@ -136,24 +145,27 @@ export function Header() {
               )}
             </div>
 
-            {/* Weather - clickable with location */}
+            {/* Weather - clickable with location - city first, then temperature */}
             <Link 
               to="/pogoda"
               className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-nav-foreground/80 text-sm hover:bg-nav-foreground/10 rounded-lg transition-colors"
             >
-              <CloudSun className="h-5 w-5 text-weather-sunny" />
               {weatherLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : weatherData ? (
                 <>
-                  <span className="text-xs text-nav-foreground/60 flex items-center gap-1">
-                    <MapPin className="h-3 w-3" />
-                    {weatherData.stacja}
-                  </span>
+                  <MapPin className="h-4 w-4 text-primary" />
+                  <span className="font-medium">{weatherData.stacja}</span>
+                  <CloudSun className="h-5 w-5 text-weather-sunny" />
                   <span className="font-semibold">{Math.round(parseFloat(weatherData.temperatura))}°C</span>
                 </>
               ) : (
-                <span className="text-xs text-nav-foreground/60">Brak danych</span>
+                <>
+                  <MapPin className="h-4 w-4" />
+                  <span className="text-xs text-nav-foreground/60">Warszawa</span>
+                  <CloudSun className="h-5 w-5 text-weather-sunny" />
+                  <span className="font-semibold">--°C</span>
+                </>
               )}
             </Link>
 
