@@ -10,18 +10,11 @@ const corsHeaders = {
 const RSS_SOURCES = [
   { url: 'https://www.polsatnews.pl/rss/wszystkie.xml', source: 'Polsat News', category: 'Wiadomości' },
   { url: 'https://tvn24.pl/najnowsze.xml', source: 'TVN24', category: 'Wiadomości' },
-  { url: 'https://www.rp.pl/rss/1061-swiat', source: 'Rzeczpospolita', category: 'Wiadomości' },
-  { url: 'https://wiadomosci.onet.pl/rss/kraj', source: 'Onet', category: 'Wiadomości' },
   { url: 'https://wiadomosci.wp.pl/rss.xml', source: 'Wirtualna Polska', category: 'Wiadomości' },
-  { url: 'https://fakty.interia.pl/rss', source: 'Interia', category: 'Wiadomości' },
-  { url: 'https://sport.onet.pl/rss/pilka-nozna', source: 'Onet Sport', category: 'Sport' },
-  { url: 'https://sport.interia.pl/rss', source: 'Interia Sport', category: 'Sport' },
   { url: 'https://www.bankier.pl/rss/wiadomosci.xml', source: 'Bankier.pl', category: 'Biznes' },
   { url: 'https://www.money.pl/rss/rss.xml', source: 'Money.pl', category: 'Biznes' },
-  { url: 'https://biznes.interia.pl/rss', source: 'Interia Biznes', category: 'Biznes' },
   { url: 'https://sportowefakty.wp.pl/rss.xml', source: 'Sportowe Fakty', category: 'Sport' },
   { url: 'https://www.chip.pl/feed', source: 'Chip.pl', category: 'Technologia' },
-  { url: 'https://www.dobreprogramy.pl/feed', source: 'Dobreprogramy', category: 'Technologia' },
   { url: 'https://tech.wp.pl/rss.xml', source: 'WP Tech', category: 'Technologia' },
 ];
 
@@ -35,6 +28,18 @@ interface Article {
   sourceUrl: string;
   timestamp: string;
   content: string;
+  pubDateMs: number;
+}
+
+// Simple hash function for stable ID generation
+function simpleHash(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash).toString(36);
 }
 
 function parseRSSItem(item: string, source: string, category: string): Article | null {
@@ -74,31 +79,38 @@ function parseRSSItem(item: string, source: string, category: string): Article |
     const link = linkMatch?.[1]?.trim() || '';
     const description = descMatch?.[1]?.replace(/<[^>]+>/g, '').trim() || '';
     const content = contentMatch?.[1]?.replace(/<[^>]+>/g, '').trim() || description;
-    const pubDate = pubDateMatch?.[1] || new Date().toISOString();
+    const pubDateStr = pubDateMatch?.[1] || '';
 
     if (!title || !link) return null;
 
-    // Generate unique ID from link - use full base64 encoding for uniqueness
-    const id = btoa(encodeURIComponent(link)).replace(/[^a-zA-Z0-9]/g, '');
+    // Generate stable unique ID using hash of the link
+    const id = simpleHash(link) + simpleHash(title.substring(0, 20));
 
-    // Format timestamp
+    // Parse publication date
+    let pubDateMs = Date.now();
     let timestamp = 'Przed chwilą';
+    
     try {
-      const date = new Date(pubDate);
-      const now = new Date();
-      const diffMs = now.getTime() - date.getTime();
-      const diffMins = Math.floor(diffMs / 60000);
-      const diffHours = Math.floor(diffMs / 3600000);
-      const diffDays = Math.floor(diffMs / 86400000);
+      if (pubDateStr) {
+        const date = new Date(pubDateStr);
+        if (!isNaN(date.getTime())) {
+          pubDateMs = date.getTime();
+          const now = new Date();
+          const diffMs = now.getTime() - date.getTime();
+          const diffMins = Math.floor(diffMs / 60000);
+          const diffHours = Math.floor(diffMs / 3600000);
+          const diffDays = Math.floor(diffMs / 86400000);
 
-      if (diffMins < 60) {
-        timestamp = `${diffMins} min temu`;
-      } else if (diffHours < 24) {
-        timestamp = `${diffHours} godz. temu`;
-      } else if (diffDays < 7) {
-        timestamp = `${diffDays} dni temu`;
-      } else {
-        timestamp = date.toLocaleDateString('pl-PL');
+          if (diffMins < 60) {
+            timestamp = `${diffMins} min temu`;
+          } else if (diffHours < 24) {
+            timestamp = `${diffHours} godz. temu`;
+          } else if (diffDays < 7) {
+            timestamp = `${diffDays} dni temu`;
+          } else {
+            timestamp = date.toLocaleDateString('pl-PL');
+          }
+        }
       }
     } catch (e) {
       console.error('Date parsing error:', e);
@@ -114,6 +126,7 @@ function parseRSSItem(item: string, source: string, category: string): Article |
       sourceUrl: link,
       timestamp,
       content,
+      pubDateMs,
     };
   } catch (error) {
     console.error('Error parsing RSS item:', error);
@@ -181,12 +194,15 @@ serve(async (req) => {
       }
     });
 
-    // Sort by most recent (based on timestamp parsing would be better, but for now shuffle)
-    allArticles = allArticles.sort(() => Math.random() - 0.5);
+    // Sort by publication date (newest first) - deterministic ordering
+    allArticles.sort((a, b) => b.pubDateMs - a.pubDateMs);
 
-    console.log(`Total articles fetched: ${allArticles.length}`);
+    // Remove pubDateMs from response (internal use only)
+    const articlesForResponse = allArticles.map(({ pubDateMs, ...rest }) => rest);
 
-    return new Response(JSON.stringify({ articles: allArticles }), {
+    console.log(`Total articles fetched: ${articlesForResponse.length}`);
+
+    return new Response(JSON.stringify({ articles: articlesForResponse }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error: unknown) {
