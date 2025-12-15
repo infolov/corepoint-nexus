@@ -305,6 +305,9 @@ export function NewsCard({
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
           
+          {/* Light gradient under text */}
+          <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+
           {hasVideo && (
             <div className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
               <Play className="w-5 h-5 text-white fill-white" />
@@ -353,6 +356,8 @@ export function NewsCard({
             alt={title}
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
+          {/* Light gradient under text */}
+          <div className="absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
           
           {hasVideo && (
             <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
@@ -394,6 +399,8 @@ export function NewsCard({
           alt={title}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
+        {/* Light gradient under text */}
+        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
         
         {hasVideo && (
           <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
