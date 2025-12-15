@@ -328,14 +328,11 @@ export function NewsCard({
             )}
             
             <div className="flex items-center gap-2 mb-3">
-              <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center shadow-lg", getSourceColor(source))}>
-                <span className="text-[10px] font-bold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">{getSourceInitials(source)}</span>
-              </div>
-              <span className="text-sm text-white/90 font-light drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">{source}</span>
-              <span className="text-sm text-white/60 font-light drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">· {timestamp}</span>
+              <span className="text-sm text-white font-light">{source}</span>
+              <span className="text-sm text-white/80 font-light">· {timestamp}</span>
             </div>
             
-            <h3 className="font-light text-2xl md:text-3xl text-white brightness-110 line-clamp-3 leading-tight drop-shadow-[0_3px_6px_rgba(0,0,0,0.9)]">
+            <h3 className="font-light text-2xl md:text-3xl text-white line-clamp-3 leading-tight">
               {title}
             </h3>
           </div>
@@ -377,13 +374,10 @@ export function NewsCard({
           
           <div className="absolute inset-x-0 bottom-0 p-2.5">
             <div className="flex items-center gap-1.5 mb-1">
-              <div className={cn("w-4 h-4 rounded flex items-center justify-center", getSourceColor(source))}>
-                <span className="text-[8px] font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">{getSourceInitials(source)}</span>
-              </div>
-              <span className="text-[10px] text-white/80 font-light drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">{source}</span>
-              <span className="text-[10px] text-white/60 font-light drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">· {timestamp}</span>
+              <span className="text-[10px] text-white font-light">{source}</span>
+              <span className="text-[10px] text-white/80 font-light">· {timestamp}</span>
             </div>
-            <h4 className="font-light text-sm text-white brightness-110 line-clamp-2 leading-tight drop-shadow-[0_3px_6px_rgba(0,0,0,0.9)]">
+            <h4 className="font-light text-sm text-white line-clamp-2 leading-tight">
               {title}
             </h4>
           </div>
@@ -432,14 +426,11 @@ export function NewsCard({
         
         <div className="absolute inset-x-0 bottom-0 p-3 sm:p-4">
           <div className="flex items-center gap-1.5 sm:gap-2 mb-2 flex-wrap">
-            <div className={cn("w-5 h-5 sm:w-6 sm:h-6 rounded-md flex items-center justify-center shadow", getSourceColor(source))}>
-              <span className="text-[9px] sm:text-[10px] font-bold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">{getSourceInitials(source)}</span>
-            </div>
-            <span className="text-[11px] sm:text-xs text-white/90 font-light drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">{source}</span>
-            <span className="text-[11px] sm:text-xs text-white/60 font-light drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">· {timestamp}</span>
+            <span className="text-[11px] sm:text-xs text-white font-light">{source}</span>
+            <span className="text-[11px] sm:text-xs text-white/80 font-light">· {timestamp}</span>
           </div>
           
-          <h3 className="font-light text-base sm:text-lg text-white brightness-110 line-clamp-2 leading-snug drop-shadow-[0_3px_6px_rgba(0,0,0,0.9)]">
+          <h3 className="font-light text-base sm:text-lg text-white line-clamp-2 leading-snug">
             {title}
           </h3>
         </div>
