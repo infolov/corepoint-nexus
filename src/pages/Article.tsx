@@ -25,6 +25,13 @@ const allMockArticles = [
   ...lifestyleArticles,
 ];
 
+// Helper function to decode HTML entities
+const decodeHTMLEntities = (text: string): string => {
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = text;
+  return textarea.value;
+};
+
 const Article = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -99,7 +106,7 @@ const Article = () => {
           <article>
             {/* Article Title */}
             <h1 className="text-xl md:text-2xl lg:text-3xl font-medium text-foreground mb-4 leading-tight">
-              {article.title}
+              {decodeHTMLEntities(article.title)}
             </h1>
 
             {/* Publication Time & Category */}
