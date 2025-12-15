@@ -286,6 +286,8 @@ const Index = () => {
   // Generate enough articles for infinite scroll by cycling
   const getArticlesForDisplay = useMemo(() => {
     const articlesToUse = user ? personalizedArticles : allArticles;
+    if (articlesToUse.length === 0) return [];
+    
     const totalNeeded = visibleGrids * ARTICLES_PER_GRID;
     const result = [];
     for (let i = 0; i < totalNeeded; i++) {
