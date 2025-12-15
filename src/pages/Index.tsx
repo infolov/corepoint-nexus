@@ -5,6 +5,7 @@ import { CategoryBar } from "@/components/navigation/CategoryBar";
 import { NewsCard } from "@/components/news/NewsCard";
 import { AdBanner } from "@/components/widgets/AdBanner";
 import { LocalAdBanner } from "@/components/widgets/LocalAdBanner";
+import { AdCarousel } from "@/components/widgets/AdCarousel";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import { useDisplayMode } from "@/hooks/use-display-mode";
 import { useAuth } from "@/hooks/use-auth";
@@ -325,16 +326,12 @@ const Index = () => {
                 {gridArticles.map((article, articleIndex) => <NewsCard key={`${article.id}-${gridIndex}-${articleIndex}`} id={article.id} title={article.title} category={article.category} image={article.image} timestamp={article.timestamp} badge={article.badge} source={article.source} sourceUrl={article.sourceUrl} variant="default" />)}
               </div>
 
-              {/* Ad Banner after each grid of 12 articles - alternating local and regular */}
+              {/* Ad Banner after each grid of 12 articles */}
               <div className="mt-6 sm:mt-8">
-                {gridIndex % 2 === 0 ? (
-                  <LocalAdBanner 
-                    placementType="regional_banner" 
-                    variant="horizontal" 
-                    className="w-full" 
-                  />
-                ) : (
+                {gridIndex === 0 ? (
                   <AdBanner variant="horizontal" className="w-full" />
+                ) : (
+                  <AdCarousel className="w-full" />
                 )}
               </div>
             </div>)}

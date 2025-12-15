@@ -1,13 +1,16 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Clock, Share2, ExternalLink, Loader2, ThumbsUp, ThumbsDown } from "lucide-react";
+import { ArrowLeft, Clock, Share2, ExternalLink, Loader2, ThumbsUp, ThumbsDown, Bookmark, BookmarkCheck, ChevronRight, Home } from "lucide-react";
 import { useRecentlyViewed } from "@/hooks/use-recently-viewed";
 import { ArticleSummary } from "@/components/article/ArticleSummary";
 import { useRSSArticles } from "@/hooks/use-rss-articles";
+import { AdBanner } from "@/components/widgets/AdBanner";
+import { NewsCard } from "@/components/news/NewsCard";
+import { toast } from "sonner";
 import {
   newsArticles,
   businessArticles,
@@ -30,6 +33,33 @@ const Article = () => {
   const navigate = useNavigate();
   const { trackArticleView } = useRecentlyViewed();
   const { articles: rssArticles, loading: rssLoading } = useRSSArticles();
+  const [isSaved, setIsSaved] = useState(false);
+
+  // Check if article is saved
+  useEffect(() => {
+    const saved = localStorage.getItem('savedArticles');
+    if (saved && id) {
+      const savedArticles = JSON.parse(saved);
+      setIsSaved(savedArticles.includes(id));
+    }
+  }, [id]);
+
+  // Handle save article
+  const handleSaveArticle = () => {
+    const saved = localStorage.getItem('savedArticles');
+    let savedArticles = saved ? JSON.parse(saved) : [];
+    
+    if (isSaved) {
+      savedArticles = savedArticles.filter((articleId: string) => articleId !== id);
+      toast.success("Usunięto z zapisanych");
+    } else {
+      savedArticles.push(id);
+      toast.success("Zapisano na później");
+    }
+    
+    localStorage.setItem('savedArticles', JSON.stringify(savedArticles));
+    setIsSaved(!isSaved);
+  };
 
   // Handle back navigation - go back in history to preserve scroll position
   const handleGoBack = () => {
@@ -89,11 +119,35 @@ const Article = () => {
   const sourceUrl = rssArticle?.sourceUrl || (mockArticle as any)?.sourceUrl;
   const source = rssArticle?.source || (mockArticle as any)?.source || "Informacje.pl";
 
+  // Get related articles (same category, exclude current)
+  const relatedArticles = [...rssArticles, ...allMockArticles]
+    .filter(a => a.category === article.category && a.id !== id)
+    .slice(0, 4);
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
       
       <main className="container py-4 md:py-6">
+        {/* Top Ad Banner */}
+        <div className="mb-6">
+          <AdBanner variant="horizontal" className="w-full" />
+        </div>
+
+        {/* Navigation Breadcrumbs */}
+        <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
+          <Link to="/" className="flex items-center gap-1 hover:text-foreground transition-colors">
+            <Home className="h-4 w-4" />
+            <span>Strona główna</span>
+          </Link>
+          <ChevronRight className="h-4 w-4" />
+          <Link to={`/kategoria/${article.category.toLowerCase()}`} className="hover:text-foreground transition-colors">
+            {article.category}
+          </Link>
+          <ChevronRight className="h-4 w-4" />
+          <span className="text-foreground truncate max-w-[200px]">{article.title}</span>
+        </nav>
+
         <div className="max-w-3xl mx-auto">
           {/* Main Article Content */}
           <article>
@@ -127,7 +181,7 @@ const Article = () => {
               category={article.category}
             />
 
-            {/* Action Buttons - Thumbs up/down & Share */}
+            {/* Action Buttons - Thumbs up/down, Save & Share */}
             <div className="flex items-center justify-between border-t border-b border-border py-4 my-6">
               <div className="flex items-center gap-2">
                 <Button variant="ghost" size="sm" className="gap-1">
@@ -137,6 +191,19 @@ const Article = () => {
                 <Button variant="ghost" size="sm" className="gap-1">
                   <ThumbsDown className="h-4 w-4" />
                   <span className="hidden sm:inline">Nie podoba mi się</span>
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="gap-1"
+                  onClick={handleSaveArticle}
+                >
+                  {isSaved ? (
+                    <BookmarkCheck className="h-4 w-4 text-primary" />
+                  ) : (
+                    <Bookmark className="h-4 w-4" />
+                  )}
+                  <span className="hidden sm:inline">{isSaved ? "Zapisano" : "Zapisz"}</span>
                 </Button>
               </div>
               <Button variant="ghost" size="sm" className="gap-1">
@@ -194,6 +261,27 @@ const Article = () => {
             </div>
           </article>
         </div>
+
+        {/* Related Articles Section */}
+        {relatedArticles.length > 0 && (
+          <section className="mt-12">
+            <h2 className="text-xl font-bold mb-6">Powiązane artykuły</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {relatedArticles.map((relatedArticle) => (
+                <NewsCard
+                  key={relatedArticle.id}
+                  id={relatedArticle.id}
+                  title={relatedArticle.title}
+                  image={relatedArticle.image}
+                  category={relatedArticle.category}
+                  timestamp={(relatedArticle as any).timestamp || "Dzisiaj"}
+                  source={(relatedArticle as any).source || "Informacje.pl"}
+                  variant="msn-slot"
+                />
+              ))}
+            </div>
+          </section>
+        )}
       </main>
       
       <Footer />
