@@ -333,7 +333,7 @@ export function NewsCard({
               <span className="text-sm text-white/80 font-light">· {timestamp}</span>
             </div>
             
-            <h3 className="font-light text-2xl md:text-3xl text-white line-clamp-3 leading-tight">
+            <h3 className="font-bold text-2xl md:text-3xl text-white line-clamp-3 leading-tight">
               {title}
             </h3>
           </div>
@@ -377,7 +377,7 @@ export function NewsCard({
               <span className="text-[10px] text-white font-light">{source}</span>
               <span className="text-[10px] text-white/80 font-light">· {timestamp}</span>
             </div>
-            <h4 className="font-light text-sm text-white line-clamp-2 leading-tight">
+            <h4 className="font-bold text-sm text-white line-clamp-2 leading-tight">
               {title}
             </h4>
           </div>
@@ -429,7 +429,7 @@ export function NewsCard({
             <span className="text-[11px] sm:text-xs text-white/80 font-light">· {timestamp}</span>
           </div>
           
-          <h3 className="font-light text-base sm:text-lg text-white line-clamp-2 leading-snug">
+          <h3 className="font-bold text-base sm:text-lg text-white line-clamp-2 leading-snug">
             {title}
           </h3>
         </div>
