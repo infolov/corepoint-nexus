@@ -295,7 +295,7 @@ export function NewsCard({
       <a href={articleUrl} target="_blank" rel="noopener noreferrer" className="block h-full">
         <article className={cn(
           "group relative overflow-hidden",
-          "rounded-2xl shadow-lg",
+          "rounded-2xl",
           "aspect-[4/3] lg:aspect-auto lg:h-full",
           className
         )}>
@@ -304,8 +304,6 @@ export function NewsCard({
             alt={title}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
-          {/* Gradient only under text - bottom area */}
-          <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/95 via-black/60 to-transparent" />
           
           {hasVideo && (
             <div className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
@@ -347,8 +345,7 @@ export function NewsCard({
       <a href={articleUrl} target="_blank" rel="noopener noreferrer" className="block">
         <article className={cn(
           "group rounded-xl overflow-hidden relative",
-          "h-[95px] lg:h-[98px] shadow-sm bg-muted",
-          "hover:shadow-md transition-shadow duration-200",
+          "h-[95px] lg:h-[98px] bg-muted",
           className
         )}>
           <CardImage
@@ -356,8 +353,6 @@ export function NewsCard({
             alt={title}
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
-          {/* Gradient only under text - bottom area */}
-          <div className="absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-black/95 via-black/60 to-transparent" />
           
           {hasVideo && (
             <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
@@ -392,7 +387,6 @@ export function NewsCard({
       <article className={cn(
         "group rounded-xl overflow-hidden relative",
         "aspect-[16/9] min-h-[180px] max-h-[250px] bg-muted",
-        "shadow-sm hover:shadow-lg transition-all duration-300",
         className
       )}>
         <CardImage
@@ -400,8 +394,6 @@ export function NewsCard({
           alt={title}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
-        {/* Gradient only under text - bottom area */}
-        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/95 via-black/70 to-transparent" />
         
         {hasVideo && (
           <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
