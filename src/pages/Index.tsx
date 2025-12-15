@@ -312,6 +312,10 @@ const Index = () => {
       <FloatingRefreshButton onClick={handleRefresh} isLoading={isRefreshing || rssLoading || dbLoading} />
 
       <main className="container py-4 sm:py-6">
+        {/* Top Ad Banner */}
+        <div className="mb-6">
+          <AdBanner variant="horizontal" className="w-full" />
+        </div>
 
         {/* Main Content - Ad + 4x3 Grid pattern */}
         <div className="space-y-6 sm:space-y-8">
