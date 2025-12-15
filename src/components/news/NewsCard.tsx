@@ -188,7 +188,7 @@ export function NewsCard({
             <CardImage
               src={image}
               alt={title}
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 brightness-125"
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
             {hasVideo && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/30">
@@ -214,7 +214,7 @@ export function NewsCard({
             <CardImage
               src={image}
               alt={title}
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 brightness-125"
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
             {hasVideo && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/30">
@@ -253,7 +253,7 @@ export function NewsCard({
           <CardImage
             src={image}
             alt={title}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 brightness-125"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
           {/* Gradient only under text - bottom area */}
           <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/95 via-black/60 to-transparent" />
@@ -308,7 +308,7 @@ export function NewsCard({
           <CardImage
             src={image}
             alt={title}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 brightness-125"
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
           {/* Gradient only under text - bottom area */}
           <div className="absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-black/95 via-black/60 to-transparent" />
@@ -355,7 +355,7 @@ export function NewsCard({
         <CardImage
           src={image}
           alt={title}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 brightness-125"
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
         {/* Gradient only under text - bottom area */}
         <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/95 via-black/70 to-transparent" />
