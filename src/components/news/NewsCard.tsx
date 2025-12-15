@@ -335,7 +335,7 @@ export function NewsCard({
               <span className="text-sm text-white/60 font-light drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">· {timestamp}</span>
             </div>
             
-            <h3 className="font-light text-xl md:text-2xl text-white line-clamp-3 leading-tight drop-shadow-[0_3px_6px_rgba(0,0,0,0.9)]">
+            <h3 className="font-light text-2xl md:text-3xl text-white brightness-110 line-clamp-3 leading-tight drop-shadow-[0_3px_6px_rgba(0,0,0,0.9)]">
               {title}
             </h3>
           </div>
@@ -383,7 +383,7 @@ export function NewsCard({
               <span className="text-[10px] text-white/80 font-light drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">{source}</span>
               <span className="text-[10px] text-white/60 font-light drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">· {timestamp}</span>
             </div>
-            <h4 className="font-light text-xs text-white line-clamp-2 leading-tight drop-shadow-[0_3px_6px_rgba(0,0,0,0.9)]">
+            <h4 className="font-light text-sm text-white brightness-110 line-clamp-2 leading-tight drop-shadow-[0_3px_6px_rgba(0,0,0,0.9)]">
               {title}
             </h4>
           </div>
@@ -439,7 +439,7 @@ export function NewsCard({
             <span className="text-[11px] sm:text-xs text-white/60 font-light drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">· {timestamp}</span>
           </div>
           
-          <h3 className="font-light text-sm sm:text-base text-white line-clamp-2 leading-snug drop-shadow-[0_3px_6px_rgba(0,0,0,0.9)]">
+          <h3 className="font-light text-base sm:text-lg text-white brightness-110 line-clamp-2 leading-snug drop-shadow-[0_3px_6px_rgba(0,0,0,0.9)]">
             {title}
           </h3>
         </div>
