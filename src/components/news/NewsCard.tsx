@@ -55,6 +55,55 @@ const getSourceColor = (source: string) => {
   return sourceColors[source] || "bg-primary";
 };
 
+// Category colors mapping
+const categoryColors: Record<string, string> = {
+  "sport": "bg-green-600",
+  "Sport": "bg-green-600",
+  "wiadomości": "bg-yellow-500",
+  "Wiadomości": "bg-yellow-500",
+  "news": "bg-yellow-500",
+  "News": "bg-yellow-500",
+  "technologie": "bg-indigo-700",
+  "Technologie": "bg-indigo-700",
+  "tech": "bg-indigo-700",
+  "Tech": "bg-indigo-700",
+  "biznes": "bg-amber-700",
+  "Biznes": "bg-amber-700",
+  "business": "bg-amber-700",
+  "Business": "bg-amber-700",
+  "lifestyle": "bg-pink-500",
+  "Lifestyle": "bg-pink-500",
+  "rozrywka": "bg-purple-500",
+  "Rozrywka": "bg-purple-500",
+  "pogoda": "bg-sky-500",
+  "Pogoda": "bg-sky-500",
+  "motoryzacja": "bg-red-600",
+  "Motoryzacja": "bg-red-600",
+  "zdrowie": "bg-teal-500",
+  "Zdrowie": "bg-teal-500",
+  "nauka": "bg-cyan-600",
+  "Nauka": "bg-cyan-600",
+  "polityka": "bg-slate-600",
+  "Polityka": "bg-slate-600",
+  "kultura": "bg-violet-500",
+  "Kultura": "bg-violet-500",
+  "świat": "bg-blue-600",
+  "Świat": "bg-blue-600",
+};
+
+const getCategoryColor = (category: string) => {
+  // Check for exact match first
+  if (categoryColors[category]) return categoryColors[category];
+  
+  // Check for partial match (subcategories)
+  const lowerCategory = category.toLowerCase();
+  for (const [key, value] of Object.entries(categoryColors)) {
+    if (lowerCategory.includes(key.toLowerCase())) return value;
+  }
+  
+  return "bg-primary/90";
+};
+
 const getSourceInitials = (source: string) => {
   if (source.length <= 3) return source;
   return source.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
@@ -266,7 +315,7 @@ export function NewsCard({
 
           {/* Category badge - top left */}
           <div className="absolute top-3 left-3">
-            <Badge variant="secondary" className="bg-primary/90 text-primary-foreground text-xs font-medium px-2.5 py-1">
+            <Badge variant="secondary" className={cn(getCategoryColor(category), "text-white text-xs font-medium px-2.5 py-1")}>
               {category}
             </Badge>
           </div>
@@ -321,7 +370,7 @@ export function NewsCard({
 
           {/* Category badge - top left */}
           <div className="absolute top-2 left-2">
-            <Badge variant="secondary" className="bg-primary/90 text-primary-foreground text-[8px] font-medium px-1.5 py-0.5">
+            <Badge variant="secondary" className={cn(getCategoryColor(category), "text-white text-[8px] font-medium px-1.5 py-0.5")}>
               {category}
             </Badge>
           </div>
@@ -368,7 +417,7 @@ export function NewsCard({
 
         {/* Category badge - top left */}
         <div className="absolute top-3 left-3">
-          <Badge variant="secondary" className="bg-primary/90 text-primary-foreground text-[10px] font-medium px-2 py-0.5">
+          <Badge variant="secondary" className={cn(getCategoryColor(category), "text-white text-[10px] font-medium px-2 py-0.5")}>
             {category}
           </Badge>
         </div>
