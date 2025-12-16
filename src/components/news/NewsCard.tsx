@@ -127,10 +127,13 @@ const CardImage = ({ src, alt, className }: { src: string; alt: string; classNam
 export function NewsCard({
   id,
   title,
+  excerpt,
+  content,
   category,
   image,
   timestamp,
   source = "Informacje.pl",
+  sourceUrl,
   badge,
   hasVideo,
   variant = "default",
@@ -138,6 +141,25 @@ export function NewsCard({
 }: NewsCardProps) {
   // Generate article URL - opens in new tab
   const articleUrl = id ? `/artykul/${id}` : "#";
+
+  // Save article data to sessionStorage when clicking, so it's available in new tab
+  const handleArticleClick = () => {
+    if (id) {
+      const articleData = {
+        id,
+        title,
+        excerpt,
+        content,
+        category,
+        image,
+        timestamp,
+        source,
+        sourceUrl,
+        badge,
+      };
+      sessionStorage.setItem(`article_${id}`, JSON.stringify(articleData));
+    }
+  };
 
   // Context menu handlers
   const handleFollow = () => {
@@ -213,7 +235,7 @@ export function NewsCard({
   // MSN-style compact list item (for sidebar/data saver)
   if (variant === "compact") {
     return renderWithContextMenu(
-      <a href={articleUrl} target="_blank" rel="noopener noreferrer" className="block">
+      <a href={articleUrl} target="_blank" rel="noopener noreferrer" className="block" onClick={handleArticleClick}>
         <article className={cn(
           "group flex gap-3 py-3 px-3 -mx-3",
           "border-b border-border/50 last:border-0",
@@ -253,7 +275,7 @@ export function NewsCard({
   // MSN-style horizontal card
   if (variant === "horizontal") {
     return renderWithContextMenu(
-      <a href={articleUrl} target="_blank" rel="noopener noreferrer" className="block">
+      <a href={articleUrl} target="_blank" rel="noopener noreferrer" className="block" onClick={handleArticleClick}>
         <article className={cn(
           "group flex gap-4 p-2 -m-2 rounded-xl",
           "hover:bg-muted/50 transition-all duration-200",
@@ -292,7 +314,7 @@ export function NewsCard({
   // MSN-style hero card (large featured card)
   if (variant === "hero") {
     return renderWithContextMenu(
-      <a href={articleUrl} target="_blank" rel="noopener noreferrer" className="block h-full">
+      <a href={articleUrl} target="_blank" rel="noopener noreferrer" className="block h-full" onClick={handleArticleClick}>
         <article className={cn(
           "group relative overflow-hidden",
           "rounded-2xl",
@@ -354,7 +376,7 @@ export function NewsCard({
   // MSN-style slot card (for slots 2-5 in sidebar)
   if (variant === "msn-slot") {
     return renderWithContextMenu(
-      <a href={articleUrl} target="_blank" rel="noopener noreferrer" className="block">
+      <a href={articleUrl} target="_blank" rel="noopener noreferrer" className="block" onClick={handleArticleClick}>
         <article className={cn(
           "group rounded-xl overflow-hidden relative",
           "h-[95px] lg:h-[98px] bg-muted",
@@ -411,7 +433,7 @@ export function NewsCard({
 
   // MSN-style default card (grid item) - 16:9 aspect ratio with proper height
   return renderWithContextMenu(
-    <a href={articleUrl} target="_blank" rel="noopener noreferrer" className="block">
+    <a href={articleUrl} target="_blank" rel="noopener noreferrer" className="block" onClick={handleArticleClick}>
       <article className={cn(
         "group rounded-xl overflow-hidden relative",
         "aspect-[16/9] min-h-[180px] max-h-[250px] bg-muted",

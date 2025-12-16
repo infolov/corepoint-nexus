@@ -34,6 +34,21 @@ const Article = () => {
   const { trackArticleView } = useRecentlyViewed();
   const { articles: rssArticles, loading: rssLoading } = useRSSArticles();
   const [isSaved, setIsSaved] = useState(false);
+  const [cachedArticle, setCachedArticle] = useState<any>(null);
+
+  // Load cached article from sessionStorage on mount
+  useEffect(() => {
+    if (id) {
+      const cached = sessionStorage.getItem(`article_${id}`);
+      if (cached) {
+        try {
+          setCachedArticle(JSON.parse(cached));
+        } catch (e) {
+          console.error("Error parsing cached article:", e);
+        }
+      }
+    }
+  }, [id]);
 
   // Check if article is saved
   useEffect(() => {
@@ -70,11 +85,12 @@ const Article = () => {
     }
   };
 
-  // Find article from RSS or mock data
+  // Find article from RSS or mock data or cache
   const rssArticle = rssArticles.find((a) => a.id === id);
   const mockArticle = allMockArticles.find((a) => a.id === id);
   
-  const article = rssArticle || mockArticle;
+  // Use cached article if RSS/mock not found
+  const article = rssArticle || mockArticle || cachedArticle;
 
   // Track article view for logged-in users
   useEffect(() => {
@@ -83,8 +99,8 @@ const Article = () => {
     }
   }, [id, article?.category]);
 
-  // Show loading while fetching RSS
-  if (rssLoading && !mockArticle) {
+  // Show loading while fetching RSS (only if no cached article)
+  if (rssLoading && !mockArticle && !cachedArticle) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
