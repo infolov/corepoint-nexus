@@ -8,14 +8,29 @@ const corsHeaders = {
 
 // Polish RSS news sources
 const RSS_SOURCES = [
+  // Wiadomości
   { url: 'https://www.polsatnews.pl/rss/wszystkie.xml', source: 'Polsat News', category: 'Wiadomości' },
   { url: 'https://tvn24.pl/najnowsze.xml', source: 'TVN24', category: 'Wiadomości' },
   { url: 'https://wiadomosci.wp.pl/rss.xml', source: 'Wirtualna Polska', category: 'Wiadomości' },
+  // Biznes
   { url: 'https://www.bankier.pl/rss/wiadomosci.xml', source: 'Bankier.pl', category: 'Biznes' },
   { url: 'https://www.money.pl/rss/rss.xml', source: 'Money.pl', category: 'Biznes' },
+  // Sport
   { url: 'https://sportowefakty.wp.pl/rss.xml', source: 'Sportowe Fakty', category: 'Sport' },
+  // Technologia
   { url: 'https://www.chip.pl/feed', source: 'Chip.pl', category: 'Technologia' },
   { url: 'https://tech.wp.pl/rss.xml', source: 'WP Tech', category: 'Technologia' },
+  // Rozrywka
+  { url: 'https://plejada.pl/rss.xml', source: 'Plejada', category: 'Rozrywka' },
+  { url: 'https://rozrywka.wp.pl/rss.xml', source: 'WP Rozrywka', category: 'Rozrywka' },
+  { url: 'https://www.pudelek.pl/rss.xml', source: 'Pudelek', category: 'Rozrywka' },
+  // Zdrowie
+  { url: 'https://zdrowie.wp.pl/rss.xml', source: 'WP Zdrowie', category: 'Zdrowie' },
+  { url: 'https://www.medonet.pl/rss.xml', source: 'Medonet', category: 'Zdrowie' },
+  { url: 'https://kobieta.wp.pl/rss.xml', source: 'WP Kobieta', category: 'Lifestyle' },
+  // Kultura
+  { url: 'https://kultura.wp.pl/rss.xml', source: 'WP Kultura', category: 'Kultura' },
+  { url: 'https://www.culture.pl/pl/rss', source: 'Culture.pl', category: 'Kultura' },
 ];
 
 interface Article {
@@ -69,6 +84,9 @@ function parseRSSItem(item: string, source: string, category: string): Article |
       'Sport': 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=800&h=500&fit=crop',
       'Technologia': 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&h=500&fit=crop',
       'Lifestyle': 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?w=800&h=500&fit=crop',
+      'Rozrywka': 'https://images.unsplash.com/photo-1603190287605-e6ade32fa852?w=800&h=500&fit=crop',
+      'Zdrowie': 'https://images.unsplash.com/photo-1505576399279-565b52d4ac71?w=800&h=500&fit=crop',
+      'Kultura': 'https://images.unsplash.com/photo-1518998053901-5348d3961a04?w=800&h=500&fit=crop',
     };
     
     if (!image) {
