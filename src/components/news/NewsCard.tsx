@@ -142,7 +142,7 @@ export function NewsCard({
   // Generate article URL - opens in new tab
   const articleUrl = id ? `/artykul/${id}` : "#";
 
-  // Save article data to sessionStorage when clicking, so it's available in new tab
+  // Save article data to localStorage when clicking, so it's available in new tab
   const handleArticleClick = () => {
     if (id) {
       const articleData = {
@@ -157,7 +157,7 @@ export function NewsCard({
         sourceUrl,
         badge,
       };
-      sessionStorage.setItem(`article_${id}`, JSON.stringify(articleData));
+      localStorage.setItem(`article_${id}`, JSON.stringify(articleData));
     }
   };
 
