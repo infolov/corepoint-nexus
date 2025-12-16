@@ -240,6 +240,250 @@ const SCRAPE_SOURCES = [
       excerpt: '.lead, p'
     }
   },
+  { 
+    url: 'https://muzyka.interia.pl/', 
+    source: 'Interia Muzyka', 
+    category: 'Kultura',
+    selectors: {
+      articles: '.article-item, .news-item, article',
+      title: 'h2, h3, .title',
+      link: 'a',
+      image: 'img',
+      excerpt: '.lead, p'
+    }
+  },
+  { 
+    url: 'https://www.telemagazyn.pl/', 
+    source: 'Telemagazyn', 
+    category: 'Kultura',
+    selectors: {
+      articles: '.article-item, .news-item, article',
+      title: 'h2, h3, .title',
+      link: 'a',
+      image: 'img',
+      excerpt: '.lead, p'
+    }
+  },
+  
+  // ===== NAUKA =====
+  { 
+    url: 'https://www.focus.pl/', 
+    source: 'Focus', 
+    category: 'Nauka',
+    selectors: {
+      articles: '.article-tile, .news-item, article',
+      title: 'h2, h3, .title',
+      link: 'a',
+      image: 'img',
+      excerpt: '.lead, p'
+    }
+  },
+  { 
+    url: 'https://naukawpolsce.pl/', 
+    source: 'Nauka w Polsce', 
+    category: 'Nauka',
+    selectors: {
+      articles: '.article-item, .news-item, article',
+      title: 'h2, h3, .title',
+      link: 'a',
+      image: 'img',
+      excerpt: '.lead, p'
+    }
+  },
+  { 
+    url: 'https://www.national-geographic.pl/', 
+    source: 'National Geographic PL', 
+    category: 'Nauka',
+    selectors: {
+      articles: '.article-tile, .news-item, article',
+      title: 'h2, h3, .title',
+      link: 'a',
+      image: 'img',
+      excerpt: '.lead, p'
+    }
+  },
+  { 
+    url: 'https://kopalniawiedzy.pl/', 
+    source: 'Kopalnia Wiedzy', 
+    category: 'Nauka',
+    selectors: {
+      articles: '.article-item, .news-item, article',
+      title: 'h2, h3, .title',
+      link: 'a',
+      image: 'img',
+      excerpt: '.lead, p'
+    }
+  },
+  { 
+    url: 'https://www.crazynauka.pl/', 
+    source: 'Crazy Nauka', 
+    category: 'Nauka',
+    selectors: {
+      articles: '.article-tile, .news-item, article, .post',
+      title: 'h2, h3, .title',
+      link: 'a',
+      image: 'img',
+      excerpt: '.lead, p, .excerpt'
+    }
+  },
+  { 
+    url: 'https://www.polityka.pl/tygodnikpolityka/nauka/', 
+    source: 'Polityka Nauka', 
+    category: 'Nauka',
+    selectors: {
+      articles: '.article-tile, .news-item, article',
+      title: 'h2, h3, .title',
+      link: 'a',
+      image: 'img',
+      excerpt: '.lead, p'
+    }
+  },
+  { 
+    url: 'https://www.rmf24.pl/nauka/', 
+    source: 'RMF Nauka', 
+    category: 'Nauka',
+    selectors: {
+      articles: '.article-item, .news-item, article',
+      title: 'h2, h3, .title',
+      link: 'a',
+      image: 'img',
+      excerpt: '.lead, p'
+    }
+  },
+  { 
+    url: 'https://www.tvn24.pl/nauka/', 
+    source: 'TVN24 Nauka', 
+    category: 'Nauka',
+    selectors: {
+      articles: '.article-item, .news-item, article',
+      title: 'h2, h3, .title',
+      link: 'a',
+      image: 'img',
+      excerpt: '.lead, p'
+    }
+  },
+  
+  // ===== MOTORYZACJA =====
+  { 
+    url: 'https://moto.wp.pl/', 
+    source: 'WP Moto', 
+    category: 'Motoryzacja',
+    selectors: {
+      articles: '.article-tile, .news-item, article',
+      title: 'h2, h3, .title',
+      link: 'a',
+      image: 'img',
+      excerpt: '.lead, p'
+    }
+  },
+  { 
+    url: 'https://www.auto-swiat.pl/', 
+    source: 'Auto Świat', 
+    category: 'Motoryzacja',
+    selectors: {
+      articles: '.article-tile, .news-item, article',
+      title: 'h2, h3, .title',
+      link: 'a',
+      image: 'img',
+      excerpt: '.lead, p'
+    }
+  },
+  { 
+    url: 'https://autokult.pl/', 
+    source: 'Autokult', 
+    category: 'Motoryzacja',
+    selectors: {
+      articles: '.article-tile, .news-item, article, .post',
+      title: 'h2, h3, .title',
+      link: 'a',
+      image: 'img',
+      excerpt: '.lead, p, .excerpt'
+    }
+  },
+  { 
+    url: 'https://www.moto.pl/', 
+    source: 'Moto.pl', 
+    category: 'Motoryzacja',
+    selectors: {
+      articles: '.article-tile, .news-item, article',
+      title: 'h2, h3, .title',
+      link: 'a',
+      image: 'img',
+      excerpt: '.lead, p'
+    }
+  },
+  { 
+    url: 'https://motofakty.pl/', 
+    source: 'Motofakty', 
+    category: 'Motoryzacja',
+    selectors: {
+      articles: '.article-tile, .news-item, article',
+      title: 'h2, h3, .title',
+      link: 'a',
+      image: 'img',
+      excerpt: '.lead, p'
+    }
+  },
+  { 
+    url: 'https://www.autocentrum.pl/', 
+    source: 'Autocentrum', 
+    category: 'Motoryzacja',
+    selectors: {
+      articles: '.article-item, .news-item, article',
+      title: 'h2, h3, .title',
+      link: 'a',
+      image: 'img',
+      excerpt: '.lead, p'
+    }
+  },
+  { 
+    url: 'https://autoblog.pl/', 
+    source: 'Autoblog.pl', 
+    category: 'Motoryzacja',
+    selectors: {
+      articles: '.article-tile, .news-item, article, .post',
+      title: 'h2, h3, .title',
+      link: 'a',
+      image: 'img',
+      excerpt: '.lead, p'
+    }
+  },
+  { 
+    url: 'https://elektrowoz.pl/', 
+    source: 'Elektrowóz', 
+    category: 'Motoryzacja',
+    selectors: {
+      articles: '.article-tile, .news-item, article, .post',
+      title: 'h2, h3, .title',
+      link: 'a',
+      image: 'img',
+      excerpt: '.lead, p, .excerpt'
+    }
+  },
+  { 
+    url: 'https://moto.onet.pl/', 
+    source: 'Onet Moto', 
+    category: 'Motoryzacja',
+    selectors: {
+      articles: '.itemBox, .news-item, article',
+      title: 'h2, h3, .title, .itemTitle',
+      link: 'a',
+      image: 'img',
+      excerpt: '.itemLead, .lead, p'
+    }
+  },
+  { 
+    url: 'https://moto.interia.pl/', 
+    source: 'Interia Moto', 
+    category: 'Motoryzacja',
+    selectors: {
+      articles: '.article-item, .news-item, article',
+      title: 'h2, h3, .title',
+      link: 'a',
+      image: 'img',
+      excerpt: '.lead, p'
+    }
+  },
 ];
 
 function simpleHash(str: string): string {
@@ -362,6 +606,8 @@ function extractArticlesFromHTML(html: string, source: string, category: string,
           'Rozrywka': 'https://images.unsplash.com/photo-1603190287605-e6ade32fa852?w=800&h=500&fit=crop',
           'Zdrowie': 'https://images.unsplash.com/photo-1505576399279-565b52d4ac71?w=800&h=500&fit=crop',
           'Kultura': 'https://images.unsplash.com/photo-1518998053901-5348d3961a04?w=800&h=500&fit=crop',
+          'Nauka': 'https://images.unsplash.com/photo-1507413245164-6160d8298b31?w=800&h=500&fit=crop',
+          'Motoryzacja': 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=800&h=500&fit=crop',
         };
         image = fallbacks[category] || fallbacks['Rozrywka'];
       }
