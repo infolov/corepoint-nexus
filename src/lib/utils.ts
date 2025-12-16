@@ -30,8 +30,27 @@ export function decodeHTMLEntities(text: string): string {
     '&rsquo;': '\u2019',
     '&ldquo;': '\u201C',
     '&rdquo;': '\u201D',
-    '&hellip;': '…',
-    '&#8230;': '…',
+    '&hellip;': '\u2026',
+    '&#8230;': '\u2026',
+    // Polish characters
+    '&oacute;': '\u00F3',
+    '&Oacute;': '\u00D3',
+    '&aogon;': '\u0105',
+    '&Aogon;': '\u0104',
+    '&eogon;': '\u0119',
+    '&Eogon;': '\u0118',
+    '&sacute;': '\u015B',
+    '&Sacute;': '\u015A',
+    '&cacute;': '\u0107',
+    '&Cacute;': '\u0106',
+    '&nacute;': '\u0144',
+    '&Nacute;': '\u0143',
+    '&zacute;': '\u017A',
+    '&Zacute;': '\u0179',
+    '&zdot;': '\u017C',
+    '&Zdot;': '\u017B',
+    '&lstrok;': '\u0142',
+    '&Lstrok;': '\u0141',
   };
   
   let decoded = text;
@@ -39,8 +58,11 @@ export function decodeHTMLEntities(text: string): string {
     decoded = decoded.split(entity).join(char);
   }
   
-  // Handle numeric entities like &#123;
+  // Handle decimal numeric entities like &#243; (ó)
   decoded = decoded.replace(/&#(\d+);/g, (_, num) => String.fromCharCode(parseInt(num, 10)));
+  
+  // Handle hexadecimal numeric entities like &#xF3; (ó)
+  decoded = decoded.replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
   
   return decoded;
 }
