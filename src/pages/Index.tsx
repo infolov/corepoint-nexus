@@ -172,49 +172,53 @@ const Index = () => {
     if (activeCategory !== "all") {
       // Check if it's a subcategory (format: category/subcategory)
       const [mainCategory, subCategory] = activeCategory.split("/");
+      
+      // Map slugs to exact category names from RSS feeds
       const categoryMap: Record<string, string[]> = {
-        wiadomosci: ["Wiadomości", "Polska", "News", "Polityka", "Społeczeństwo"],
-        biznes: ["Biznes", "Finanse", "Ekonomia", "Giełda", "Gospodarka", "Money"],
-        sport: ["Sport", "Piłka nożna", "Koszykówka", "Siatkówka", "Tenis", "F1", "MMA", "Sportowe"],
-        technologia: ["Technologia", "Tech", "IT", "AI", "Gaming", "Smartfon", "Chip"],
-        lifestyle: ["Lifestyle", "Moda", "Uroda", "Dom", "Podróże"],
-        rozrywka: ["Rozrywka", "Film", "Muzyka", "Seriale", "Gwiazdy", "TV"],
-        zdrowie: ["Zdrowie", "Medycyna", "Dieta", "Fitness"],
-        nauka: ["Nauka", "Edukacja", "Kosmos", "Historia", "Odkrycia"],
-        motoryzacja: ["Motoryzacja", "Auto", "Samochód"],
-        kultura: ["Kultura", "Sztuka", "Teatr", "Literatura"]
+        wiadomosci: ["Wiadomości"],
+        biznes: ["Biznes"],
+        sport: ["Sport"],
+        technologia: ["Technologia"],
+        lifestyle: ["Lifestyle"],
+        rozrywka: ["Rozrywka"],
+        zdrowie: ["Zdrowie"],
+        nauka: ["Nauka"],
+        motoryzacja: ["Motoryzacja"],
+        kultura: ["Kultura"]
       };
-      const subcategoryMap: Record<string, string[]> = {
+      
+      // Subcategory keywords for title search (only for subcategories)
+      const subcategoryKeywords: Record<string, string[]> = {
         // Wiadomości
-        "wiadomosci/polska": ["Polska"],
-        "wiadomosci/swiat": ["Świat", "Zagranica"],
-        "wiadomosci/polityka": ["Polityka"],
-        "wiadomosci/spoleczenstwo": ["Społeczeństwo"],
+        "wiadomosci/polska": ["Polska", "Polski", "Polskie"],
+        "wiadomosci/swiat": ["Świat", "USA", "Europa", "Chiny", "Rosja", "Ukraina"],
+        "wiadomosci/polityka": ["Polityka", "Sejm", "Rząd", "Minister", "Premier", "Prezydent"],
+        "wiadomosci/spoleczenstwo": ["Społeczeństwo", "Społeczny"],
         // Sport
-        "sport/pilka-nozna": ["Piłka nożna", "Ekstraklasa", "Liga", "UEFA", "Lech", "Legia"],
+        "sport/pilka-nozna": ["Piłka nożna", "Ekstraklasa", "Liga", "UEFA", "Lech", "Legia", "Real", "Barcelona", "Messi", "Ronaldo"],
         "sport/koszykowka": ["Koszykówka", "NBA", "Euroliga"],
         "sport/siatkowka": ["Siatkówka", "PlusLiga"],
-        "sport/tenis": ["Tenis", "ATP", "WTA"],
-        "sport/sporty-motorowe": ["F1", "MotoGP", "Rajdy", "Żużel"],
+        "sport/tenis": ["Tenis", "ATP", "WTA", "Wimbledon", "Roland Garros"],
+        "sport/sporty-motorowe": ["F1", "MotoGP", "Rajdy", "Żużel", "Formuła"],
         "sport/sporty-walki": ["MMA", "UFC", "KSW", "Boks"],
         "sport/e-sport": ["E-sport", "CS2", "League of Legends", "Valorant"],
         // Biznes
-        "biznes/finanse-osobiste": ["Finanse osobiste", "Oszczędności"],
+        "biznes/finanse-osobiste": ["Finanse osobiste", "Oszczędności", "Kredyt"],
         "biznes/gielda": ["Giełda", "GPW", "Akcje", "Inwestycje"],
-        "biznes/nieruchomosci": ["Nieruchomości", "Mieszkania"],
+        "biznes/nieruchomosci": ["Nieruchomości", "Mieszkania", "Dom"],
         "biznes/gospodarka": ["Gospodarka", "PKB", "Inflacja"],
-        "biznes/kryptowaluty": ["Kryptowaluty", "Bitcoin", "Crypto"],
+        "biznes/kryptowaluty": ["Kryptowaluty", "Bitcoin", "Crypto", "Ethereum"],
         // Technologia
-        "technologia/smartfony": ["Smartfon", "iPhone", "Samsung", "Telefon"],
+        "technologia/smartfony": ["Smartfon", "iPhone", "Samsung", "Telefon", "Android"],
         "technologia/gaming": ["Gaming", "Gry", "PlayStation", "Xbox", "PC"],
-        "technologia/ai": ["AI", "Sztuczna inteligencja", "ChatGPT", "GPT"],
+        "technologia/ai": ["AI", "Sztuczna inteligencja", "ChatGPT", "GPT", "OpenAI"],
         "technologia/cyberbezpieczenstwo": ["Cyberbezpieczeństwo", "Haker", "Bezpieczeństwo"],
         // Lifestyle
         "lifestyle/moda": ["Moda", "Fashion"],
         "lifestyle/podroze": ["Podróże", "Turystyka", "Wakacje"],
         "lifestyle/gotowanie": ["Gotowanie", "Przepisy", "Kuchnia"],
         // Rozrywka
-        "rozrywka/film": ["Film", "Kino", "Netflix"],
+        "rozrywka/film": ["Film", "Kino", "Netflix", "Marvel"],
         "rozrywka/muzyka": ["Muzyka", "Koncert", "Album"],
         "rozrywka/seriale": ["Serial", "HBO", "Netflix"],
         "rozrywka/gwiazdy": ["Gwiazdy", "Celebryci"],
@@ -222,20 +226,39 @@ const Index = () => {
         "zdrowie/dieta": ["Dieta", "Odżywianie", "Odchudzanie"],
         "zdrowie/fitness": ["Fitness", "Trening", "Ćwiczenia"],
         // Nauka
-        "nauka/kosmos": ["Kosmos", "Astronomia", "NASA", "Kometa", "Gwiazda"],
-        "nauka/historia": ["Historia"],
+        "nauka/kosmos": ["Kosmos", "Astronomia", "NASA", "Kometa", "Gwiazda", "Mars"],
+        "nauka/historia": ["Historia", "Historyczne"],
         "nauka/ekologia": ["Ekologia", "Klimat", "Środowisko"]
       };
-      let categoryNames: string[] = [];
+      
       if (subCategory) {
-        // Use subcategory filter
-        categoryNames = subcategoryMap[activeCategory] || [];
+        // For subcategories: first filter by main category, then by title keywords
+        const mainCategoryNames = categoryMap[mainCategory] || [];
+        const keywords = subcategoryKeywords[activeCategory] || [];
+        
+        articles = articles.filter(a => {
+          // Must match main category
+          const matchesCategory = mainCategoryNames.some(cat => 
+            a.category?.toLowerCase() === cat.toLowerCase()
+          );
+          if (!matchesCategory) return false;
+          
+          // Then check title for subcategory keywords
+          if (keywords.length > 0) {
+            return keywords.some(keyword => 
+              a.title?.toLowerCase().includes(keyword.toLowerCase())
+            );
+          }
+          return true;
+        });
       } else {
-        // Use main category filter
-        categoryNames = categoryMap[mainCategory] || [];
-      }
-      if (categoryNames.length > 0) {
-        articles = articles.filter(a => categoryNames.some(cat => a.category?.toLowerCase().includes(cat.toLowerCase()) || a.title?.toLowerCase().includes(cat.toLowerCase())));
+        // For main categories: exact category match only
+        const categoryNames = categoryMap[mainCategory] || [];
+        if (categoryNames.length > 0) {
+          articles = articles.filter(a => 
+            categoryNames.some(cat => a.category?.toLowerCase() === cat.toLowerCase())
+          );
+        }
       }
     }
     return articles;
