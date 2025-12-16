@@ -94,22 +94,6 @@ const RSS_SOURCES = [
   { url: 'https://urania.edu.pl/feed/', source: 'Urania', category: 'Nauka' },
   { url: 'https://www.naukaoklimacie.pl/feed/', source: 'Nauka o Klimacie', category: 'Nauka' },
   { url: 'https://geekweek.pl/feed/', source: 'GeekWeek', category: 'Nauka' },
-  // Dodatkowe źródła naukowe
-  { url: 'https://www.rmf24.pl/nauka/feed', source: 'RMF24 Nauka', category: 'Nauka' },
-  { url: 'https://tvn24.pl/nauka/najnowsze.xml', source: 'TVN24 Nauka', category: 'Nauka' },
-  { url: 'https://nauka.interia.pl/rss', source: 'Interia Nauka', category: 'Nauka' },
-  { url: 'https://www.polskieradio.pl/rss/nauka.xml', source: 'Polskie Radio Nauka', category: 'Nauka' },
-  { url: 'https://www.polityka.pl/rss/nauka.xml', source: 'Polityka Nauka', category: 'Nauka' },
-  { url: 'https://www.rp.pl/rss/1047-nauka.xml', source: 'Rzeczpospolita Nauka', category: 'Nauka' },
-  { url: 'https://nauka.gazeta.pl/pub/rss/nauka.xml', source: 'Gazeta Nauka', category: 'Nauka' },
-  { url: 'https://www.onet.pl/rss/nauka.xml', source: 'Onet Nauka', category: 'Nauka' },
-  { url: 'https://www.wp.pl/rss/nauka.xml', source: 'WP Nauka', category: 'Nauka' },
-  { url: 'https://ciekawostkihistoryczne.pl/feed/', source: 'Ciekawostki Historyczne', category: 'Nauka' },
-  { url: 'https://histmag.org/feed/', source: 'Histmag', category: 'Nauka' },
-  { url: 'https://www.archeowiesci.pl/feed/', source: 'Archeowieści', category: 'Nauka' },
-  { url: 'https://www.kwantowo.pl/feed/', source: 'Kwantowo', category: 'Nauka' },
-  { url: 'https://www.naukowiec.org/feed/', source: 'Naukowiec', category: 'Nauka' },
-  { url: 'https://www.scienceinpoland.pl/rss.xml', source: 'Science in Poland', category: 'Nauka' },
   
   // ===== MOTORYZACJA =====
   { url: 'https://moto.wp.pl/rss.xml', source: 'WP Moto', category: 'Motoryzacja' },
