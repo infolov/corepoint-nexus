@@ -321,12 +321,21 @@ export function NewsCard({
             </Badge>
           </div>
           
+          {/* Badge - top right circle */}
+          {badge && (
+            <div className="absolute top-3 right-3">
+              <div className={cn(
+                "w-8 h-8 rounded-full flex items-center justify-center text-base",
+                badge === "pilne" ? "bg-destructive text-destructive-foreground" : 
+                badge === "hot" ? "bg-orange-500 text-white" : 
+                badge === "trending" ? "bg-blue-500 text-white" : "bg-primary text-primary-foreground"
+              )}>
+                {badge === "pilne" ? "!" : badge === "hot" ? "🔥" : badge === "trending" ? "📈" : "✨"}
+              </div>
+            </div>
+          )}
+          
           <div className="absolute inset-x-0 bottom-0 p-5 lg:p-6">
-            {badge && (
-              <Badge variant={badge === "pilne" ? "destructive" : badge} className="mb-3">
-                {badge === "pilne" ? "PILNE" : badge === "hot" ? "Popularne" : badge === "trending" ? "Na czasie" : "Nowe"}
-              </Badge>
-            )}
             
             <div className="flex items-center gap-2 mb-3">
               <span className="text-sm text-white font-light">{source}</span>
@@ -371,6 +380,20 @@ export function NewsCard({
               {category}
             </Badge>
           </div>
+          
+          {/* Badge - top right circle */}
+          {badge && (
+            <div className="absolute top-2 right-2">
+              <div className={cn(
+                "w-6 h-6 rounded-full flex items-center justify-center text-xs",
+                badge === "pilne" ? "bg-destructive text-destructive-foreground" : 
+                badge === "hot" ? "bg-orange-500 text-white" : 
+                badge === "trending" ? "bg-blue-500 text-white" : "bg-primary text-primary-foreground"
+              )}>
+                {badge === "pilne" ? "!" : badge === "hot" ? "🔥" : badge === "trending" ? "📈" : "✨"}
+              </div>
+            </div>
+          )}
           
           <div className="absolute inset-x-0 bottom-0 p-2.5">
             <div className="flex items-center gap-1.5 mb-1">
