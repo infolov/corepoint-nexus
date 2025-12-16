@@ -33,7 +33,7 @@ const categories = [
 ];
 
 export function Header() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  
   const [isDark, setIsDark] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -331,26 +331,6 @@ export function Header() {
         </div>
       </div>
 
-      {/* Mobile Menu (kept for category quick access) */}
-      <div
-        className={cn(
-          "md:hidden bg-nav border-t border-nav-foreground/10 overflow-hidden transition-all duration-300",
-          isMenuOpen ? "max-h-96" : "max-h-0"
-        )}
-      >
-        <nav className="container py-4 flex flex-col gap-2">
-          {categories.map((cat) => (
-            <Link
-              key={cat.name}
-              to={`/${cat.slug}`}
-              className="px-4 py-2 text-nav-foreground hover:bg-nav-foreground/10 rounded-lg transition-colors"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              {cat.name}
-            </Link>
-          ))}
-        </nav>
-      </div>
 
       {/* Settings Panel */}
       <SettingsPanel 
