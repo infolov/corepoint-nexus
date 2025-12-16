@@ -36,10 +36,10 @@ const Article = () => {
   const [isSaved, setIsSaved] = useState(false);
   const [cachedArticle, setCachedArticle] = useState<any>(null);
 
-  // Load cached article from sessionStorage on mount
+  // Load cached article from localStorage on mount
   useEffect(() => {
     if (id) {
-      const cached = sessionStorage.getItem(`article_${id}`);
+      const cached = localStorage.getItem(`article_${id}`);
       if (cached) {
         try {
           setCachedArticle(JSON.parse(cached));
