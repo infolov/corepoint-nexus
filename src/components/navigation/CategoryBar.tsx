@@ -370,6 +370,11 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
 
   const currentExpandedCategory = categoriesWithSubs.find(c => c.slug === expandedCategory);
 
+  // Hide on mobile
+  if (isMobile) {
+    return null;
+  }
+
   return (
     <div className="sticky top-16 z-40 bg-background/95 backdrop-blur-md border-b border-border/50">
       <div className="container relative">
