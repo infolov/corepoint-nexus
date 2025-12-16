@@ -30,37 +30,61 @@ export function useRSSArticles() {
     setError(null);
 
     try {
-      console.log("Fetching RSS articles...");
+      console.log("Fetching articles from RSS and scraping...");
       
-      const { data, error: fetchError } = await supabase.functions.invoke("fetch-rss");
+      // Fetch from both RSS and scraping in parallel
+      const [rssResult, scrapeResult] = await Promise.allSettled([
+        supabase.functions.invoke("fetch-rss"),
+        supabase.functions.invoke("scrape-news")
+      ]);
 
-      if (fetchError) {
-        console.error("Error from edge function:", fetchError);
-        throw fetchError;
+      let allArticles: RSSArticle[] = [];
+
+      // Process RSS results
+      if (rssResult.status === 'fulfilled' && !rssResult.value.error) {
+        console.log("RSS data received:", rssResult.value.data?.articles?.length || 0, "articles");
+        allArticles = [...allArticles, ...(rssResult.value.data?.articles || [])];
+      } else {
+        console.error("Error from RSS:", rssResult.status === 'rejected' ? rssResult.reason : rssResult.value.error);
       }
 
-      console.log("RSS data received:", data);
-      const newArticles = data?.articles || [];
+      // Process scraping results
+      if (scrapeResult.status === 'fulfilled' && !scrapeResult.value.error) {
+        console.log("Scraping data received:", scrapeResult.value.data?.articles?.length || 0, "articles");
+        allArticles = [...allArticles, ...(scrapeResult.value.data?.articles || [])];
+      } else {
+        console.error("Error from scraping:", scrapeResult.status === 'rejected' ? scrapeResult.reason : scrapeResult.value.error);
+      }
+
+      // Sort all articles by publication date (newest first)
+      allArticles.sort((a, b) => (b.pubDateMs || 0) - (a.pubDateMs || 0));
       
-      // Merge new articles with existing ones, preserving order for stability
-      // but adding new articles at the beginning
+      // Remove duplicates by ID
+      const seenIds = new Set<string>();
+      const uniqueArticles = allArticles.filter(article => {
+        if (seenIds.has(article.id)) return false;
+        seenIds.add(article.id);
+        return true;
+      });
+
+      console.log("Total unique articles:", uniqueArticles.length);
+      
+      // Merge new articles with existing ones
       const existingIds = new Set(articlesRef.current.map(a => a.id));
-      const trulyNewArticles = newArticles.filter((a: RSSArticle) => !existingIds.has(a.id));
+      const trulyNewArticles = uniqueArticles.filter((a: RSSArticle) => !existingIds.has(a.id));
       
-      // Update existing articles and add new ones at the start
       const mergedArticles = [...trulyNewArticles, ...articlesRef.current.filter((existing: RSSArticle) => 
-        newArticles.some((newA: RSSArticle) => newA.id === existing.id)
+        uniqueArticles.some((newA: RSSArticle) => newA.id === existing.id)
       )];
       
-      // If we have no existing articles, just use the new ones
-      const finalArticles = articlesRef.current.length === 0 ? newArticles : mergedArticles;
+      const finalArticles = articlesRef.current.length === 0 ? uniqueArticles : mergedArticles;
       
       articlesRef.current = finalArticles;
       setArticles(finalArticles);
       setLastUpdated(new Date());
     } catch (err) {
-      console.error("Error fetching RSS articles:", err);
-      setError("Błąd podczas ładowania artykułów z RSS");
+      console.error("Error fetching articles:", err);
+      setError("Błąd podczas ładowania artykułów");
     } finally {
       setLoading(false);
     }
