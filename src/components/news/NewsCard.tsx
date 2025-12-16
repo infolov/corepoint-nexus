@@ -416,10 +416,15 @@ export function NewsCard({
         </div>
         
         {badge && (
-          <div className="absolute top-3 left-20">
-            <Badge variant={badge === "pilne" ? "destructive" : badge} className="text-[10px] px-2 py-0.5">
-              {badge === "pilne" ? "PILNE" : badge === "hot" ? "🔥" : badge === "trending" ? "📈" : "✨"}
-            </Badge>
+          <div className="absolute top-3 right-3">
+            <div className={cn(
+              "w-7 h-7 rounded-full flex items-center justify-center text-sm",
+              badge === "pilne" ? "bg-destructive text-destructive-foreground" : 
+              badge === "hot" ? "bg-orange-500 text-white" : 
+              badge === "trending" ? "bg-blue-500 text-white" : "bg-primary text-primary-foreground"
+            )}>
+              {badge === "pilne" ? "!" : badge === "hot" ? "🔥" : badge === "trending" ? "📈" : "✨"}
+            </div>
           </div>
         )}
         
