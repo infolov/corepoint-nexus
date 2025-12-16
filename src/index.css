@@ -121,11 +121,14 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans antialiased;
+    @apply bg-background text-foreground font-sans antialiased tracking-wide;
+    font-weight: 400;
+    letter-spacing: 0.01em;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-heading font-bold tracking-tight;
+    @apply font-heading font-semibold tracking-normal;
+    letter-spacing: 0.02em;
   }
 }
 
