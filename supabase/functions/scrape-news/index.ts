@@ -21,6 +21,7 @@ interface ScrapedArticle {
 
 // News sources to scrape (sites without working RSS)
 const SCRAPE_SOURCES = [
+  // ===== ROZRYWKA =====
   { 
     url: 'https://www.pudelek.pl/', 
     source: 'Pudelek', 
@@ -31,30 +32,6 @@ const SCRAPE_SOURCES = [
       link: 'a',
       image: 'img',
       excerpt: '.lead, .excerpt, p'
-    }
-  },
-  { 
-    url: 'https://www.medonet.pl/', 
-    source: 'Medonet', 
-    category: 'Zdrowie',
-    selectors: {
-      articles: '.article-tile, .news-item, article',
-      title: 'h2, h3, .title',
-      link: 'a',
-      image: 'img',
-      excerpt: '.lead, .description, p'
-    }
-  },
-  { 
-    url: 'https://kultura.onet.pl/', 
-    source: 'Onet Kultura', 
-    category: 'Kultura',
-    selectors: {
-      articles: '.itemBox, .news-item, article',
-      title: 'h2, h3, .title, .itemTitle',
-      link: 'a',
-      image: 'img',
-      excerpt: '.itemLead, .lead, p'
     }
   },
   { 
@@ -70,12 +47,194 @@ const SCRAPE_SOURCES = [
     }
   },
   { 
+    url: 'https://www.se.pl/rozrywka/', 
+    source: 'Super Express', 
+    category: 'Rozrywka',
+    selectors: {
+      articles: '.article-item, .news-item, article',
+      title: 'h2, h3, .title',
+      link: 'a',
+      image: 'img',
+      excerpt: '.lead, p'
+    }
+  },
+  { 
+    url: 'https://www.pomponik.pl/', 
+    source: 'Pomponik', 
+    category: 'Rozrywka',
+    selectors: {
+      articles: '.article-tile, .news-item, article',
+      title: 'h2, h3, .title',
+      link: 'a',
+      image: 'img',
+      excerpt: '.lead, p'
+    }
+  },
+  { 
+    url: 'https://www.kozaczek.pl/', 
+    source: 'Kozaczek', 
+    category: 'Rozrywka',
+    selectors: {
+      articles: '.article-item, .news-item, article',
+      title: 'h2, h3, .title',
+      link: 'a',
+      image: 'img',
+      excerpt: '.lead, p'
+    }
+  },
+  { 
+    url: 'https://plotek.pl/', 
+    source: 'Plotek', 
+    category: 'Rozrywka',
+    selectors: {
+      articles: '.article-tile, .news-item, article',
+      title: 'h2, h3, .title',
+      link: 'a',
+      image: 'img',
+      excerpt: '.lead, p'
+    }
+  },
+  // ===== ZDROWIE =====
+  { 
+    url: 'https://www.medonet.pl/', 
+    source: 'Medonet', 
+    category: 'Zdrowie',
+    selectors: {
+      articles: '.article-tile, .news-item, article',
+      title: 'h2, h3, .title',
+      link: 'a',
+      image: 'img',
+      excerpt: '.lead, .description, p'
+    }
+  },
+  { 
     url: 'https://zdrowie.radiozet.pl/', 
     source: 'Radio ZET Zdrowie', 
     category: 'Zdrowie',
     selectors: {
       articles: '.article-tile, .news-item, article',
       title: 'h2, h3',
+      link: 'a',
+      image: 'img',
+      excerpt: '.lead, p'
+    }
+  },
+  { 
+    url: 'https://www.poradnikzdrowie.pl/', 
+    source: 'Poradnik Zdrowie', 
+    category: 'Zdrowie',
+    selectors: {
+      articles: '.article-tile, .news-item, article',
+      title: 'h2, h3, .title',
+      link: 'a',
+      image: 'img',
+      excerpt: '.lead, p'
+    }
+  },
+  { 
+    url: 'https://www.mp.pl/pacjent/', 
+    source: 'Medycyna Praktyczna', 
+    category: 'Zdrowie',
+    selectors: {
+      articles: '.article-item, .news-item, article',
+      title: 'h2, h3, .title',
+      link: 'a',
+      image: 'img',
+      excerpt: '.lead, p'
+    }
+  },
+  { 
+    url: 'https://www.abczdrowie.pl/', 
+    source: 'ABC Zdrowie', 
+    category: 'Zdrowie',
+    selectors: {
+      articles: '.article-tile, .news-item, article',
+      title: 'h2, h3, .title',
+      link: 'a',
+      image: 'img',
+      excerpt: '.lead, p'
+    }
+  },
+  { 
+    url: 'https://polki.pl/zdrowie/', 
+    source: 'Polki.pl Zdrowie', 
+    category: 'Zdrowie',
+    selectors: {
+      articles: '.article-tile, .news-item, article',
+      title: 'h2, h3, .title',
+      link: 'a',
+      image: 'img',
+      excerpt: '.lead, p'
+    }
+  },
+  // ===== KULTURA =====
+  { 
+    url: 'https://kultura.onet.pl/', 
+    source: 'Onet Kultura', 
+    category: 'Kultura',
+    selectors: {
+      articles: '.itemBox, .news-item, article',
+      title: 'h2, h3, .title, .itemTitle',
+      link: 'a',
+      image: 'img',
+      excerpt: '.itemLead, .lead, p'
+    }
+  },
+  { 
+    url: 'https://www.filmweb.pl/news', 
+    source: 'Filmweb', 
+    category: 'Kultura',
+    selectors: {
+      articles: '.newsItem, .news-item, article',
+      title: 'h2, h3, .title',
+      link: 'a',
+      image: 'img',
+      excerpt: '.lead, p'
+    }
+  },
+  { 
+    url: 'https://www.e-teatr.pl/', 
+    source: 'E-Teatr', 
+    category: 'Kultura',
+    selectors: {
+      articles: '.article-item, .news-item, article',
+      title: 'h2, h3, .title',
+      link: 'a',
+      image: 'img',
+      excerpt: '.lead, p'
+    }
+  },
+  { 
+    url: 'https://www.rp.pl/kultura', 
+    source: 'Rzeczpospolita Kultura', 
+    category: 'Kultura',
+    selectors: {
+      articles: '.article-tile, .news-item, article',
+      title: 'h2, h3, .title',
+      link: 'a',
+      image: 'img',
+      excerpt: '.lead, p'
+    }
+  },
+  { 
+    url: 'https://natemat.pl/kultura', 
+    source: 'NaTemat Kultura', 
+    category: 'Kultura',
+    selectors: {
+      articles: '.article-tile, .news-item, article',
+      title: 'h2, h3, .title',
+      link: 'a',
+      image: 'img',
+      excerpt: '.lead, p'
+    }
+  },
+  { 
+    url: 'https://www.dwutygodnik.com/', 
+    source: 'Dwutygodnik', 
+    category: 'Kultura',
+    selectors: {
+      articles: '.article-item, .news-item, article',
+      title: 'h2, h3, .title',
       link: 'a',
       image: 'img',
       excerpt: '.lead, p'
