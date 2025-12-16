@@ -65,47 +65,50 @@ const RSS_SOURCES = [
   { url: 'https://www.eska.pl/rss/hotplota.xml', source: 'Eska', category: 'Rozrywka' },
   { url: 'https://www.gala.pl/rss.xml', source: 'Gala', category: 'Rozrywka' },
   { url: 'https://www.viva.pl/rss.xml', source: 'Viva', category: 'Rozrywka' },
-  { url: 'https://noizz.pl/feed', source: 'Noizz', category: 'Rozrywka' },
-  { url: 'https://kobieta.onet.pl/rss.xml', source: 'Onet Kobieta', category: 'Rozrywka' },
+  { url: 'https://www.o2.pl/rss/rozrywka.xml', source: 'O2 Rozrywka', category: 'Rozrywka' },
+  { url: 'https://plotek.pl/feed', source: 'Plotek', category: 'Rozrywka' },
   
   // ===== ZDROWIE =====
   { url: 'https://zdrowie.wp.pl/rss.xml', source: 'WP Zdrowie', category: 'Zdrowie' },
   { url: 'https://www.medonet.pl/rss.xml', source: 'Medonet', category: 'Zdrowie' },
+  { url: 'https://www.poradnikzdrowie.pl/rss.xml', source: 'Poradnik Zdrowie', category: 'Zdrowie' },
+  { url: 'https://www.mp.pl/rss/pediatria.xml', source: 'Medycyna Praktyczna', category: 'Zdrowie' },
+  { url: 'https://www.o2.pl/rss/zdrowie.xml', source: 'O2 Zdrowie', category: 'Zdrowie' },
   { url: 'https://kobieta.wp.pl/rss.xml', source: 'WP Kobieta', category: 'Lifestyle' },
   
   // ===== KULTURA =====
   { url: 'https://kultura.wp.pl/rss.xml', source: 'WP Kultura', category: 'Kultura' },
   { url: 'https://www.culture.pl/pl/rss', source: 'Culture.pl', category: 'Kultura' },
   { url: 'https://www.filmweb.pl/feed/news/latest', source: 'Filmweb', category: 'Kultura' },
-  { url: 'https://www.rp.pl/rss/1048-kultura.xml', source: 'Rzeczpospolita Kultura', category: 'Kultura' },
   { url: 'https://kultura.gazeta.pl/pub/rss/kultura.xml', source: 'Gazeta Kultura', category: 'Kultura' },
-  { url: 'https://muzyka.onet.pl/rss.xml', source: 'Onet Muzyka', category: 'Kultura' },
-  { url: 'https://film.onet.pl/rss.xml', source: 'Onet Film', category: 'Kultura' },
-  { url: 'https://www.polskieradio.pl/rss/kultura.xml', source: 'Polskie Radio Kultura', category: 'Kultura' },
+  { url: 'https://www.polskieradio.pl/8/rss.xml', source: 'Polskie Radio Dwójka', category: 'Kultura' },
+  { url: 'https://kulturalnemedia.pl/feed/', source: 'Kulturalne Media', category: 'Kultura' },
+  { url: 'https://www.dwutygodnik.com/rss', source: 'Dwutygodnik', category: 'Kultura' },
+  { url: 'https://www.o2.pl/rss/kultura.xml', source: 'O2 Kultura', category: 'Kultura' },
   
   // ===== NAUKA =====
   { url: 'https://www.focus.pl/rss.xml', source: 'Focus', category: 'Nauka' },
   { url: 'https://naukawpolsce.pl/rss.xml', source: 'Nauka w Polsce', category: 'Nauka' },
   { url: 'https://www.national-geographic.pl/rss', source: 'National Geographic PL', category: 'Nauka' },
   { url: 'https://kopalniawiedzy.pl/rss.xml', source: 'Kopalnia Wiedzy', category: 'Nauka' },
-  { url: 'https://www.crazynauka.pl/feed/', source: 'Crazy Nauka', category: 'Nauka' },
-  { url: 'https://www.wykop.pl/rss/nauka/', source: 'Wykop Nauka', category: 'Nauka' },
   { url: 'https://innpoland.pl/rss', source: 'InnPoland', category: 'Nauka' },
   { url: 'https://urania.edu.pl/feed/', source: 'Urania', category: 'Nauka' },
-  { url: 'https://www.naukaoklimacie.pl/feed/', source: 'Nauka o Klimacie', category: 'Nauka' },
   { url: 'https://geekweek.pl/feed/', source: 'GeekWeek', category: 'Nauka' },
+  { url: 'https://www.o2.pl/rss/nauka.xml', source: 'O2 Nauka', category: 'Nauka' },
+  { url: 'https://naukawpolsce.pap.pl/rss', source: 'PAP Nauka', category: 'Nauka' },
+  { url: 'https://www.polskieradio.pl/23/rss.xml', source: 'PR Nauka', category: 'Nauka' },
   
   // ===== MOTORYZACJA =====
   { url: 'https://moto.wp.pl/rss.xml', source: 'WP Moto', category: 'Motoryzacja' },
-  { url: 'https://www.auto-swiat.pl/rss.xml', source: 'Auto Świat', category: 'Motoryzacja' },
   { url: 'https://autokult.pl/feed/', source: 'Autokult', category: 'Motoryzacja' },
   { url: 'https://www.moto.pl/rss.xml', source: 'Moto.pl', category: 'Motoryzacja' },
-  { url: 'https://motofakty.pl/rss.xml', source: 'Motofakty', category: 'Motoryzacja' },
   { url: 'https://www.autocentrum.pl/rss.xml', source: 'Autocentrum', category: 'Motoryzacja' },
   { url: 'https://autoblog.pl/feed/', source: 'Autoblog.pl', category: 'Motoryzacja' },
-  { url: 'https://www.motohigh.pl/feed/', source: 'MotoHigh', category: 'Motoryzacja' },
   { url: 'https://elektrowoz.pl/feed/', source: 'Elektrowóz', category: 'Motoryzacja' },
-  { url: 'https://www.motocaina.pl/feed/', source: 'Motocaina', category: 'Motoryzacja' },
+  { url: 'https://www.o2.pl/rss/moto.xml', source: 'O2 Moto', category: 'Motoryzacja' },
+  { url: 'https://moto.interia.pl/rss', source: 'Interia Moto', category: 'Motoryzacja' },
+  { url: 'https://www.motofakty.pl/feed/', source: 'Motofakty', category: 'Motoryzacja' },
+  { url: 'https://sprzedajemy.pl/rss/motoryzacja', source: 'Sprzedajemy Moto', category: 'Motoryzacja' },
 ];
 
 interface Article {
