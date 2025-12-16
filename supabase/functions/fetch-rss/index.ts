@@ -62,6 +62,11 @@ const RSS_SOURCES = [
   { url: 'https://plejada.pl/rss.xml', source: 'Plejada', category: 'Rozrywka' },
   { url: 'https://rozrywka.wp.pl/rss.xml', source: 'WP Rozrywka', category: 'Rozrywka' },
   { url: 'https://www.pudelek.pl/rss.xml', source: 'Pudelek', category: 'Rozrywka' },
+  { url: 'https://www.eska.pl/rss/hotplota.xml', source: 'Eska', category: 'Rozrywka' },
+  { url: 'https://www.gala.pl/rss.xml', source: 'Gala', category: 'Rozrywka' },
+  { url: 'https://www.viva.pl/rss.xml', source: 'Viva', category: 'Rozrywka' },
+  { url: 'https://noizz.pl/feed', source: 'Noizz', category: 'Rozrywka' },
+  { url: 'https://kobieta.onet.pl/rss.xml', source: 'Onet Kobieta', category: 'Rozrywka' },
   
   // ===== ZDROWIE =====
   { url: 'https://zdrowie.wp.pl/rss.xml', source: 'WP Zdrowie', category: 'Zdrowie' },
@@ -71,6 +76,36 @@ const RSS_SOURCES = [
   // ===== KULTURA =====
   { url: 'https://kultura.wp.pl/rss.xml', source: 'WP Kultura', category: 'Kultura' },
   { url: 'https://www.culture.pl/pl/rss', source: 'Culture.pl', category: 'Kultura' },
+  { url: 'https://www.filmweb.pl/feed/news/latest', source: 'Filmweb', category: 'Kultura' },
+  { url: 'https://www.rp.pl/rss/1048-kultura.xml', source: 'Rzeczpospolita Kultura', category: 'Kultura' },
+  { url: 'https://kultura.gazeta.pl/pub/rss/kultura.xml', source: 'Gazeta Kultura', category: 'Kultura' },
+  { url: 'https://muzyka.onet.pl/rss.xml', source: 'Onet Muzyka', category: 'Kultura' },
+  { url: 'https://film.onet.pl/rss.xml', source: 'Onet Film', category: 'Kultura' },
+  { url: 'https://www.polskieradio.pl/rss/kultura.xml', source: 'Polskie Radio Kultura', category: 'Kultura' },
+  
+  // ===== NAUKA =====
+  { url: 'https://www.focus.pl/rss.xml', source: 'Focus', category: 'Nauka' },
+  { url: 'https://naukawpolsce.pl/rss.xml', source: 'Nauka w Polsce', category: 'Nauka' },
+  { url: 'https://www.national-geographic.pl/rss', source: 'National Geographic PL', category: 'Nauka' },
+  { url: 'https://kopalniawiedzy.pl/rss.xml', source: 'Kopalnia Wiedzy', category: 'Nauka' },
+  { url: 'https://www.crazynauka.pl/feed/', source: 'Crazy Nauka', category: 'Nauka' },
+  { url: 'https://www.wykop.pl/rss/nauka/', source: 'Wykop Nauka', category: 'Nauka' },
+  { url: 'https://innpoland.pl/rss', source: 'InnPoland', category: 'Nauka' },
+  { url: 'https://urania.edu.pl/feed/', source: 'Urania', category: 'Nauka' },
+  { url: 'https://www.naukaoklimacie.pl/feed/', source: 'Nauka o Klimacie', category: 'Nauka' },
+  { url: 'https://geekweek.pl/feed/', source: 'GeekWeek', category: 'Nauka' },
+  
+  // ===== MOTORYZACJA =====
+  { url: 'https://moto.wp.pl/rss.xml', source: 'WP Moto', category: 'Motoryzacja' },
+  { url: 'https://www.auto-swiat.pl/rss.xml', source: 'Auto Świat', category: 'Motoryzacja' },
+  { url: 'https://autokult.pl/feed/', source: 'Autokult', category: 'Motoryzacja' },
+  { url: 'https://www.moto.pl/rss.xml', source: 'Moto.pl', category: 'Motoryzacja' },
+  { url: 'https://motofakty.pl/rss.xml', source: 'Motofakty', category: 'Motoryzacja' },
+  { url: 'https://www.autocentrum.pl/rss.xml', source: 'Autocentrum', category: 'Motoryzacja' },
+  { url: 'https://autoblog.pl/feed/', source: 'Autoblog.pl', category: 'Motoryzacja' },
+  { url: 'https://www.motohigh.pl/feed/', source: 'MotoHigh', category: 'Motoryzacja' },
+  { url: 'https://elektrowoz.pl/feed/', source: 'Elektrowóz', category: 'Motoryzacja' },
+  { url: 'https://www.motocaina.pl/feed/', source: 'Motocaina', category: 'Motoryzacja' },
 ];
 
 interface Article {
@@ -127,6 +162,8 @@ function parseRSSItem(item: string, source: string, category: string): Article |
       'Rozrywka': 'https://images.unsplash.com/photo-1603190287605-e6ade32fa852?w=800&h=500&fit=crop',
       'Zdrowie': 'https://images.unsplash.com/photo-1505576399279-565b52d4ac71?w=800&h=500&fit=crop',
       'Kultura': 'https://images.unsplash.com/photo-1518998053901-5348d3961a04?w=800&h=500&fit=crop',
+      'Nauka': 'https://images.unsplash.com/photo-1507413245164-6160d8298b31?w=800&h=500&fit=crop',
+      'Motoryzacja': 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=800&h=500&fit=crop',
     };
     
     if (!image) {
