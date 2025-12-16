@@ -115,11 +115,13 @@ function formatTimestamp(dateString: string): string {
   const diffHours = Math.floor(diffMs / 3600000);
   const diffDays = Math.floor(diffMs / 86400000);
 
-  if (diffMins < 60) {
+  if (diffMins < 1) {
+    return "Przed chwilą";
+  } else if (diffMins < 60) {
     return `${diffMins} min temu`;
   } else if (diffHours < 24) {
     return `${diffHours} godz. temu`;
-  } else if (diffDays < 7) {
+  } else if (diffDays < 30) {
     return `${diffDays} dni temu`;
   } else {
     return date.toLocaleDateString("pl-PL");

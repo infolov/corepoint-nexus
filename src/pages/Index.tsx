@@ -140,9 +140,10 @@ const Index = () => {
   // Combine RSS articles with DB articles, preferring RSS
   const allArticles = useMemo(() => {
     // Format RSS articles with viewCount and pubDateMs for sorting
+    // Give RSS articles priority since they have real sources
     const formattedRSSArticles = rssArticles.map(article => ({
       ...formatRSSArticleForCard(article),
-      viewCount: 0, // RSS articles don't have view count, use 0
+      viewCount: 100, // Give RSS articles priority over DB articles
       pubDateMs: article.pubDateMs || Date.now(),
     }));
 
@@ -153,13 +154,17 @@ const Index = () => {
       createdAt: article.created_at,
     }));
 
-    // Combine RSS with DB articles and sort by popularity/date
+    // Prioritize RSS articles, then add DB articles
     let articles = [];
-    if (formattedRSSArticles.length > 0 || formattedDbArticles.length > 0) {
-      const combined = [...formattedRSSArticles, ...formattedDbArticles];
-      articles = sortByPopularityAndDate(combined);
+    if (formattedRSSArticles.length > 0) {
+      // RSS has priority - sort by date, add DB articles at end
+      const sortedRSS = sortByPopularityAndDate(formattedRSSArticles);
+      const sortedDB = sortByPopularityAndDate(formattedDbArticles);
+      articles = [...sortedRSS, ...sortedDB];
+    } else if (formattedDbArticles.length > 0) {
+      articles = sortByPopularityAndDate(formattedDbArticles);
     } else {
-      // Use mock data as fallback, sorted by date
+      // Use mock data as fallback
       articles = sortByPopularityAndDate(allMockArticles.map(a => ({ ...a, viewCount: 0 })));
     }
 

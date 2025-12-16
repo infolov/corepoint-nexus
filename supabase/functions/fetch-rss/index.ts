@@ -196,11 +196,13 @@ function parseRSSItem(item: string, source: string, category: string): Article |
           const diffHours = Math.floor(diffMs / 3600000);
           const diffDays = Math.floor(diffMs / 86400000);
 
-          if (diffMins < 60) {
+          if (diffMins < 1) {
+            timestamp = 'Przed chwilą';
+          } else if (diffMins < 60) {
             timestamp = `${diffMins} min temu`;
           } else if (diffHours < 24) {
             timestamp = `${diffHours} godz. temu`;
-          } else if (diffDays < 7) {
+          } else if (diffDays < 30) {
             timestamp = `${diffDays} dni temu`;
           } else {
             timestamp = date.toLocaleDateString('pl-PL');
