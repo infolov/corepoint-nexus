@@ -8,27 +8,67 @@ const corsHeaders = {
 
 // Polish RSS news sources
 const RSS_SOURCES = [
-  // Wiadomości
+  // ===== WIADOMOŚCI =====
   { url: 'https://www.polsatnews.pl/rss/wszystkie.xml', source: 'Polsat News', category: 'Wiadomości' },
   { url: 'https://tvn24.pl/najnowsze.xml', source: 'TVN24', category: 'Wiadomości' },
   { url: 'https://wiadomosci.wp.pl/rss.xml', source: 'Wirtualna Polska', category: 'Wiadomości' },
-  // Biznes
+  { url: 'https://www.rp.pl/rss/1019-kraj.xml', source: 'Rzeczpospolita', category: 'Wiadomości' },
+  { url: 'https://www.gazetaprawna.pl/rss.xml', source: 'Gazeta Prawna', category: 'Wiadomości' },
+  { url: 'https://www.rmf24.pl/fakty/feed', source: 'RMF24', category: 'Wiadomości' },
+  { url: 'https://www.se.pl/rss/', source: 'Super Express', category: 'Wiadomości' },
+  { url: 'https://www.fakt.pl/rss.xml', source: 'Fakt', category: 'Wiadomości' },
+  { url: 'https://natemat.pl/rss/wszystko', source: 'NaTemat', category: 'Wiadomości' },
+  { url: 'https://wydarzenia.interia.pl/rss', source: 'Interia', category: 'Wiadomości' },
+  { url: 'https://wiadomosci.gazeta.pl/pub/rss/wiadomosci.xml', source: 'Gazeta.pl', category: 'Wiadomości' },
+  { url: 'https://www.o2.pl/rss/wiadomosci.xml', source: 'O2.pl', category: 'Wiadomości' },
+  
+  // ===== BIZNES =====
   { url: 'https://www.bankier.pl/rss/wiadomosci.xml', source: 'Bankier.pl', category: 'Biznes' },
   { url: 'https://www.money.pl/rss/rss.xml', source: 'Money.pl', category: 'Biznes' },
-  // Sport
+  { url: 'https://www.rp.pl/rss/1006-ekonomia.xml', source: 'Rzeczpospolita Ekonomia', category: 'Biznes' },
+  { url: 'https://www.pb.pl/rss/wszystko.xml', source: 'Puls Biznesu', category: 'Biznes' },
+  { url: 'https://biznes.interia.pl/rss', source: 'Interia Biznes', category: 'Biznes' },
+  { url: 'https://forsal.pl/rss.xml', source: 'Forsal', category: 'Biznes' },
+  { url: 'https://finanse.wp.pl/rss.xml', source: 'WP Finanse', category: 'Biznes' },
+  { url: 'https://www.gazetaprawna.pl/rss/biznes.xml', source: 'Gazeta Prawna Biznes', category: 'Biznes' },
+  { url: 'https://businessinsider.com.pl/rss', source: 'Business Insider PL', category: 'Biznes' },
+  { url: 'https://www.forbes.pl/rss', source: 'Forbes PL', category: 'Biznes' },
+  
+  // ===== SPORT =====
   { url: 'https://sportowefakty.wp.pl/rss.xml', source: 'Sportowe Fakty', category: 'Sport' },
-  // Technologia
+  { url: 'https://sport.tvp.pl/rss/sport.xml', source: 'TVP Sport', category: 'Sport' },
+  { url: 'https://www.sport.pl/rss.xml', source: 'Sport.pl', category: 'Sport' },
+  { url: 'https://sport.interia.pl/rss', source: 'Interia Sport', category: 'Sport' },
+  { url: 'https://www.meczyki.pl/rss.xml', source: 'Meczyki.pl', category: 'Sport' },
+  { url: 'https://www.goal.pl/feeds/rss', source: 'Goal.pl', category: 'Sport' },
+  { url: 'https://www.przegladysportowy.pl/rss.xml', source: 'Przegląd Sportowy', category: 'Sport' },
+  { url: 'https://sport.onet.pl/rss.xml', source: 'Onet Sport', category: 'Sport' },
+  { url: 'https://www.weszlo.com/feed/', source: 'Weszło', category: 'Sport' },
+  { url: 'https://pilkanozna.pl/feed/', source: 'PilkaNozna.pl', category: 'Sport' },
+  
+  // ===== TECHNOLOGIA =====
   { url: 'https://www.chip.pl/feed', source: 'Chip.pl', category: 'Technologia' },
   { url: 'https://tech.wp.pl/rss.xml', source: 'WP Tech', category: 'Technologia' },
-  // Rozrywka
+  { url: 'https://www.dobreprogramy.pl/rss.xml', source: 'Dobreprogramy', category: 'Technologia' },
+  { url: 'https://www.benchmark.pl/rss/aktualnosci.xml', source: 'Benchmark', category: 'Technologia' },
+  { url: 'https://www.komputerswiat.pl/rss.xml', source: 'Komputer Świat', category: 'Technologia' },
+  { url: 'https://www.spidersweb.pl/feed', source: 'Spider\'s Web', category: 'Technologia' },
+  { url: 'https://antyweb.pl/feed/', source: 'Antyweb', category: 'Technologia' },
+  { url: 'https://www.tabletowo.pl/feed/', source: 'Tabletowo', category: 'Technologia' },
+  { url: 'https://android.com.pl/feed/', source: 'Android.com.pl', category: 'Technologia' },
+  { url: 'https://ithardware.pl/rss.xml', source: 'ITHardware', category: 'Technologia' },
+  
+  // ===== ROZRYWKA =====
   { url: 'https://plejada.pl/rss.xml', source: 'Plejada', category: 'Rozrywka' },
   { url: 'https://rozrywka.wp.pl/rss.xml', source: 'WP Rozrywka', category: 'Rozrywka' },
   { url: 'https://www.pudelek.pl/rss.xml', source: 'Pudelek', category: 'Rozrywka' },
-  // Zdrowie
+  
+  // ===== ZDROWIE =====
   { url: 'https://zdrowie.wp.pl/rss.xml', source: 'WP Zdrowie', category: 'Zdrowie' },
   { url: 'https://www.medonet.pl/rss.xml', source: 'Medonet', category: 'Zdrowie' },
   { url: 'https://kobieta.wp.pl/rss.xml', source: 'WP Kobieta', category: 'Lifestyle' },
-  // Kultura
+  
+  // ===== KULTURA =====
   { url: 'https://kultura.wp.pl/rss.xml', source: 'WP Kultura', category: 'Kultura' },
   { url: 'https://www.culture.pl/pl/rss', source: 'Culture.pl', category: 'Kultura' },
 ];
