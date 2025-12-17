@@ -1,0 +1,568 @@
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { 
+  ArrowLeft, 
+  ArrowRight, 
+  Check, 
+  Calendar,
+  Target,
+  Zap,
+  CreditCard,
+  Upload,
+  Monitor,
+  Smartphone,
+  Square,
+  FileText
+} from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
+import { toast } from "sonner";
+import { format, differenceInDays, addDays } from "date-fns";
+import { pl } from "date-fns/locale";
+import { cn } from "@/lib/utils";
+
+import { BookingCalendar } from "@/components/dashboard/BookingCalendar";
+import { EmissionTypeSelector, EmissionType } from "@/components/dashboard/EmissionTypeSelector";
+import { PricingPackages, PricingPackage } from "@/components/dashboard/PricingPackages";
+
+interface AdPlacement {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  dimensions: string | null;
+  credit_cost: number;
+}
+
+const placementIcons: Record<string, any> = {
+  "top-banner": Monitor,
+  "sidebar-square": Square,
+  "sponsored-article": FileText,
+  "mobile-banner": Smartphone,
+};
+
+const STEPS = [
+  { id: 1, name: "Miejsce", icon: Target },
+  { id: 2, name: "Emisja", icon: Zap },
+  { id: 3, name: "Termin", icon: Calendar },
+  { id: 4, name: "Podsumowanie", icon: CreditCard },
+  { id: 5, name: "Kreacja", icon: Upload },
+];
+
+// Pricing (PLN per day)
+const EXCLUSIVE_DAILY_RATE = 100;
+const ROTATION_DAILY_RATE = 35;
+
+export default function DashboardCampaignCreator() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const initialPlacementId = searchParams.get("placement");
+
+  const [currentStep, setCurrentStep] = useState(1);
+  const [placements, setPlacements] = useState<AdPlacement[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+
+  // Form state
+  const [selectedPlacement, setSelectedPlacement] = useState<string | null>(initialPlacementId);
+  const [emissionType, setEmissionType] = useState<EmissionType | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
+  const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
+  const [campaignName, setCampaignName] = useState("");
+  const [targetUrl, setTargetUrl] = useState("");
+  const [contentUrl, setContentUrl] = useState("");
+  const [walletBalance, setWalletBalance] = useState(0);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!user) return;
+
+      try {
+        // Fetch placements
+        const { data: placementsData } = await supabase
+          .from("ad_placements")
+          .select("*")
+          .eq("is_active", true);
+
+        setPlacements(placementsData || []);
+
+        // Fetch wallet balance
+        const { data: creditsData } = await supabase
+          .from("advertiser_credits")
+          .select("balance")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        setWalletBalance(creditsData?.balance || 0);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [user]);
+
+  // Calculate pricing
+  const dailyRate = emissionType === "exclusive" ? EXCLUSIVE_DAILY_RATE : ROTATION_DAILY_RATE;
+  const daysCount = startDate && endDate ? differenceInDays(endDate, startDate) + 1 : 0;
+  const totalPrice = daysCount * dailyRate;
+
+  // Handle package selection - update dates
+  const handlePackageSelect = (packageId: string) => {
+    setSelectedPackage(packageId);
+    const today = new Date();
+    
+    switch (packageId) {
+      case "1day":
+        setStartDate(today);
+        setEndDate(today);
+        break;
+      case "1week":
+        setStartDate(today);
+        setEndDate(addDays(today, 6));
+        break;
+      case "1month":
+        setStartDate(today);
+        setEndDate(addDays(today, 29));
+        break;
+    }
+  };
+
+  // Handle date selection from calendar
+  const handleDateSelect = (start: Date | null, end: Date | null) => {
+    setStartDate(start);
+    setEndDate(end);
+    setSelectedPackage(null); // Clear package selection when manually selecting dates
+  };
+
+  // Validate current step
+  const canProceed = () => {
+    switch (currentStep) {
+      case 1: return !!selectedPlacement;
+      case 2: return !!emissionType && (emissionType === "exclusive" || !!selectedSlot);
+      case 3: return !!startDate && !!endDate;
+      case 4: return !!campaignName && totalPrice > 0;
+      case 5: return true;
+      default: return false;
+    }
+  };
+
+  const handleNext = () => {
+    if (canProceed() && currentStep < STEPS.length) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const handleBack = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!user || !selectedPlacement || !startDate || !endDate) return;
+
+    setSubmitting(true);
+    try {
+      const { error } = await supabase.from("ad_campaigns").insert({
+        user_id: user.id,
+        placement_id: selectedPlacement,
+        name: campaignName,
+        ad_type: emissionType === "exclusive" ? "exclusive" : `rotation_slot_${selectedSlot}`,
+        start_date: format(startDate, "yyyy-MM-dd"),
+        end_date: format(endDate, "yyyy-MM-dd"),
+        total_credits: totalPrice,
+        target_url: targetUrl || null,
+        content_url: contentUrl || null,
+        status: "pending"
+      });
+
+      if (error) throw error;
+
+      toast.success("Kampania została utworzona i oczekuje na weryfikację");
+      navigate("/dashboard/campaigns");
+    } catch (error) {
+      console.error("Error creating campaign:", error);
+      toast.error("Wystąpił błąd podczas tworzenia kampanii");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const selectedPlacementData = placements.find(p => p.id === selectedPlacement);
+  const PlacementIcon = selectedPlacementData ? placementIcons[selectedPlacementData.slug] || Monitor : Monitor;
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard/placements")}>
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <div>
+          <h1 className="text-2xl font-bold">Nowa kampania</h1>
+          <p className="text-muted-foreground">Zarezerwuj miejsce reklamowe</p>
+        </div>
+      </div>
+
+      {/* Progress Steps */}
+      <div className="flex items-center justify-between">
+        {STEPS.map((step, index) => {
+          const StepIcon = step.icon;
+          const isActive = step.id === currentStep;
+          const isCompleted = step.id < currentStep;
+
+          return (
+            <div key={step.id} className="flex items-center">
+              <div className="flex flex-col items-center">
+                <div
+                  className={cn(
+                    "w-10 h-10 rounded-full flex items-center justify-center transition-colors",
+                    isActive && "bg-primary text-primary-foreground",
+                    isCompleted && "bg-green-500 text-white",
+                    !isActive && !isCompleted && "bg-muted text-muted-foreground"
+                  )}
+                >
+                  {isCompleted ? (
+                    <Check className="h-5 w-5" />
+                  ) : (
+                    <StepIcon className="h-5 w-5" />
+                  )}
+                </div>
+                <span className={cn(
+                  "text-xs mt-1",
+                  isActive && "text-primary font-medium",
+                  !isActive && "text-muted-foreground"
+                )}>
+                  {step.name}
+                </span>
+              </div>
+              {index < STEPS.length - 1 && (
+                <div className={cn(
+                  "w-8 md:w-16 lg:w-24 h-0.5 mx-2",
+                  isCompleted ? "bg-green-500" : "bg-muted"
+                )} />
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Step Content */}
+      <Card>
+        <CardContent className="p-6">
+          {/* Step 1: Placement Selection */}
+          {currentStep === 1 && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-xl font-semibold mb-2">Wybierz miejsce reklamowe</h2>
+                <p className="text-muted-foreground">
+                  Wybierz format reklamy, który najlepiej pasuje do Twojej kampanii.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {placements.map((placement) => {
+                  const Icon = placementIcons[placement.slug] || Monitor;
+                  const isSelected = selectedPlacement === placement.id;
+
+                  return (
+                    <Card
+                      key={placement.id}
+                      className={cn(
+                        "cursor-pointer transition-all hover:shadow-lg",
+                        isSelected && "ring-2 ring-primary border-primary"
+                      )}
+                      onClick={() => setSelectedPlacement(placement.id)}
+                    >
+                      <CardHeader className="pb-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Icon className="h-5 w-5 text-primary" />
+                            <CardTitle className="text-lg">{placement.name}</CardTitle>
+                          </div>
+                          {isSelected && <Check className="h-5 w-5 text-primary" />}
+                        </div>
+                        {placement.dimensions && (
+                          <CardDescription>{placement.dimensions}</CardDescription>
+                        )}
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-muted-foreground">
+                          {placement.description}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Step 2: Emission Type */}
+          {currentStep === 2 && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-xl font-semibold mb-2">Wybierz typ emisji</h2>
+                <p className="text-muted-foreground">
+                  Określ jak często Twoja reklama będzie wyświetlana.
+                </p>
+              </div>
+
+              <EmissionTypeSelector
+                selectedType={emissionType}
+                selectedSlot={selectedSlot}
+                onTypeSelect={setEmissionType}
+                onSlotSelect={setSelectedSlot}
+                exclusivePrice={EXCLUSIVE_DAILY_RATE}
+                rotationPrice={ROTATION_DAILY_RATE}
+              />
+            </div>
+          )}
+
+          {/* Step 3: Date Selection */}
+          {currentStep === 3 && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-xl font-semibold mb-2">Wybierz termin kampanii</h2>
+                <p className="text-muted-foreground">
+                  Wybierz pakiet lub zaznacz daty w kalendarzu.
+                </p>
+              </div>
+
+              {/* Pricing Packages */}
+              <PricingPackages
+                packages={[
+                  { id: "1day", name: "1 dzień", days: 1, price: dailyRate, description: "Dobre na szybkie promo" },
+                  { id: "1week", name: "1 tydzień", days: 7, price: dailyRate * 6, savings: dailyRate, description: "Oszczędzasz " + dailyRate + " PLN" },
+                  { id: "1month", name: "1 miesiąc", days: 30, price: dailyRate * 20, savings: dailyRate * 10, popular: true, description: "Oszczędzasz " + (dailyRate * 10) + " PLN" },
+                ]}
+                selectedPackage={selectedPackage}
+                onPackageSelect={handlePackageSelect}
+                dailyRate={dailyRate}
+              />
+
+              <Separator />
+
+              {/* Calendar */}
+              <div>
+                <h3 className="text-lg font-medium mb-4">Lub wybierz własne daty</h3>
+                <BookingCalendar
+                  selectedStartDate={startDate}
+                  selectedEndDate={endDate}
+                  onDateSelect={handleDateSelect}
+                />
+              </div>
+
+              {/* Selection Summary */}
+              {startDate && endDate && (
+                <Card className="bg-primary/5 border-primary/20">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">
+                          Wybrałeś {daysCount} {daysCount === 1 ? "dzień" : daysCount < 5 ? "dni" : "dni"} emisji
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {format(startDate, "d MMMM", { locale: pl })} – {format(endDate, "d MMMM yyyy", { locale: pl })}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-primary">{totalPrice} PLN</p>
+                        <p className="text-xs text-muted-foreground">
+                          {emissionType === "exclusive" ? "Wyłączność" : "Rotacja"}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+
+          {/* Step 4: Summary & Payment */}
+          {currentStep === 4 && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-xl font-semibold mb-2">Podsumowanie zamówienia</h2>
+                <p className="text-muted-foreground">
+                  Sprawdź szczegóły kampanii i podaj nazwę.
+                </p>
+              </div>
+
+              {/* Campaign Name */}
+              <div className="space-y-2">
+                <Label htmlFor="campaign-name">Nazwa kampanii *</Label>
+                <Input
+                  id="campaign-name"
+                  placeholder="np. Promocja świąteczna 2024"
+                  value={campaignName}
+                  onChange={(e) => setCampaignName(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="target-url">Link docelowy (opcjonalnie)</Label>
+                <Input
+                  id="target-url"
+                  type="url"
+                  placeholder="https://twoja-strona.pl"
+                  value={targetUrl}
+                  onChange={(e) => setTargetUrl(e.target.value)}
+                />
+              </div>
+
+              {/* Order Summary */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Szczegóły zamówienia</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Miejsce reklamowe</span>
+                    <span className="font-medium">{selectedPlacementData?.name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Typ emisji</span>
+                    <span className="font-medium">
+                      {emissionType === "exclusive" ? "Wyłączność (100%)" : `Rotacja (Slot ${selectedSlot})`}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Okres</span>
+                    <span className="font-medium">
+                      {startDate && endDate && `${format(startDate, "d.MM.yyyy")} – ${format(endDate, "d.MM.yyyy")}`}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Liczba dni</span>
+                    <span className="font-medium">{daysCount}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between text-lg font-bold">
+                    <span>Do zapłaty</span>
+                    <span className="text-primary">{totalPrice} PLN</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Wallet Info */}
+              <Card className="bg-muted/50">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="h-5 w-5 text-muted-foreground" />
+                      <span>Saldo portfela</span>
+                    </div>
+                    <span className="font-bold">{walletBalance} PLN</span>
+                  </div>
+                  {walletBalance < totalPrice && (
+                    <p className="text-sm text-destructive mt-2">
+                      Niewystarczające środki. Doładuj portfel aby kontynuować.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Step 5: Creative Upload */}
+          {currentStep === 5 && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-xl font-semibold mb-2">Wgraj kreację reklamową</h2>
+                <p className="text-muted-foreground">
+                  Dodaj grafikę lub multimedia do swojej kampanii.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="content-url">URL kreacji (grafika/wideo)</Label>
+                <Input
+                  id="content-url"
+                  type="url"
+                  placeholder="https://... lub wgraj plik poniżej"
+                  value={contentUrl}
+                  onChange={(e) => setContentUrl(e.target.value)}
+                />
+              </div>
+
+              {/* Upload Area */}
+              <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-12 text-center">
+                <Upload className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+                <p className="text-muted-foreground mb-2">
+                  Przeciągnij i upuść plik lub
+                </p>
+                <Button variant="outline">Wybierz plik</Button>
+                <p className="text-xs text-muted-foreground mt-4">
+                  Obsługiwane formaty: JPG, PNG, GIF, MP4. Max 5MB.
+                </p>
+              </div>
+
+              {selectedPlacementData?.dimensions && (
+                <Card className="bg-muted/50">
+                  <CardContent className="p-4">
+                    <p className="text-sm">
+                      <strong>Zalecane wymiary:</strong> {selectedPlacementData.dimensions}
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+
+              <Card className="bg-blue-500/10 border-blue-500/20">
+                <CardContent className="p-4">
+                  <p className="text-sm text-blue-600 dark:text-blue-400">
+                    <strong>Uwaga:</strong> Możesz pominąć ten krok i dodać kreację później. 
+                    Kampania zostanie zapisana jako szkic.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Navigation Buttons */}
+      <div className="flex justify-between">
+        <Button
+          variant="outline"
+          onClick={handleBack}
+          disabled={currentStep === 1}
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Wstecz
+        </Button>
+
+        {currentStep < STEPS.length ? (
+          <Button
+            onClick={handleNext}
+            disabled={!canProceed()}
+          >
+            Dalej
+            <ArrowRight className="h-4 w-4 ml-2" />
+          </Button>
+        ) : (
+          <Button
+            onClick={handleSubmit}
+            disabled={submitting || !campaignName}
+            className="bg-green-600 hover:bg-green-700"
+          >
+            {submitting ? "Wysyłanie..." : "Zatwierdź kampanię"}
+            <Check className="h-4 w-4 ml-2" />
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
