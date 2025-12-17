@@ -21,6 +21,7 @@ import DashboardStats from "./pages/dashboard/DashboardStats";
 import DashboardCampaigns from "./pages/dashboard/DashboardCampaigns";
 import DashboardSettings from "./pages/dashboard/DashboardSettings";
 import DashboardCampaignCreator from "./pages/dashboard/DashboardCampaignCreator";
+import DashboardAdminCampaigns from "./pages/dashboard/DashboardAdminCampaigns";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +48,7 @@ const App = () => (
             <Route path="stats" element={<DashboardStats />} />
             <Route path="campaigns" element={<DashboardCampaigns />} />
             <Route path="settings" element={<DashboardSettings />} />
+            <Route path="admin/campaigns" element={<DashboardAdminCampaigns />} />
           </Route>
           <Route path="/sport/:subcategory" element={<Category />} />
           <Route path="/:category" element={<Category />} />
