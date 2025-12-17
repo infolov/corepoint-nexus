@@ -20,6 +20,7 @@ import DashboardCredits from "./pages/dashboard/DashboardCredits";
 import DashboardStats from "./pages/dashboard/DashboardStats";
 import DashboardCampaigns from "./pages/dashboard/DashboardCampaigns";
 import DashboardSettings from "./pages/dashboard/DashboardSettings";
+import DashboardCampaignCreator from "./pages/dashboard/DashboardCampaignCreator";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +42,7 @@ const App = () => (
             <Route index element={<DashboardHome />} />
             <Route path="calendar" element={<DashboardCalendar />} />
             <Route path="placements" element={<DashboardPlacements />} />
+            <Route path="campaigns/new" element={<DashboardCampaignCreator />} />
             <Route path="credits" element={<DashboardCredits />} />
             <Route path="stats" element={<DashboardStats />} />
             <Route path="campaigns" element={<DashboardCampaigns />} />
