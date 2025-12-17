@@ -1,0 +1,380 @@
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
+import { useAdmin } from "@/hooks/use-admin";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { toast } from "sonner";
+import { 
+  User, 
+  Shield, 
+  ShieldAlert, 
+  Search,
+  UserCog,
+  Mail,
+  Calendar
+} from "lucide-react";
+import { format } from "date-fns";
+import { pl } from "date-fns/locale";
+
+interface UserProfile {
+  id: string;
+  user_id: string;
+  email: string | null;
+  full_name: string | null;
+  company_name: string | null;
+  created_at: string;
+  roles: string[];
+}
+
+const roleConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon: React.ComponentType<{ className?: string }> }> = {
+  user: { label: "Użytkownik", variant: "secondary", icon: User },
+  advertiser: { label: "Reklamodawca", variant: "default", icon: UserCog },
+  admin: { label: "Administrator", variant: "destructive", icon: Shield },
+};
+
+export default function DashboardAdminUsers() {
+  const { user } = useAuth();
+  const { isAdmin, loading: adminLoading } = useAdmin();
+  const [users, setUsers] = useState<UserProfile[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+  const [roleDialogOpen, setRoleDialogOpen] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<string>("");
+  const [processing, setProcessing] = useState(false);
+
+  useEffect(() => {
+    if (user && isAdmin) {
+      fetchUsers();
+    }
+  }, [user, isAdmin]);
+
+  const fetchUsers = async () => {
+    setLoading(true);
+
+    // Fetch all profiles (admin has access via RLS)
+    const { data: profilesData, error: profilesError } = await supabase
+      .from("profiles")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (profilesError) {
+      console.error("Error fetching profiles:", profilesError);
+      toast.error("Błąd podczas pobierania użytkowników");
+      setLoading(false);
+      return;
+    }
+
+    // Fetch all roles
+    const { data: rolesData } = await supabase
+      .from("user_roles")
+      .select("user_id, role");
+
+    const rolesMap = new Map<string, string[]>();
+    (rolesData || []).forEach(r => {
+      const existing = rolesMap.get(r.user_id) || [];
+      existing.push(r.role);
+      rolesMap.set(r.user_id, existing);
+    });
+
+    const formattedUsers: UserProfile[] = (profilesData || []).map(profile => ({
+      ...profile,
+      roles: rolesMap.get(profile.user_id) || ["user"],
+    }));
+
+    setUsers(formattedUsers);
+    setLoading(false);
+  };
+
+  const openRoleDialog = (userProfile: UserProfile) => {
+    setSelectedUser(userProfile);
+    setSelectedRole("");
+    setRoleDialogOpen(true);
+  };
+
+  const handleAddRole = async () => {
+    if (!selectedUser || !selectedRole) {
+      toast.error("Wybierz rolę");
+      return;
+    }
+
+    if (selectedUser.roles.includes(selectedRole)) {
+      toast.error("Użytkownik ma już tę rolę");
+      return;
+    }
+
+    setProcessing(true);
+
+    const roleValue = selectedRole as "user" | "advertiser" | "admin";
+
+    const { error } = await supabase
+      .from("user_roles")
+      .insert({
+        user_id: selectedUser.user_id,
+        role: roleValue,
+      });
+
+    if (error) {
+      if (error.code === "23505") {
+        toast.error("Użytkownik ma już tę rolę");
+      } else {
+        toast.error("Błąd podczas dodawania roli");
+      }
+    } else {
+      toast.success(`Rola "${roleConfig[selectedRole]?.label}" została dodana`);
+      setRoleDialogOpen(false);
+      fetchUsers();
+    }
+
+    setProcessing(false);
+  };
+
+  const handleRemoveRole = async (userProfile: UserProfile, role: string) => {
+    if (role === "user") {
+      toast.error("Nie można usunąć podstawowej roli użytkownika");
+      return;
+    }
+
+    if (userProfile.user_id === user?.id && role === "admin") {
+      toast.error("Nie możesz usunąć sobie roli administratora");
+      return;
+    }
+
+    setProcessing(true);
+
+    const roleValue = role as "user" | "advertiser" | "admin";
+
+    const { error } = await supabase
+      .from("user_roles")
+      .delete()
+      .eq("user_id", userProfile.user_id)
+      .eq("role", roleValue);
+
+    if (error) {
+      toast.error("Błąd podczas usuwania roli");
+    } else {
+      toast.success(`Rola "${roleConfig[role]?.label}" została usunięta`);
+      fetchUsers();
+    }
+
+    setProcessing(false);
+  };
+
+  const filteredUsers = users.filter(u => {
+    const query = searchQuery.toLowerCase();
+    return (
+      (u.email?.toLowerCase().includes(query) || false) ||
+      (u.full_name?.toLowerCase().includes(query) || false) ||
+      (u.company_name?.toLowerCase().includes(query) || false)
+    );
+  });
+
+  if (adminLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <Card className="border-destructive">
+        <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+          <ShieldAlert className="h-16 w-16 text-destructive mb-4" />
+          <h2 className="text-xl font-semibold mb-2">Brak dostępu</h2>
+          <p className="text-muted-foreground">
+            Ta strona jest dostępna tylko dla administratorów.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold">Zarządzanie użytkownikami</h1>
+        <p className="text-muted-foreground">
+          Przeglądaj użytkowników i zarządzaj ich rolami
+        </p>
+      </div>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg">Wszyscy użytkownicy ({users.length})</CardTitle>
+            <div className="relative w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Szukaj użytkownika..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map(i => (
+                <Skeleton key={i} className="h-16 w-full" />
+              ))}
+            </div>
+          ) : filteredUsers.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              Nie znaleziono użytkowników
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Użytkownik</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Firma</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Data rejestracji</TableHead>
+                    <TableHead className="text-right">Akcje</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredUsers.map(userProfile => (
+                    <TableRow key={userProfile.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                            <User className="h-4 w-4 text-primary" />
+                          </div>
+                          <span className="font-medium">
+                            {userProfile.full_name || "Brak nazwy"}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2 text-sm">
+                          <Mail className="h-3 w-3 text-muted-foreground" />
+                          {userProfile.email || "Brak"}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {userProfile.company_name || "-"}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {userProfile.roles.map(role => {
+                            const config = roleConfig[role] || roleConfig.user;
+                            const RoleIcon = config.icon;
+                            return (
+                              <Badge 
+                                key={role} 
+                                variant={config.variant}
+                                className="gap-1 cursor-pointer hover:opacity-80"
+                                onClick={() => {
+                                  if (role !== "user") {
+                                    handleRemoveRole(userProfile, role);
+                                  }
+                                }}
+                                title={role !== "user" ? "Kliknij aby usunąć" : ""}
+                              >
+                                <RoleIcon className="h-3 w-3" />
+                                {config.label}
+                              </Badge>
+                            );
+                          })}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <Calendar className="h-3 w-3" />
+                          {format(new Date(userProfile.created_at), "d MMM yyyy", { locale: pl })}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openRoleDialog(userProfile)}
+                          className="gap-1"
+                        >
+                          <UserCog className="h-4 w-4" />
+                          Dodaj rolę
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Add Role Dialog */}
+      <Dialog open={roleDialogOpen} onOpenChange={setRoleDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Dodaj rolę użytkownikowi</DialogTitle>
+            <DialogDescription>
+              Wybierz rolę dla użytkownika "{selectedUser?.full_name || selectedUser?.email}"
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Select value={selectedRole} onValueChange={setSelectedRole}>
+              <SelectTrigger>
+                <SelectValue placeholder="Wybierz rolę..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="user">Użytkownik</SelectItem>
+                <SelectItem value="advertiser">Reklamodawca</SelectItem>
+                <SelectItem value="admin">Administrator</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setRoleDialogOpen(false)}
+            >
+              Anuluj
+            </Button>
+            <Button
+              onClick={handleAddRole}
+              disabled={processing || !selectedRole}
+            >
+              Dodaj rolę
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
