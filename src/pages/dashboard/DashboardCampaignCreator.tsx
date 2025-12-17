@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { 
   ArrowLeft, 
@@ -12,7 +12,9 @@ import {
   Monitor,
   Smartphone,
   Square,
-  FileText
+  FileText,
+  X,
+  Image as ImageIcon
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -81,6 +83,9 @@ export default function DashboardCampaignCreator() {
   const [targetUrl, setTargetUrl] = useState("");
   const [contentUrl, setContentUrl] = useState("");
   const [walletBalance, setWalletBalance] = useState(0);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [filePreview, setFilePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -144,6 +149,49 @@ export default function DashboardCampaignCreator() {
     setStartDate(start);
     setEndDate(end);
     setSelectedPackage(null); // Clear package selection when manually selecting dates
+  };
+
+  // Handle file selection
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file size (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Plik jest za duży. Maksymalny rozmiar to 5MB.");
+        return;
+      }
+      
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'video/mp4'];
+      if (!allowedTypes.includes(file.type)) {
+        toast.error("Nieobsługiwany format pliku. Dozwolone: JPG, PNG, GIF, MP4.");
+        return;
+      }
+
+      setSelectedFile(file);
+      
+      // Create preview for images
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setFilePreview(e.target?.result as string);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        setFilePreview(null);
+      }
+      
+      toast.success("Plik został wybrany");
+    }
+  };
+
+  // Remove selected file
+  const handleRemoveFile = () => {
+    setSelectedFile(null);
+    setFilePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   // Validate current step
@@ -487,28 +535,83 @@ export default function DashboardCampaignCreator() {
                 </p>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="content-url">URL kreacji (grafika/wideo)</Label>
-                <Input
-                  id="content-url"
-                  type="url"
-                  placeholder="https://... lub wgraj plik poniżej"
-                  value={contentUrl}
-                  onChange={(e) => setContentUrl(e.target.value)}
-                />
-              </div>
+              {/* Hidden file input */}
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileSelect}
+                accept="image/jpeg,image/png,image/gif,video/mp4"
+                className="hidden"
+              />
 
-              {/* Upload Area */}
-              <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-12 text-center">
-                <Upload className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-                <p className="text-muted-foreground mb-2">
-                  Przeciągnij i upuść plik lub
-                </p>
-                <Button variant="outline">Wybierz plik</Button>
-                <p className="text-xs text-muted-foreground mt-4">
-                  Obsługiwane formaty: JPG, PNG, GIF, MP4. Max 5MB.
-                </p>
-              </div>
+              {!selectedFile ? (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="content-url">URL kreacji (grafika/wideo)</Label>
+                    <Input
+                      id="content-url"
+                      type="url"
+                      placeholder="https://... lub wgraj plik poniżej"
+                      value={contentUrl}
+                      onChange={(e) => setContentUrl(e.target.value)}
+                    />
+                  </div>
+
+                  {/* Upload Area */}
+                  <div 
+                    className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-12 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Upload className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+                    <p className="text-muted-foreground mb-2">
+                      Przeciągnij i upuść plik lub
+                    </p>
+                    <Button variant="outline" type="button" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}>
+                      Wybierz plik
+                    </Button>
+                    <p className="text-xs text-muted-foreground mt-4">
+                      Obsługiwane formaty: JPG, PNG, GIF, MP4. Max 5MB.
+                    </p>
+                  </div>
+                </>
+              ) : (
+                /* File Preview */
+                <Card className="overflow-hidden">
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-4">
+                      {filePreview ? (
+                        <img 
+                          src={filePreview} 
+                          alt="Podgląd kreacji" 
+                          className="w-32 h-32 object-cover rounded-lg"
+                        />
+                      ) : (
+                        <div className="w-32 h-32 bg-muted rounded-lg flex items-center justify-center">
+                          <ImageIcon className="h-12 w-12 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <p className="font-medium">{selectedFile.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {selectedFile.type}
+                        </p>
+                        <Button 
+                          variant="destructive" 
+                          size="sm" 
+                          className="mt-2"
+                          onClick={handleRemoveFile}
+                        >
+                          <X className="h-4 w-4 mr-1" />
+                          Usuń plik
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
               {selectedPlacementData?.dimensions && (
                 <Card className="bg-muted/50">
