@@ -127,28 +127,9 @@ export function useWeather(defaultStationId: string = "12375") {
     error: null,
   });
   const [stationId, setStationId] = useState<string>(defaultStationId);
-  const [currentStation, setCurrentStation] = useState<StationCoords | null>(null);
 
-  // Load saved location from localStorage on mount
+  // Get user's location and find nearest station
   useEffect(() => {
-    const savedLocation = localStorage.getItem("userLocation");
-    if (savedLocation) {
-      try {
-        const parsed = JSON.parse(savedLocation);
-        if (parsed.stationId) {
-          setStationId(parsed.stationId);
-          const station = STATIONS.find(s => s.id === parsed.stationId);
-          if (station) {
-            setCurrentStation(station);
-          }
-          return; // Don't try geolocation if we have saved location
-        }
-      } catch (e) {
-        console.error("Error parsing saved location:", e);
-      }
-    }
-
-    // No saved location, try geolocation
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -157,32 +138,15 @@ export function useWeather(defaultStationId: string = "12375") {
             position.coords.longitude
           );
           setStationId(nearest.id);
-          setCurrentStation(nearest);
         },
         () => {
           // Geolocation denied or failed, use default (Warszawa)
           setStationId(defaultStationId);
-          const defaultStation = STATIONS.find(s => s.id === defaultStationId);
-          if (defaultStation) {
-            setCurrentStation(defaultStation);
-          }
         },
         { timeout: 5000, maximumAge: 600000 } // 10 min cache
       );
-    } else {
-      // Geolocation not supported, use default
-      const defaultStation = STATIONS.find(s => s.id === defaultStationId);
-      if (defaultStation) {
-        setCurrentStation(defaultStation);
-      }
     }
   }, [defaultStationId]);
-
-  // Function to manually set station
-  const setStation = (station: StationCoords) => {
-    setStationId(station.id);
-    setCurrentStation(station);
-  };
 
   // Fetch weather data
   useEffect(() => {
@@ -217,7 +181,7 @@ export function useWeather(defaultStationId: string = "12375") {
     return () => clearInterval(interval);
   }, [stationId]);
 
-  return { ...state, stationId, currentStation, setStation };
+  return { ...state, stationId };
 }
 
 export { STATIONS, findNearestStation };

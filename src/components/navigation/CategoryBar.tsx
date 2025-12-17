@@ -18,10 +18,6 @@ interface Category {
   name: string;
   slug: string;
   subcategories: SubCategory[];
-  sponsor?: {
-    name: string;
-    logo?: string;
-  };
 }
 
 const categoriesWithSubs: Category[] = [
@@ -33,7 +29,6 @@ const categoriesWithSubs: Category[] = [
   { 
     name: "Wiadomości", 
     slug: "wiadomosci",
-    sponsor: { name: "TVN24" },
     subcategories: [
       { name: "Polska", slug: "polska", subcategories: [
         { name: "Polityka krajowa", slug: "polityka-krajowa" },
@@ -62,7 +57,6 @@ const categoriesWithSubs: Category[] = [
   { 
     name: "Sport", 
     slug: "sport",
-    sponsor: { name: "Sportowe Fakty" },
     subcategories: [
       { name: "Piłka nożna", slug: "pilka-nozna", subcategories: [
         { name: "Ekstraklasa", slug: "ekstraklasa" },
@@ -117,7 +111,6 @@ const categoriesWithSubs: Category[] = [
   { 
     name: "Biznes", 
     slug: "biznes",
-    sponsor: { name: "Bankier.pl" },
     subcategories: [
       { name: "Finanse osobiste", slug: "finanse-osobiste", subcategories: [
         { name: "Oszczędzanie", slug: "oszczedzanie" },
@@ -145,7 +138,6 @@ const categoriesWithSubs: Category[] = [
   { 
     name: "Technologia", 
     slug: "technologia",
-    sponsor: { name: "Chip.pl" },
     subcategories: [
       { name: "Smartfony", slug: "smartfony", subcategories: [
         { name: "iPhone", slug: "iphone" },
@@ -176,7 +168,6 @@ const categoriesWithSubs: Category[] = [
   { 
     name: "Lifestyle", 
     slug: "lifestyle",
-    sponsor: { name: "Elle" },
     subcategories: [
       { name: "Moda", slug: "moda", subcategories: [
         { name: "Damska", slug: "damska" },
@@ -208,7 +199,6 @@ const categoriesWithSubs: Category[] = [
   { 
     name: "Rozrywka", 
     slug: "rozrywka",
-    sponsor: { name: "Plejada" },
     subcategories: [
       { name: "Film", slug: "film", subcategories: [
         { name: "Premiery", slug: "premiery" },
@@ -236,7 +226,6 @@ const categoriesWithSubs: Category[] = [
   { 
     name: "Zdrowie", 
     slug: "zdrowie",
-    sponsor: { name: "Medonet" },
     subcategories: [
       { name: "Dieta i odżywianie", slug: "dieta", subcategories: [
         { name: "Keto", slug: "keto" },
@@ -258,7 +247,6 @@ const categoriesWithSubs: Category[] = [
   { 
     name: "Nauka", 
     slug: "nauka",
-    sponsor: { name: "National Geographic" },
     subcategories: [
       { name: "Kosmos i astronomia", slug: "kosmos", subcategories: [
         { name: "NASA", slug: "nasa" },
@@ -275,7 +263,6 @@ const categoriesWithSubs: Category[] = [
   { 
     name: "Motoryzacja", 
     slug: "motoryzacja",
-    sponsor: { name: "AutoŚwiat" },
     subcategories: [
       { name: "Testy samochodów", slug: "testy", subcategories: [
         { name: "SUV", slug: "suv" },
@@ -296,7 +283,6 @@ const categoriesWithSubs: Category[] = [
   { 
     name: "Kultura", 
     slug: "kultura",
-    sponsor: { name: "Polityka" },
     subcategories: [
       { name: "Sztuka", slug: "sztuka" },
       { name: "Teatr", slug: "teatr" },
@@ -419,7 +405,7 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
               <button
                 onClick={() => handleCategoryClick(category)}
                 className={cn(
-                  "flex flex-col items-center px-4 py-2 rounded-full text-sm font-medium transition-all duration-200",
+                  "flex items-center gap-1 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200",
                   "hover:bg-muted",
                   activeCategory === category.slug
                     ? "bg-primary text-primary-foreground hover:bg-primary/90"
@@ -427,24 +413,12 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
                   expandedCategory === category.slug && "bg-muted ring-2 ring-primary/30"
                 )}
               >
-                <div className="flex items-center gap-1">
-                  {category.name}
-                  {category.subcategories.length > 0 && (
-                    <ChevronDown className={cn(
-                      "h-3.5 w-3.5 transition-transform duration-200",
-                      expandedCategory === category.slug && "rotate-180"
-                    )} />
-                  )}
-                </div>
-                {category.sponsor && (
-                  <span className={cn(
-                    "text-[10px] font-normal opacity-70",
-                    activeCategory === category.slug 
-                      ? "text-primary-foreground/80" 
-                      : "text-muted-foreground"
-                  )}>
-                    {category.sponsor.name}
-                  </span>
+                {category.name}
+                {category.subcategories.length > 0 && (
+                  <ChevronDown className={cn(
+                    "h-3.5 w-3.5 transition-transform duration-200",
+                    expandedCategory === category.slug && "rotate-180"
+                  )} />
                 )}
               </button>
 
