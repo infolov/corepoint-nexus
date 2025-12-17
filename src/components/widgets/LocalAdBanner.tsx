@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useLocalAds } from "@/hooks/use-local-ads";
 import { useUserSettings } from "@/hooks/use-user-settings";
-import { MapPin, ExternalLink } from "lucide-react";
+import { MapPin, ExternalLink, LayoutGrid, Monitor, Sidebar } from "lucide-react";
 
 interface LocalAdBannerProps {
   placementType?: "sponsored_tile" | "regional_banner" | "local_sidebar";
@@ -10,6 +10,12 @@ interface LocalAdBannerProps {
   className?: string;
   showFallback?: boolean;
 }
+
+const placementTypeNames: Record<string, { name: string; icon: typeof Monitor }> = {
+  sponsored_tile: { name: "Kafelek sponsorowany", icon: LayoutGrid },
+  regional_banner: { name: "Baner regionalny", icon: Monitor },
+  local_sidebar: { name: "Baner boczny lokalny", icon: Sidebar },
+};
 
 export function LocalAdBanner({ 
   placementType = "regional_banner", 
@@ -82,10 +88,14 @@ export function LocalAdBanner({
           <span>{settings.voivodeship || "Twój region"}</span>
         </div>
 
-        {/* Ad label */}
-        <span className="absolute top-1 right-2 text-[10px] text-foreground/50 bg-background/80 px-1 rounded">
-          Reklama lokalna
-        </span>
+        {/* Ad label with placement type */}
+        <div className="absolute top-1 right-2 flex items-center gap-1 text-[10px] text-foreground/50 bg-background/80 px-1.5 py-0.5 rounded">
+          {(() => {
+            const PlacementIcon = placementTypeNames[placementType]?.icon || Monitor;
+            return <PlacementIcon className="h-2.5 w-2.5" />;
+          })()}
+          <span>{placementTypeNames[placementType]?.name || "Reklama lokalna"}</span>
+        </div>
 
         {/* CTA overlay on hover */}
         <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
@@ -109,9 +119,12 @@ export function LocalAdBanner({
         )}
       >
         <div className="text-center p-4">
-          <div className="flex items-center justify-center gap-1 text-muted-foreground text-xs mb-1">
-            <MapPin className="h-3 w-3" />
-            <span className="uppercase tracking-wider">Reklama regionalna</span>
+          <div className="flex items-center justify-center gap-1.5 text-muted-foreground text-xs mb-1">
+            {(() => {
+              const PlacementIcon = placementTypeNames[placementType]?.icon || Monitor;
+              return <PlacementIcon className="h-3 w-3" />;
+            })()}
+            <span className="uppercase tracking-wider">{placementTypeNames[placementType]?.name || "Reklama regionalna"}</span>
           </div>
           <p className="text-sm text-muted-foreground/70">
             {settings.voivodeship 

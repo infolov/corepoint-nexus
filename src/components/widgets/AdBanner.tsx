@@ -1,9 +1,16 @@
 import { cn } from "@/lib/utils";
+import { Monitor, Square, Smartphone } from "lucide-react";
 
 interface AdBannerProps {
   variant?: "horizontal" | "square" | "vertical";
   className?: string;
 }
+
+const variantNames: Record<string, { name: string; icon: typeof Monitor }> = {
+  horizontal: { name: "Baner - Strona Główna", icon: Monitor },
+  square: { name: "Baner boczny", icon: Square },
+  vertical: { name: "Baner pionowy", icon: Monitor },
+};
 
 export function AdBanner({ variant = "horizontal", className }: AdBannerProps) {
   const variants = {
@@ -11,6 +18,8 @@ export function AdBanner({ variant = "horizontal", className }: AdBannerProps) {
     square: "aspect-square",
     vertical: "aspect-[300/600]",
   };
+
+  const { name, icon: Icon } = variantNames[variant];
 
   return (
     <div
@@ -21,9 +30,10 @@ export function AdBanner({ variant = "horizontal", className }: AdBannerProps) {
       )}
     >
       <div className="text-center p-4">
-        <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">
-          Reklama
-        </p>
+        <div className="flex items-center justify-center gap-1.5 text-muted-foreground text-xs uppercase tracking-wider mb-1">
+          <Icon className="h-3 w-3" />
+          <span>{name}</span>
+        </div>
         <p className="text-sm text-muted-foreground/70">
           Twoja reklama może być tutaj
         </p>
