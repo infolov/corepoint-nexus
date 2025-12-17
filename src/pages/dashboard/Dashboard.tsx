@@ -33,6 +33,7 @@ const sidebarLinks = [
 ];
 
 const adminLinks = [
+  { name: "Statystyki platformy", href: "/dashboard/admin/stats", icon: BarChart3 },
   { name: "Zarządzanie kampaniami", href: "/dashboard/admin/campaigns", icon: Shield },
   { name: "Zarządzanie użytkownikami", href: "/dashboard/admin/users", icon: Users },
   { name: "Zarządzanie miejscami", href: "/dashboard/admin/placements", icon: LayoutGrid },
