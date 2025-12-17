@@ -12,10 +12,12 @@ import {
   Menu,
   X,
   User,
-  ChevronRight
+  ChevronRight,
+  Shield
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
+import { useAdmin } from "@/hooks/use-admin";
 import { cn } from "@/lib/utils";
 
 const sidebarLinks = [
@@ -28,8 +30,13 @@ const sidebarLinks = [
   { name: "Ustawienia konta", href: "/dashboard/settings", icon: Settings },
 ];
 
+const adminLinks = [
+  { name: "Zarządzanie kampaniami", href: "/dashboard/admin/campaigns", icon: Shield },
+];
+
 export default function Dashboard() {
   const { user, loading, signOut } = useAuth();
+  const { isAdmin } = useAdmin();
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -111,6 +118,36 @@ export default function Dashboard() {
                 </Link>
               );
             })}
+
+            {/* Admin Section */}
+            {isAdmin && (
+              <>
+                <div className="pt-4 pb-2">
+                  <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Administracja
+                  </p>
+                </div>
+                {adminLinks.map((link) => {
+                  const isActive = location.pathname === link.href;
+                  return (
+                    <Link
+                      key={link.href}
+                      to={link.href}
+                      onClick={() => setSidebarOpen(false)}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                        isActive 
+                          ? "bg-primary text-primary-foreground" 
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                      )}
+                    >
+                      <link.icon className="h-5 w-5" />
+                      {link.name}
+                    </Link>
+                  );
+                })}
+              </>
+            )}
           </nav>
 
           {/* Footer */}
