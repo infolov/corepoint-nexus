@@ -24,6 +24,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { useAdmin } from "@/hooks/use-admin";
 import { toast } from "sonner";
 import { format, differenceInDays, addDays } from "date-fns";
 import { pl } from "date-fns/locale";
@@ -63,6 +64,7 @@ const ROTATION_DAILY_RATE = 35;
 
 export default function DashboardCampaignCreator() {
   const { user } = useAuth();
+  const { isAdmin } = useAdmin();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialPlacementId = searchParams.get("placement");
@@ -230,7 +232,7 @@ export default function DashboardCampaignCreator() {
         ad_type: emissionType === "exclusive" ? "exclusive" : `rotation_slot_${selectedSlot}`,
         start_date: format(startDate, "yyyy-MM-dd"),
         end_date: format(endDate, "yyyy-MM-dd"),
-        total_credits: totalPrice,
+        total_credits: isAdmin ? 0 : totalPrice, // Admin doesn't pay credits
         target_url: targetUrl || null,
         content_url: contentUrl || null,
         status: "pending"
@@ -506,22 +508,36 @@ export default function DashboardCampaignCreator() {
               </Card>
 
               {/* Wallet Info */}
-              <Card className="bg-muted/50">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <CreditCard className="h-5 w-5 text-muted-foreground" />
-                      <span>Saldo portfela</span>
+              {isAdmin ? (
+                <Card className="bg-green-500/10 border-green-500/20">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                      <Check className="h-5 w-5" />
+                      <span className="font-medium">Konto administratora - brak opłat</span>
                     </div>
-                    <span className="font-bold">{walletBalance} PLN</span>
-                  </div>
-                  {walletBalance < totalPrice && (
-                    <p className="text-sm text-destructive mt-2">
-                      Niewystarczające środki. Doładuj portfel aby kontynuować.
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Jako administrator możesz tworzyć kampanie bez wykorzystania kredytów.
                     </p>
-                  )}
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card className="bg-muted/50">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="h-5 w-5 text-muted-foreground" />
+                        <span>Saldo portfela</span>
+                      </div>
+                      <span className="font-bold">{walletBalance} PLN</span>
+                    </div>
+                    {walletBalance < totalPrice && (
+                      <p className="text-sm text-destructive mt-2">
+                        Niewystarczające środki. Doładuj portfel aby kontynuować.
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
             </div>
           )}
 
