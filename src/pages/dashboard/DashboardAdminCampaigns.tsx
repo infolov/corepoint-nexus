@@ -73,6 +73,8 @@ export default function DashboardAdminCampaigns() {
   const [activeTab, setActiveTab] = useState("pending");
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
+  const [previewCampaign, setPreviewCampaign] = useState<Campaign | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [processing, setProcessing] = useState(false);
 
@@ -174,6 +176,11 @@ export default function DashboardAdminCampaigns() {
   const openRejectDialog = (campaign: Campaign) => {
     setSelectedCampaign(campaign);
     setRejectDialogOpen(true);
+  };
+
+  const openPreviewDialog = (campaign: Campaign) => {
+    setPreviewCampaign(campaign);
+    setPreviewDialogOpen(true);
   };
 
   const filteredCampaigns = campaigns.filter(c => {
@@ -318,15 +325,14 @@ export default function DashboardAdminCampaigns() {
                                     </a>
                                   </Button>
                                 )}
-                                {campaign.content_url && (
+                                {(campaign.content_url || campaign.content_text) && (
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    asChild
+                                    onClick={() => openPreviewDialog(campaign)}
+                                    title="Podgląd reklamy"
                                   >
-                                    <a href={campaign.content_url} target="_blank" rel="noopener noreferrer">
-                                      <Eye className="h-4 w-4" />
-                                    </a>
+                                    <Eye className="h-4 w-4" />
                                   </Button>
                                 )}
                                 {campaign.status === "pending" && (
@@ -397,6 +403,104 @@ export default function DashboardAdminCampaigns() {
             >
               Odrzuć kampanię
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* Preview Dialog */}
+      <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Podgląd reklamy</DialogTitle>
+            <DialogDescription>
+              {previewCampaign?.name} - {previewCampaign?.placement_name}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Ad Preview */}
+            <div className="border rounded-lg overflow-hidden bg-muted/50">
+              {previewCampaign?.content_url ? (
+                <img
+                  src={previewCampaign.content_url}
+                  alt={previewCampaign.name}
+                  className="w-full h-auto max-h-[400px] object-contain"
+                />
+              ) : previewCampaign?.content_text ? (
+                <div className="p-8 text-center">
+                  <p className="text-lg">{previewCampaign.content_text}</p>
+                </div>
+              ) : (
+                <div className="p-8 text-center text-muted-foreground">
+                  Brak podglądu kreacji
+                </div>
+              )}
+            </div>
+
+            {/* Campaign Details */}
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="text-muted-foreground">Reklamodawca:</span>
+                <p className="font-medium">{previewCampaign?.user_name} ({previewCampaign?.user_email})</p>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Typ emisji:</span>
+                <p className="font-medium">{previewCampaign?.ad_type}</p>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Okres:</span>
+                <p className="font-medium">
+                  {previewCampaign && format(new Date(previewCampaign.start_date), "d.MM.yyyy")} - {previewCampaign && format(new Date(previewCampaign.end_date), "d.MM.yyyy")}
+                </p>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Link docelowy:</span>
+                {previewCampaign?.target_url ? (
+                  <a 
+                    href={previewCampaign.target_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline flex items-center gap-1"
+                  >
+                    {new URL(previewCampaign.target_url).hostname}
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                ) : (
+                  <p className="text-muted-foreground">Brak</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            {previewCampaign?.status === "pending" && (
+              <>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    setPreviewDialogOpen(false);
+                    if (previewCampaign) openRejectDialog(previewCampaign);
+                  }}
+                >
+                  <XCircle className="h-4 w-4 mr-2" />
+                  Odrzuć
+                </Button>
+                <Button
+                  onClick={() => {
+                    if (previewCampaign) handleApprove(previewCampaign);
+                    setPreviewDialogOpen(false);
+                  }}
+                  disabled={processing}
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Zatwierdź
+                </Button>
+              </>
+            )}
+            {previewCampaign?.status !== "pending" && (
+              <Button variant="outline" onClick={() => setPreviewDialogOpen(false)}>
+                Zamknij
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
