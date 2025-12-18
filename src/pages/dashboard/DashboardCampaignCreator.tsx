@@ -225,6 +225,32 @@ export default function DashboardCampaignCreator() {
 
     setSubmitting(true);
     try {
+      let uploadedContentUrl = contentUrl || null;
+
+      // Upload file to storage if selected
+      if (selectedFile) {
+        const fileExt = selectedFile.name.split('.').pop();
+        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('ad-campaigns')
+          .upload(fileName, selectedFile);
+
+        if (uploadError) {
+          console.error("Upload error:", uploadError);
+          toast.error("Błąd podczas przesyłania pliku");
+          setSubmitting(false);
+          return;
+        }
+
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('ad-campaigns')
+          .getPublicUrl(fileName);
+
+        uploadedContentUrl = publicUrl;
+      }
+
       const { error } = await supabase.from("ad_campaigns").insert({
         user_id: user.id,
         placement_id: selectedPlacement,
@@ -232,9 +258,9 @@ export default function DashboardCampaignCreator() {
         ad_type: emissionType === "exclusive" ? "exclusive" : `rotation_slot_${selectedSlot}`,
         start_date: format(startDate, "yyyy-MM-dd"),
         end_date: format(endDate, "yyyy-MM-dd"),
-        total_credits: isAdmin ? 0 : totalPrice, // Admin doesn't pay credits
+        total_credits: isAdmin ? 0 : totalPrice,
         target_url: targetUrl || null,
-        content_url: contentUrl || null,
+        content_url: uploadedContentUrl,
         status: "pending"
       });
 
