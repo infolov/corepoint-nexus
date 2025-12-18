@@ -126,15 +126,16 @@ export default function DashboardAdminCampaigns() {
   const handleApprove = async (campaign: Campaign) => {
     setProcessing(true);
     
+    // Set status to "active" so ads show on homepage immediately
     const { error } = await supabase
       .from("ad_campaigns")
-      .update({ status: "approved" })
+      .update({ status: "active" })
       .eq("id", campaign.id);
 
     if (error) {
       toast.error("Błąd podczas zatwierdzania kampanii");
     } else {
-      toast.success("Kampania została zatwierdzona");
+      toast.success("Kampania została zatwierdzona i jest teraz aktywna");
       fetchCampaigns();
     }
     
