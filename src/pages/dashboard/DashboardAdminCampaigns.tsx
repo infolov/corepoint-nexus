@@ -1,19 +1,34 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useAdmin } from "@/hooks/use-admin";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { format } from "date-fns";
+import { pl } from "date-fns/locale";
+import {
+  CheckCircle,
+  XCircle,
+  Clock,
+  Eye,
+  AlertCircle,
+  Edit,
+  Trash2,
+  Save,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import {
   Dialog,
@@ -23,46 +38,43 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
-import { 
-  CheckCircle, 
-  XCircle, 
-  Clock, 
-  Eye, 
-  Calendar, 
-  User, 
-  ExternalLink,
-  ShieldAlert
-} from "lucide-react";
-import { format } from "date-fns";
-import { pl } from "date-fns/locale";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Label } from "@/components/ui/label";
 
 interface Campaign {
   id: string;
   name: string;
-  status: string;
   ad_type: string;
+  content_url: string | null;
+  content_text: string | null;
+  target_url: string | null;
+  status: string;
   start_date: string;
   end_date: string;
   total_credits: number;
-  target_url: string | null;
-  content_url: string | null;
-  content_text: string | null;
   created_at: string;
   user_id: string;
+  placement_id: string;
+  rejection_reason: string | null;
   placement_name?: string;
   user_email?: string;
   user_name?: string;
 }
 
-const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon: React.ComponentType<{ className?: string }> }> = {
-  pending: { label: "Oczekująca", variant: "secondary", icon: Clock },
-  approved: { label: "Zatwierdzona", variant: "default", icon: CheckCircle },
-  active: { label: "Aktywna", variant: "default", icon: CheckCircle },
-  rejected: { label: "Odrzucona", variant: "destructive", icon: XCircle },
-  completed: { label: "Zakończona", variant: "outline", icon: CheckCircle },
-  cancelled: { label: "Anulowana", variant: "outline", icon: XCircle },
+const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon: React.ReactNode }> = {
+  pending: { label: "Oczekująca", variant: "secondary", icon: <Clock className="h-3 w-3" /> },
+  approved: { label: "Zatwierdzona", variant: "default", icon: <CheckCircle className="h-3 w-3" /> },
+  active: { label: "Aktywna", variant: "default", icon: <CheckCircle className="h-3 w-3" /> },
+  rejected: { label: "Odrzucona", variant: "destructive", icon: <XCircle className="h-3 w-3" /> },
 };
 
 export default function DashboardAdminCampaigns() {
@@ -77,6 +89,22 @@ export default function DashboardAdminCampaigns() {
   const [previewCampaign, setPreviewCampaign] = useState<Campaign | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [processing, setProcessing] = useState(false);
+  
+  // Edit state
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editCampaign, setEditCampaign] = useState<Campaign | null>(null);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    target_url: "",
+    content_text: "",
+    start_date: "",
+    end_date: "",
+    total_credits: 0,
+  });
+  
+  // Delete state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteCampaign, setDeleteCampaign] = useState<Campaign | null>(null);
 
   useEffect(() => {
     if (user && isAdmin) {
@@ -87,7 +115,6 @@ export default function DashboardAdminCampaigns() {
   const fetchCampaigns = async () => {
     setLoading(true);
     
-    // Fetch all campaigns (admin has access via RLS)
     const { data: campaignsData, error: campaignsError } = await supabase
       .from("ad_campaigns")
       .select(`
@@ -103,7 +130,6 @@ export default function DashboardAdminCampaigns() {
       return;
     }
 
-    // Fetch user profiles for each campaign
     const userIds = [...new Set((campaignsData || []).map(c => c.user_id))];
     const { data: profilesData } = await supabase
       .from("profiles")
@@ -128,7 +154,6 @@ export default function DashboardAdminCampaigns() {
   const handleApprove = async (campaign: Campaign) => {
     setProcessing(true);
     
-    // Set status to "active" so ads show on homepage immediately
     const { error } = await supabase
       .from("ad_campaigns")
       .update({ status: "active" })
@@ -183,19 +208,100 @@ export default function DashboardAdminCampaigns() {
     setPreviewDialogOpen(true);
   };
 
-  const filteredCampaigns = campaigns.filter(c => {
-    if (activeTab === "all") return true;
-    return c.status === activeTab;
-  });
-
-  const getCounts = (status: string) => {
-    if (status === "all") return campaigns.length;
-    return campaigns.filter(c => c.status === status).length;
+  const openEditDialog = (campaign: Campaign) => {
+    setEditCampaign(campaign);
+    setEditForm({
+      name: campaign.name,
+      target_url: campaign.target_url || "",
+      content_text: campaign.content_text || "",
+      start_date: campaign.start_date,
+      end_date: campaign.end_date,
+      total_credits: campaign.total_credits,
+    });
+    setEditDialogOpen(true);
   };
 
-  if (adminLoading) {
+  const handleEdit = async () => {
+    if (!editCampaign) return;
+
+    setProcessing(true);
+    
+    const { error } = await supabase
+      .from("ad_campaigns")
+      .update({
+        name: editForm.name,
+        target_url: editForm.target_url || null,
+        content_text: editForm.content_text || null,
+        start_date: editForm.start_date,
+        end_date: editForm.end_date,
+        total_credits: editForm.total_credits,
+      })
+      .eq("id", editCampaign.id);
+
+    if (error) {
+      console.error("Error updating campaign:", error);
+      toast.error("Błąd podczas aktualizacji kampanii");
+    } else {
+      toast.success("Kampania została zaktualizowana");
+      setEditDialogOpen(false);
+      setEditCampaign(null);
+      fetchCampaigns();
+    }
+    
+    setProcessing(false);
+  };
+
+  const openDeleteDialog = (campaign: Campaign) => {
+    setDeleteCampaign(campaign);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteCampaign) return;
+
+    setProcessing(true);
+    
+    // First delete related campaign_stats
+    await supabase
+      .from("campaign_stats")
+      .delete()
+      .eq("campaign_id", deleteCampaign.id);
+    
+    // Then delete the campaign
+    const { error } = await supabase
+      .from("ad_campaigns")
+      .delete()
+      .eq("id", deleteCampaign.id);
+
+    if (error) {
+      console.error("Error deleting campaign:", error);
+      toast.error("Błąd podczas usuwania kampanii");
+    } else {
+      toast.success("Kampania została usunięta");
+      setDeleteDialogOpen(false);
+      setDeleteCampaign(null);
+      fetchCampaigns();
+    }
+    
+    setProcessing(false);
+  };
+
+  const filteredCampaigns = campaigns.filter(campaign => {
+    if (activeTab === "all") return true;
+    if (activeTab === "approved") return campaign.status === "approved" || campaign.status === "active";
+    return campaign.status === activeTab;
+  });
+
+  const getCounts = () => ({
+    pending: campaigns.filter(c => c.status === "pending").length,
+    approved: campaigns.filter(c => c.status === "approved" || c.status === "active").length,
+    rejected: campaigns.filter(c => c.status === "rejected").length,
+    all: campaigns.length,
+  });
+
+  if (adminLoading || loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex items-center justify-center p-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
@@ -203,170 +309,151 @@ export default function DashboardAdminCampaigns() {
 
   if (!isAdmin) {
     return (
-      <Card className="border-destructive">
-        <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-          <ShieldAlert className="h-16 w-16 text-destructive mb-4" />
-          <h2 className="text-xl font-semibold mb-2">Brak dostępu</h2>
-          <p className="text-muted-foreground">
-            Ta strona jest dostępna tylko dla administratorów.
-          </p>
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center p-8">
+          <AlertCircle className="h-12 w-12 text-destructive mb-4" />
+          <p className="text-lg font-medium">Brak dostępu</p>
+          <p className="text-muted-foreground">Nie masz uprawnień do tej sekcji</p>
         </CardContent>
       </Card>
     );
   }
 
+  const counts = getCounts();
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Zarządzanie kampaniami</h1>
-        <p className="text-muted-foreground">
-          Przeglądaj i zatwierdzaj kampanie reklamowe użytkowników
-        </p>
-      </div>
-
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Wszystkie kampanie</CardTitle>
+        <CardHeader>
+          <CardTitle>Zarządzanie kampaniami reklamowymi</CardTitle>
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="mb-4">
               <TabsTrigger value="pending" className="gap-2">
                 <Clock className="h-4 w-4" />
-                Oczekujące ({getCounts("pending")})
+                Oczekujące ({counts.pending})
               </TabsTrigger>
-              <TabsTrigger value="approved">
-                Zatwierdzone ({getCounts("approved")})
+              <TabsTrigger value="approved" className="gap-2">
+                <CheckCircle className="h-4 w-4" />
+                Zatwierdzone ({counts.approved})
               </TabsTrigger>
-              <TabsTrigger value="active">
-                Aktywne ({getCounts("active")})
-              </TabsTrigger>
-              <TabsTrigger value="rejected">
-                Odrzucone ({getCounts("rejected")})
+              <TabsTrigger value="rejected" className="gap-2">
+                <XCircle className="h-4 w-4" />
+                Odrzucone ({counts.rejected})
               </TabsTrigger>
               <TabsTrigger value="all">
-                Wszystkie ({getCounts("all")})
+                Wszystkie ({counts.all})
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value={activeTab} className="mt-0">
-              {loading ? (
-                <div className="space-y-3">
-                  {[1, 2, 3].map(i => (
-                    <Skeleton key={i} className="h-16 w-full" />
-                  ))}
-                </div>
-              ) : filteredCampaigns.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
+            <TabsContent value={activeTab}>
+              {filteredCampaigns.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
                   Brak kampanii w tej kategorii
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Kampania</TableHead>
-                        <TableHead>Reklamodawca</TableHead>
-                        <TableHead>Miejsce</TableHead>
-                        <TableHead>Typ</TableHead>
-                        <TableHead>Okres</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Akcje</TableHead>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Reklamodawca</TableHead>
+                      <TableHead>Nazwa kampanii</TableHead>
+                      <TableHead>Placement</TableHead>
+                      <TableHead>Typ</TableHead>
+                      <TableHead>Daty</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Akcje</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredCampaigns.map((campaign) => (
+                      <TableRow key={campaign.id}>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{campaign.user_name}</div>
+                            <div className="text-sm text-muted-foreground">{campaign.user_email}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-medium">{campaign.name}</TableCell>
+                        <TableCell>{campaign.placement_name}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">
+                            {campaign.ad_type === "image" ? "Obraz" : "Tekst"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            <div>{format(new Date(campaign.start_date), "dd MMM yyyy", { locale: pl })}</div>
+                            <div className="text-muted-foreground">
+                              do {format(new Date(campaign.end_date), "dd MMM yyyy", { locale: pl })}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={statusConfig[campaign.status]?.variant || "outline"} className="gap-1">
+                            {statusConfig[campaign.status]?.icon}
+                            {statusConfig[campaign.status]?.label || campaign.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openPreviewDialog(campaign)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            
+                            {/* Edit button - available for all campaigns */}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openEditDialog(campaign)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            
+                            {/* Delete button - available for all campaigns */}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openDeleteDialog(campaign)}
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                            
+                            {campaign.status === "pending" && (
+                              <>
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  onClick={() => handleApprove(campaign)}
+                                  disabled={processing}
+                                  className="gap-1"
+                                >
+                                  <CheckCircle className="h-4 w-4" />
+                                  Zatwierdź
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => openRejectDialog(campaign)}
+                                  disabled={processing}
+                                  className="gap-1"
+                                >
+                                  <XCircle className="h-4 w-4" />
+                                  Odrzuć
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredCampaigns.map(campaign => {
-                        const status = statusConfig[campaign.status] || statusConfig.pending;
-                        const StatusIcon = status.icon;
-                        
-                        return (
-                          <TableRow key={campaign.id}>
-                            <TableCell>
-                              <div className="font-medium">{campaign.name}</div>
-                              <div className="text-xs text-muted-foreground">
-                                {format(new Date(campaign.created_at), "d MMM yyyy, HH:mm", { locale: pl })}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <User className="h-4 w-4 text-muted-foreground" />
-                                <div>
-                                  <div className="text-sm">{campaign.user_name}</div>
-                                  <div className="text-xs text-muted-foreground">{campaign.user_email}</div>
-                                </div>
-                              </div>
-                            </TableCell>
-                            <TableCell>{campaign.placement_name}</TableCell>
-                            <TableCell>
-                              <Badge variant="outline">{campaign.ad_type}</Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-1 text-sm">
-                                <Calendar className="h-3 w-3" />
-                                {format(new Date(campaign.start_date), "d.MM")} - {format(new Date(campaign.end_date), "d.MM.yyyy")}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant={status.variant} className="gap-1">
-                                <StatusIcon className="h-3 w-3" />
-                                {status.label}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                {campaign.target_url && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    asChild
-                                  >
-                                    <a href={campaign.target_url} target="_blank" rel="noopener noreferrer">
-                                      <ExternalLink className="h-4 w-4" />
-                                    </a>
-                                  </Button>
-                                )}
-                                {(campaign.content_url || campaign.content_text) && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => openPreviewDialog(campaign)}
-                                    title="Podgląd reklamy"
-                                  >
-                                    <Eye className="h-4 w-4" />
-                                  </Button>
-                                )}
-                                {campaign.status === "pending" && (
-                                  <>
-                                    <Button
-                                      variant="default"
-                                      size="sm"
-                                      onClick={() => handleApprove(campaign)}
-                                      disabled={processing}
-                                      className="gap-1"
-                                    >
-                                      <CheckCircle className="h-4 w-4" />
-                                      Zatwierdź
-                                    </Button>
-                                    <Button
-                                      variant="destructive"
-                                      size="sm"
-                                      onClick={() => openRejectDialog(campaign)}
-                                      disabled={processing}
-                                      className="gap-1"
-                                    >
-                                      <XCircle className="h-4 w-4" />
-                                      Odrzuć
-                                    </Button>
-                                  </>
-                                )}
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </div>
+                    ))}
+                  </TableBody>
+                </Table>
               )}
             </TabsContent>
           </Tabs>
@@ -379,25 +466,26 @@ export default function DashboardAdminCampaigns() {
           <DialogHeader>
             <DialogTitle>Odrzuć kampanię</DialogTitle>
             <DialogDescription>
-              Podaj powód odrzucenia kampanii "{selectedCampaign?.name}". 
-              Reklamodawca zobaczy tę wiadomość.
+              Podaj powód odrzucenia kampanii "{selectedCampaign?.name}"
             </DialogDescription>
           </DialogHeader>
-          <Textarea
-            placeholder="Powód odrzucenia..."
-            value={rejectionReason}
-            onChange={(e) => setRejectionReason(e.target.value)}
-            className="min-h-[100px]"
-          />
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Powód odrzucenia</Label>
+              <Textarea
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                placeholder="Opisz powód odrzucenia..."
+                rows={4}
+              />
+            </div>
+          </div>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setRejectDialogOpen(false)}
-            >
+            <Button variant="outline" onClick={() => setRejectDialogOpen(false)}>
               Anuluj
             </Button>
-            <Button
-              variant="destructive"
+            <Button 
+              variant="destructive" 
               onClick={handleReject}
               disabled={processing || !rejectionReason.trim()}
             >
@@ -406,104 +494,238 @@ export default function DashboardAdminCampaigns() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
       {/* Preview Dialog */}
       <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Podgląd reklamy</DialogTitle>
+            <DialogTitle>Podgląd kampanii: {previewCampaign?.name}</DialogTitle>
             <DialogDescription>
-              {previewCampaign?.name} - {previewCampaign?.placement_name}
+              Reklamodawca: {previewCampaign?.user_name} ({previewCampaign?.user_email})
             </DialogDescription>
           </DialogHeader>
-          
           <div className="space-y-4">
-            {/* Ad Preview */}
-            <div className="border rounded-lg overflow-hidden bg-muted/50">
-              {previewCampaign?.content_url ? (
-                <img
-                  src={previewCampaign.content_url}
-                  alt={previewCampaign.name}
-                  className="w-full h-auto max-h-[400px] object-contain"
-                />
+            {/* Campaign details */}
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="text-muted-foreground">Placement:</span>
+                <span className="ml-2 font-medium">{previewCampaign?.placement_name}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Typ:</span>
+                <span className="ml-2 font-medium">
+                  {previewCampaign?.ad_type === "image" ? "Obraz" : "Tekst"}
+                </span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Data rozpoczęcia:</span>
+                <span className="ml-2 font-medium">
+                  {previewCampaign && format(new Date(previewCampaign.start_date), "dd MMM yyyy", { locale: pl })}
+                </span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Data zakończenia:</span>
+                <span className="ml-2 font-medium">
+                  {previewCampaign && format(new Date(previewCampaign.end_date), "dd MMM yyyy", { locale: pl })}
+                </span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Kredyty:</span>
+                <span className="ml-2 font-medium">{previewCampaign?.total_credits}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Status:</span>
+                <Badge 
+                  variant={statusConfig[previewCampaign?.status || "pending"]?.variant || "outline"} 
+                  className="ml-2 gap-1"
+                >
+                  {statusConfig[previewCampaign?.status || "pending"]?.icon}
+                  {statusConfig[previewCampaign?.status || "pending"]?.label}
+                </Badge>
+              </div>
+            </div>
+
+            {/* Ad preview */}
+            <div className="border rounded-lg p-4 bg-muted/50">
+              <h4 className="text-sm font-medium mb-2">Podgląd reklamy:</h4>
+              {previewCampaign?.ad_type === "image" && previewCampaign.content_url ? (
+                <div className="flex justify-center">
+                  <img 
+                    src={previewCampaign.content_url} 
+                    alt="Podgląd reklamy"
+                    className="max-w-full max-h-64 object-contain rounded"
+                  />
+                </div>
               ) : previewCampaign?.content_text ? (
-                <div className="p-8 text-center">
-                  <p className="text-lg">{previewCampaign.content_text}</p>
+                <div className="p-4 bg-background rounded border">
+                  <p>{previewCampaign.content_text}</p>
                 </div>
               ) : (
-                <div className="p-8 text-center text-muted-foreground">
-                  Brak podglądu kreacji
-                </div>
+                <p className="text-muted-foreground text-center">Brak treści do wyświetlenia</p>
               )}
             </div>
 
-            {/* Campaign Details */}
-            <div className="grid grid-cols-2 gap-4 text-sm">
+            {previewCampaign?.target_url && (
               <div>
-                <span className="text-muted-foreground">Reklamodawca:</span>
-                <p className="font-medium">{previewCampaign?.user_name} ({previewCampaign?.user_email})</p>
+                <span className="text-sm text-muted-foreground">Link docelowy:</span>
+                <a 
+                  href={previewCampaign.target_url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="ml-2 text-sm text-primary hover:underline"
+                >
+                  {previewCampaign.target_url}
+                </a>
               </div>
-              <div>
-                <span className="text-muted-foreground">Typ emisji:</span>
-                <p className="font-medium">{previewCampaign?.ad_type}</p>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Okres:</span>
-                <p className="font-medium">
-                  {previewCampaign && format(new Date(previewCampaign.start_date), "d.MM.yyyy")} - {previewCampaign && format(new Date(previewCampaign.end_date), "d.MM.yyyy")}
-                </p>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Link docelowy:</span>
-                {previewCampaign?.target_url ? (
-                  <a 
-                    href={previewCampaign.target_url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-primary hover:underline flex items-center gap-1"
-                  >
-                    {new URL(previewCampaign.target_url).hostname}
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-                ) : (
-                  <p className="text-muted-foreground">Brak</p>
-                )}
-              </div>
-            </div>
-          </div>
+            )}
 
+            {previewCampaign?.rejection_reason && (
+              <div className="p-4 bg-destructive/10 rounded-lg">
+                <span className="text-sm font-medium text-destructive">Powód odrzucenia:</span>
+                <p className="mt-1 text-sm">{previewCampaign.rejection_reason}</p>
+              </div>
+            )}
+          </div>
           <DialogFooter>
             {previewCampaign?.status === "pending" && (
               <>
                 <Button
-                  variant="destructive"
+                  variant="default"
                   onClick={() => {
-                    setPreviewDialogOpen(false);
-                    if (previewCampaign) openRejectDialog(previewCampaign);
-                  }}
-                >
-                  <XCircle className="h-4 w-4 mr-2" />
-                  Odrzuć
-                </Button>
-                <Button
-                  onClick={() => {
-                    if (previewCampaign) handleApprove(previewCampaign);
+                    handleApprove(previewCampaign);
                     setPreviewDialogOpen(false);
                   }}
                   disabled={processing}
+                  className="gap-1"
                 >
-                  <CheckCircle className="h-4 w-4 mr-2" />
+                  <CheckCircle className="h-4 w-4" />
                   Zatwierdź
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    setPreviewDialogOpen(false);
+                    openRejectDialog(previewCampaign);
+                  }}
+                  disabled={processing}
+                  className="gap-1"
+                >
+                  <XCircle className="h-4 w-4" />
+                  Odrzuć
                 </Button>
               </>
             )}
-            {previewCampaign?.status !== "pending" && (
-              <Button variant="outline" onClick={() => setPreviewDialogOpen(false)}>
-                Zamknij
-              </Button>
-            )}
+            <Button variant="outline" onClick={() => setPreviewDialogOpen(false)}>
+              Zamknij
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edytuj kampanię</DialogTitle>
+            <DialogDescription>
+              Edytuj szczegóły kampanii "{editCampaign?.name}"
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">Nazwa kampanii</Label>
+              <Input
+                id="edit-name"
+                value={editForm.name}
+                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-target-url">Link docelowy</Label>
+              <Input
+                id="edit-target-url"
+                value={editForm.target_url}
+                onChange={(e) => setEditForm({ ...editForm, target_url: e.target.value })}
+                placeholder="https://..."
+              />
+            </div>
+            {editCampaign?.ad_type === "text" && (
+              <div className="space-y-2">
+                <Label htmlFor="edit-content-text">Treść tekstowa</Label>
+                <Textarea
+                  id="edit-content-text"
+                  value={editForm.content_text}
+                  onChange={(e) => setEditForm({ ...editForm, content_text: e.target.value })}
+                  rows={3}
+                />
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-start-date">Data rozpoczęcia</Label>
+                <Input
+                  id="edit-start-date"
+                  type="date"
+                  value={editForm.start_date}
+                  onChange={(e) => setEditForm({ ...editForm, start_date: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-end-date">Data zakończenia</Label>
+                <Input
+                  id="edit-end-date"
+                  type="date"
+                  value={editForm.end_date}
+                  onChange={(e) => setEditForm({ ...editForm, end_date: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-credits">Kredyty</Label>
+              <Input
+                id="edit-credits"
+                type="number"
+                value={editForm.total_credits}
+                onChange={(e) => setEditForm({ ...editForm, total_credits: parseInt(e.target.value) || 0 })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              <X className="h-4 w-4 mr-2" />
+              Anuluj
+            </Button>
+            <Button onClick={handleEdit} disabled={processing || !editForm.name.trim()}>
+              <Save className="h-4 w-4 mr-2" />
+              Zapisz zmiany
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Usuń kampanię</AlertDialogTitle>
+            <AlertDialogDescription>
+              Czy na pewno chcesz usunąć kampanię "{deleteCampaign?.name}"? 
+              Ta operacja jest nieodwracalna i usunie również wszystkie statystyki powiązane z tą kampanią.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Anuluj</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={processing}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Usuń kampanię
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
