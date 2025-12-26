@@ -200,7 +200,7 @@ export function Header() {
               <PopoverTrigger asChild>
                 <button className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-nav-foreground/80 text-sm hover:bg-nav-foreground/10 rounded-lg transition-colors">
                   {weatherLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : weatherData ? <>
-                      <MapPin className="h-4 w-4 border-accent text-popover bg-primary" />
+                      <MapPin className="h-4 w-4 border-accent bg-primary text-popover" />
                       <span className="font-medium">{weatherData.stacja}</span>
                       <CloudSun className="h-5 w-5 text-weather-sunny" />
                       <span className="font-semibold">{Math.round(parseFloat(weatherData.temperatura))}°C</span>
