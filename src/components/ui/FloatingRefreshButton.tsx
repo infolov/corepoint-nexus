@@ -17,9 +17,9 @@ export function FloatingRefreshButton({ onClick, isLoading, className }: Floatin
       className={cn(
         "fixed right-4 top-1/3 z-50",
         "w-12 h-12 rounded-full shadow-lg",
-        "bg-primary hover:bg-primary/90 text-primary-foreground",
+        "bg-[hsl(209,90%,58%)] hover:bg-[hsl(209,90%,52%)] text-white",
         "transition-all duration-300 hover:scale-110",
-        "border-2 border-primary-foreground/20",
+        "border-2 border-white/20",
         className
       )}
       title="Odśwież artykuły"
