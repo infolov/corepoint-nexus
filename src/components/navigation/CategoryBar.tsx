@@ -408,9 +408,9 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
                   "flex items-center gap-1 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200",
                   "hover:bg-muted",
                   activeCategory === category.slug
-                    ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                    ? "bg-[hsl(209,90%,58%)] text-white hover:bg-[hsl(209,90%,52%)]"
                     : "text-muted-foreground hover:text-foreground",
-                  expandedCategory === category.slug && "bg-muted ring-2 ring-primary/30"
+                  expandedCategory === category.slug && "bg-muted ring-2 ring-[hsl(209,90%,58%)]/30"
                 )}
               >
                 {category.name}
@@ -456,7 +456,7 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
                   className={cn(
                     "px-4 py-2 rounded-lg text-sm font-bold transition-colors text-left",
                     activeCategory === currentExpandedCategory.slug
-                      ? "bg-primary text-primary-foreground"
+                      ? "bg-[hsl(209,90%,58%)] text-white"
                       : "bg-background hover:bg-muted text-foreground border border-border"
                   )}
                   onClick={() => handleSubcategoryClick(currentExpandedCategory.slug)}
@@ -476,10 +476,10 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
                     {/* Main subcategory header */}
                     <button
                       className={cn(
-                        "px-3 py-1.5 rounded-md text-sm font-bold transition-colors text-left border-b-2 border-primary/30 pb-2 mb-1",
+                        "px-3 py-1.5 rounded-md text-sm font-bold transition-colors text-left border-b-2 border-[hsl(209,90%,58%)]/30 pb-2 mb-1",
                         isActive
-                          ? "text-primary"
-                          : "text-foreground hover:text-primary"
+                          ? "text-[hsl(209,90%,58%)]"
+                          : "text-foreground hover:text-[hsl(209,90%,58%)]"
                       )}
                       onClick={() => handleSubcategoryClick(currentExpandedCategory.slug, sub.slug)}
                     >
@@ -499,7 +499,7 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
                               className={cn(
                                 "px-3 py-1 rounded text-xs transition-colors text-left",
                                 isSubSubActive
-                                  ? "bg-primary/10 text-primary font-medium"
+                                  ? "bg-[hsl(209,90%,58%)]/10 text-[hsl(209,90%,58%)] font-medium"
                                   : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                               )}
                               onClick={() => handleSubcategoryClick(currentExpandedCategory.slug, sub.slug, subSub.slug)}
