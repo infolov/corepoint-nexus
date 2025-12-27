@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Menu, X, Search, User, Sun, Moon, Settings, CloudSun, LayoutDashboard, LogOut, MapPin, Loader2, Cloud, CloudRain, Wind, Droplets } from "lucide-react";
+import { Menu, X, Search, User, Sun, Moon, Settings, LayoutDashboard, LogOut, MapPin, Loader2, Cloud, CloudRain, Wind, Droplets } from "lucide-react";
 import { useWeather } from "@/hooks/use-weather";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -202,12 +202,18 @@ export function Header() {
                   {weatherLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : weatherData ? <>
                       <MapPin className="h-4 w-4 border-accent text-white bg-[#0f1729]" />
                       <span className="font-medium">{weatherData.stacja}</span>
-                      <CloudSun className="h-5 w-5 text-weather-sunny" />
+                      <div className="relative flex items-center">
+                        <Cloud className="h-5 w-5 text-white" />
+                        <Sun className="h-4 w-4 text-weather-sunny -ml-2" />
+                      </div>
                       <span className="font-semibold">{Math.round(parseFloat(weatherData.temperatura))}°C</span>
                     </> : <>
                       <MapPin className="h-4 w-4" />
                       <span className="text-xs text-nav-foreground/60">Warszawa</span>
-                      <CloudSun className="h-5 w-5 text-weather-sunny" />
+                      <div className="relative flex items-center">
+                        <Cloud className="h-5 w-5 text-white" />
+                        <Sun className="h-4 w-4 text-weather-sunny -ml-2" />
+                      </div>
                       <span className="font-semibold">--°C</span>
                     </>}
                 </button>
@@ -221,7 +227,10 @@ export function Header() {
                       <span className="font-semibold">{weatherData?.stacja || "Warszawa"}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <CloudSun className="h-8 w-8 text-weather-sunny" />
+                      <div className="relative flex items-center">
+                        <Cloud className="h-8 w-8 text-white" />
+                        <Sun className="h-6 w-6 text-weather-sunny -ml-3" />
+                      </div>
                       <span className="text-2xl font-bold">
                         {weatherData ? Math.round(parseFloat(weatherData.temperatura)) : "--"}°C
                       </span>
