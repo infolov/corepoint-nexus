@@ -195,6 +195,7 @@ const Article = () => {
               title={article.title}
               content={content}
               category={article.category}
+              articleId={id}
             />
 
             {/* Action Buttons - Thumbs up/down, Save & Share */}
