@@ -150,7 +150,7 @@ export function Header() {
   return <header className="sticky top-0 z-50 w-full">
       {/* Top Bar */}
       <div className="bg-nav text-nav-foreground">
-        <div className="container flex h-16 items-center justify-between">
+        <div className="container flex h-16 items-center justify-between bg-neutral-800">
           {/* Left: Logo + Partner Space */}
           <div className="flex items-center gap-4 md:gap-6">
             <Link to="/" className="flex flex-col md:flex-row items-start md:items-center gap-0.5 md:gap-2.5">
