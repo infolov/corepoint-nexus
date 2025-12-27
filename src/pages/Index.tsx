@@ -339,7 +339,7 @@ const Index = () => {
       {/* Floating Refresh Button */}
       <FloatingRefreshButton onClick={handleRefresh} isLoading={isRefreshing || rssLoading || dbLoading} />
 
-      <main className="container py-4 sm:py-6 bg-neutral-800">
+      <main className="container py-4 sm:py-6 bg-[#28282a]">
         {/* Top Ad Banner */}
         <div className="mb-6">
           <AdBanner variant="horizontal" className="w-full" />
