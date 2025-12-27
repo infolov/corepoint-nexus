@@ -56,6 +56,9 @@ export default {
           DEFAULT: "hsl(var(--nav-bg))",
           foreground: "hsl(var(--nav-foreground))",
         },
+        "category-bar": {
+          DEFAULT: "hsl(var(--category-bar-bg))",
+        },
         badge: {
           hot: "hsl(var(--badge-hot))",
           trending: "hsl(var(--badge-trending))",

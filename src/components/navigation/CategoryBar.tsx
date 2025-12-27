@@ -709,7 +709,7 @@ export function CategoryBar({
         <div ref={scrollRef} onScroll={checkScroll} style={{
         scrollbarWidth: "none",
         msOverflowStyle: "none"
-      }} className="flex items-center gap-1 overflow-x-auto scrollbar-hide py-2 px-8 bg-neutral-800">
+      }} className="flex items-center gap-1 overflow-x-auto scrollbar-hide py-2 px-8 bg-category-bar">
           {categoriesWithSubs.map(category => <div key={category.slug} className="relative flex-shrink-0" onMouseEnter={() => category.subcategories.length > 0 && handleCategoryHover(category.slug)} onMouseLeave={() => handleCategoryHover(null)}>
               <button onClick={() => handleCategoryClick(category)} className={cn("flex items-center gap-1 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200", "hover:bg-muted", activeCategory === category.slug ? "bg-[hsl(209,90%,58%)] text-white hover:bg-[hsl(209,90%,52%)]" : "text-muted-foreground hover:text-foreground", expandedCategory === category.slug && "bg-muted ring-2 ring-[hsl(209,90%,58%)]/30")}>
                 {category.name}
