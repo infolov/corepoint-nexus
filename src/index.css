@@ -71,52 +71,59 @@
   }
 
   .dark {
-    --background: 222 47% 7%;
-    --foreground: 210 40% 98%;
+    /* Main background: #272727 */
+    --background: 0 0% 15%;
+    /* Text: #F4F9F7 */
+    --foreground: 156 33% 97%;
 
-    --card: 222 47% 10%;
-    --card-foreground: 210 40% 98%;
+    /* Card/popover background: #2b2b2b */
+    --card: 0 0% 17%;
+    --card-foreground: 156 33% 97%;
 
-    --popover: 222 47% 10%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 17%;
+    --popover-foreground: 156 33% 97%;
 
     --primary: 207 90% 54%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
+    /* Secondary/dropdown background: #2b2b2b */
+    --secondary: 0 0% 17%;
+    --secondary-foreground: 156 33% 97%;
 
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
+    /* Muted text: #767b7d */
+    --muted: 0 0% 17%;
+    --muted-foreground: 197 4% 48%;
 
     --accent: 207 90% 54%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 156 33% 97%;
 
-    --border: 217 33% 20%;
-    --input: 217 33% 17%;
+    /* Border slightly lighter than background */
+    --border: 0 0% 22%;
+    --input: 0 0% 17%;
     --ring: 207 90% 54%;
 
-    --nav-bg: 222 47% 5%;
-    --nav-foreground: 210 40% 98%;
+    /* Nav background darker */
+    --nav-bg: 0 0% 12%;
+    --nav-foreground: 156 33% 97%;
     --hero-gradient-start: 207 90% 54%;
     --hero-gradient-end: 199 89% 48%;
-    --card-hover: 222 47% 14%;
+    --card-hover: 0 0% 20%;
     --card-shadow: 0 2px 8px -2px hsl(0 0% 0% / 0.3);
     --card-shadow-hover: 0 8px 24px -4px hsl(0 0% 0% / 0.4);
 
     /* Category active highlight - #2094f3 */
     --category-active: 209 90% 58%;
 
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-background: 0 0% 15%;
+    --sidebar-foreground: 156 33% 97%;
     --sidebar-primary: 224.3 76.3% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-accent: 0 0% 17%;
+    --sidebar-accent-foreground: 156 33% 97%;
+    --sidebar-border: 0 0% 22%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
