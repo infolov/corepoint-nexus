@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { useDemo } from "@/contexts/DemoContext";
 import { format, parseISO } from "date-fns";
 import { pl } from "date-fns/locale";
 import { toast } from "sonner";
@@ -33,8 +34,26 @@ interface Transaction {
   created_at: string;
 }
 
+// Demo data
+const demoPackages: CreditPackage[] = [
+  { id: "pkg-1", name: "Starter", credits: 100, price_pln: 49, price_eur: null },
+  { id: "pkg-2", name: "Basic", credits: 500, price_pln: 199, price_eur: null },
+  { id: "pkg-3", name: "Pro", credits: 1000, price_pln: 349, price_eur: null },
+  { id: "pkg-4", name: "Business", credits: 2500, price_pln: 749, price_eur: null },
+  { id: "pkg-5", name: "Enterprise", credits: 5000, price_pln: 1299, price_eur: null },
+];
+
+const demoTransactions: Transaction[] = [
+  { id: "tx-1", amount: 1000, transaction_type: "purchase", description: "Zakup pakietu Pro", created_at: "2024-12-20T10:30:00Z" },
+  { id: "tx-2", amount: -500, transaction_type: "campaign", description: "Kampania: Nowy produkt", created_at: "2024-12-15T14:00:00Z" },
+  { id: "tx-3", amount: 2500, transaction_type: "purchase", description: "Zakup pakietu Business", created_at: "2024-12-01T09:15:00Z" },
+  { id: "tx-4", amount: -300, transaction_type: "campaign", description: "Kampania: Reklama świąteczna", created_at: "2024-11-28T16:45:00Z" },
+  { id: "tx-5", amount: -200, transaction_type: "campaign", description: "Kampania: Black Friday", created_at: "2024-11-15T11:20:00Z" },
+];
+
 export default function DashboardCredits() {
   const { user } = useAuth();
+  const { isDemoMode } = useDemo();
   const [balance, setBalance] = useState(0);
   const [packages, setPackages] = useState<CreditPackage[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -42,6 +61,15 @@ export default function DashboardCredits() {
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
 
   useEffect(() => {
+    // If demo mode, use demo data
+    if (isDemoMode) {
+      setBalance(2500);
+      setPackages(demoPackages);
+      setTransactions(demoTransactions);
+      setLoading(false);
+      return;
+    }
+
     const fetchData = async () => {
       if (!user) return;
 
@@ -81,7 +109,7 @@ export default function DashboardCredits() {
     };
 
     fetchData();
-  }, [user]);
+  }, [user, isDemoMode]);
 
   const handlePurchase = async (packageId: string) => {
     setSelectedPackage(packageId);

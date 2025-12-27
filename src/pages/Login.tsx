@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Mail, Lock, User, Building, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, Building, Loader2, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { useDemo } from "@/contexts/DemoContext";
 import { toast } from "sonner";
 
 type AuthMode = "login" | "register" | "advertiser";
@@ -13,6 +14,7 @@ type AuthMode = "login" | "register" | "advertiser";
 export default function Login() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const { enterDemoMode, isDemoMode } = useDemo();
   const [mode, setMode] = useState<AuthMode>("login");
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
@@ -20,6 +22,12 @@ export default function Login() {
   const [name, setName] = useState("");
   const [company, setCompany] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const handleDemoLogin = () => {
+    enterDemoMode();
+    navigate("/dashboard");
+    toast.success("Zalogowano do konta demo!");
+  };
 
   // Redirect if already logged in
   useEffect(() => {
@@ -320,6 +328,26 @@ export default function Login() {
                 Facebook
               </Button>
             </div>
+
+            {/* Demo Account Divider */}
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-border"></div>
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">lub wypróbuj</span>
+              </div>
+            </div>
+
+            {/* Demo Account Button */}
+            <Button 
+              variant="outline" 
+              className="w-full border-amber-500/50 text-amber-600 hover:bg-amber-500/10 hover:text-amber-700 hover:border-amber-500"
+              onClick={handleDemoLogin}
+            >
+              <Play className="h-4 w-4 mr-2" />
+              Konto demo reklamodawcy
+            </Button>
           </div>
 
           {/* Bottom Link */}

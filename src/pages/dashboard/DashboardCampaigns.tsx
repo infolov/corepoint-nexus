@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { useDemo } from "@/contexts/DemoContext";
 import { format, parseISO } from "date-fns";
 import { pl } from "date-fns/locale";
 
@@ -50,13 +51,85 @@ const statusConfig: Record<string, { label: string; variant: "default" | "second
   rejected: { label: "Odrzucona", variant: "destructive", icon: XCircle },
 };
 
+// Demo campaigns
+const demoCampaigns: Campaign[] = [
+  {
+    id: "demo-1",
+    name: "Kampania promocyjna - Nowy produkt",
+    status: "active",
+    start_date: "2024-12-01",
+    end_date: "2024-12-31",
+    total_credits: 500,
+    ad_type: "banner",
+    content_url: null,
+    target_url: "https://example.com/produkt",
+    created_at: "2024-11-28T10:00:00Z",
+    placement_name: "Banner główny",
+    impressions: 23456,
+    clicks: 567,
+  },
+  {
+    id: "demo-2",
+    name: "Reklama świąteczna",
+    status: "active",
+    start_date: "2024-12-15",
+    end_date: "2025-01-05",
+    total_credits: 300,
+    ad_type: "banner",
+    content_url: null,
+    target_url: "https://example.com/swieta",
+    created_at: "2024-12-10T14:30:00Z",
+    placement_name: "Sidebar prawy",
+    impressions: 12890,
+    clicks: 234,
+  },
+  {
+    id: "demo-3",
+    name: "Kampania testowa",
+    status: "pending",
+    start_date: "2025-01-01",
+    end_date: "2025-01-31",
+    total_credits: 200,
+    ad_type: "banner",
+    content_url: null,
+    target_url: "https://example.com",
+    created_at: "2024-12-20T09:15:00Z",
+    placement_name: "Banner artykułu",
+    impressions: 0,
+    clicks: 0,
+  },
+  {
+    id: "demo-4",
+    name: "Black Friday 2024",
+    status: "completed",
+    start_date: "2024-11-20",
+    end_date: "2024-11-30",
+    total_credits: 1000,
+    ad_type: "banner",
+    content_url: null,
+    target_url: "https://example.com/black-friday",
+    created_at: "2024-11-15T08:00:00Z",
+    placement_name: "Banner główny",
+    impressions: 45000,
+    clicks: 1890,
+  },
+];
+
 export default function DashboardCampaigns() {
   const { user } = useAuth();
+  const { isDemoMode } = useDemo();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
 
   useEffect(() => {
+    // If demo mode, use demo campaigns
+    if (isDemoMode) {
+      setCampaigns(demoCampaigns);
+      setLoading(false);
+      return;
+    }
+
     const fetchCampaigns = async () => {
       if (!user) return;
 
@@ -101,7 +174,7 @@ export default function DashboardCampaigns() {
     };
 
     fetchCampaigns();
-  }, [user]);
+  }, [user, isDemoMode]);
 
   const filteredCampaigns = campaigns.filter((campaign) => {
     if (activeTab === "all") return true;
