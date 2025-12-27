@@ -37,8 +37,8 @@
 
     --radius: 0.5rem;
 
-    /* Custom tokens - MSN style */
-    --nav-bg: 222 47% 11%;
+    /* Nav bar - dark gray like dark mode */
+    --nav-bg: 0 0% 12%;
     --nav-foreground: 210 40% 98%;
     --hero-gradient-start: 207 90% 54%;
     --hero-gradient-end: 199 89% 48%;
