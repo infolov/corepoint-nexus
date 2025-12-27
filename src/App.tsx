@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { DisplayModeProvider } from "@/hooks/use-display-mode";
+import { DemoProvider } from "@/contexts/DemoContext";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
@@ -31,37 +32,39 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <DisplayModeProvider>
-      <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/artykul/:id" element={<Article />} />
-          <Route path="/notifications/settings" element={<NotificationSettings />} />
-          <Route path="/szukaj" element={<Search />} />
-          <Route path="/dashboard" element={<Dashboard />}>
-            <Route index element={<DashboardHome />} />
-            <Route path="calendar" element={<DashboardCalendar />} />
-            <Route path="placements" element={<DashboardPlacements />} />
-            <Route path="campaigns/new" element={<DashboardCampaignCreator />} />
-            <Route path="credits" element={<DashboardCredits />} />
-            <Route path="stats" element={<DashboardStats />} />
-            <Route path="campaigns" element={<DashboardCampaigns />} />
-            <Route path="settings" element={<DashboardSettings />} />
-            <Route path="admin/campaigns" element={<DashboardAdminCampaigns />} />
-            <Route path="admin/users" element={<DashboardAdminUsers />} />
-            <Route path="admin/placements" element={<DashboardAdminPlacements />} />
-            <Route path="admin/stats" element={<DashboardAdminStats />} />
-          </Route>
-          <Route path="/sport/:subcategory" element={<Category />} />
-          <Route path="/:category" element={<Category />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
+      <DemoProvider>
+        <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/artykul/:id" element={<Article />} />
+            <Route path="/notifications/settings" element={<NotificationSettings />} />
+            <Route path="/szukaj" element={<Search />} />
+            <Route path="/dashboard" element={<Dashboard />}>
+              <Route index element={<DashboardHome />} />
+              <Route path="calendar" element={<DashboardCalendar />} />
+              <Route path="placements" element={<DashboardPlacements />} />
+              <Route path="campaigns/new" element={<DashboardCampaignCreator />} />
+              <Route path="credits" element={<DashboardCredits />} />
+              <Route path="stats" element={<DashboardStats />} />
+              <Route path="campaigns" element={<DashboardCampaigns />} />
+              <Route path="settings" element={<DashboardSettings />} />
+              <Route path="admin/campaigns" element={<DashboardAdminCampaigns />} />
+              <Route path="admin/users" element={<DashboardAdminUsers />} />
+              <Route path="admin/placements" element={<DashboardAdminPlacements />} />
+              <Route path="admin/stats" element={<DashboardAdminStats />} />
+            </Route>
+            <Route path="/sport/:subcategory" element={<Category />} />
+            <Route path="/:category" element={<Category />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </DemoProvider>
     </DisplayModeProvider>
   </QueryClientProvider>
 );

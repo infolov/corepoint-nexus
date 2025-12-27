@@ -14,6 +14,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
+import { useDemo } from "@/contexts/DemoContext";
 import { supabase } from "@/integrations/supabase/client";
 
 interface DashboardStats {
@@ -30,8 +31,17 @@ const quickActions = [
   { name: "Kredyty reklamowe", href: "/dashboard/credits", icon: CreditCard, color: "bg-purple-500" },
 ];
 
+// Demo data
+const demoStats: DashboardStats = {
+  credits: 2500,
+  activeCampaigns: 3,
+  totalImpressions: 45820,
+  totalClicks: 1234,
+};
+
 export default function DashboardHome() {
   const { user } = useAuth();
+  const { isDemoMode, demoUser } = useDemo();
   const [stats, setStats] = useState<DashboardStats>({
     credits: 0,
     activeCampaigns: 0,
@@ -40,7 +50,16 @@ export default function DashboardHome() {
   });
   const [loading, setLoading] = useState(true);
 
+  const effectiveUser = isDemoMode ? demoUser : user;
+
   useEffect(() => {
+    // If demo mode, use demo stats
+    if (isDemoMode) {
+      setStats(demoStats);
+      setLoading(false);
+      return;
+    }
+
     const fetchStats = async () => {
       if (!user) return;
 
@@ -95,14 +114,14 @@ export default function DashboardHome() {
     };
 
     fetchStats();
-  }, [user]);
+  }, [user, isDemoMode]);
 
   return (
     <div className="space-y-6">
       {/* Welcome */}
       <div>
         <h1 className="text-2xl font-bold">
-          Witaj, {user?.user_metadata?.full_name || "Reklamodawco"}! 👋
+          Witaj, {effectiveUser?.user_metadata?.full_name || "Reklamodawco"}! 👋
         </h1>
         <p className="text-muted-foreground mt-1">
           Zarządzaj swoimi kampaniami reklamowymi i śledź ich efektywność.

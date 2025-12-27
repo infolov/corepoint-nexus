@@ -15,12 +15,15 @@ import {
   ChevronRight,
   Shield,
   Users,
-  LayoutGrid
+  LayoutGrid,
+  AlertTriangle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useAdmin } from "@/hooks/use-admin";
+import { useDemo } from "@/contexts/DemoContext";
 import { cn } from "@/lib/utils";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const sidebarLinks = [
   { name: "Panel główny", href: "/dashboard", icon: LayoutDashboard },
@@ -42,22 +45,31 @@ const adminLinks = [
 export default function Dashboard() {
   const { user, loading, signOut } = useAuth();
   const { isAdmin } = useAdmin();
+  const { isDemoMode, demoUser, exitDemoMode } = useDemo();
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // Determine effective user (real or demo)
+  const effectiveUser = isDemoMode ? demoUser : user;
+
   useEffect(() => {
-    if (!loading && !user) {
+    if (!loading && !user && !isDemoMode) {
       navigate("/login");
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, isDemoMode]);
 
   const handleSignOut = async () => {
-    await signOut();
-    navigate("/");
+    if (isDemoMode) {
+      exitDemoMode();
+      navigate("/login");
+    } else {
+      await signOut();
+      navigate("/");
+    }
   };
 
-  if (loading) {
+  if (loading && !isDemoMode) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -65,7 +77,7 @@ export default function Dashboard() {
     );
   }
 
-  if (!user) return null;
+  if (!effectiveUser) return null;
 
   return (
     <div className="min-h-screen bg-muted/30 flex">
@@ -90,14 +102,24 @@ export default function Dashboard() {
           {/* User Info */}
           <div className="p-4 border-b border-border">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <User className="h-5 w-5 text-primary" />
+              <div className={cn(
+                "w-10 h-10 rounded-full flex items-center justify-center",
+                isDemoMode ? "bg-amber-500/10" : "bg-primary/10"
+              )}>
+                <User className={cn("h-5 w-5", isDemoMode ? "text-amber-500" : "text-primary")} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">
-                  {user.user_metadata?.full_name || "Użytkownik"}
-                </p>
-                <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium truncate">
+                    {effectiveUser.user_metadata?.full_name || "Użytkownik"}
+                  </p>
+                  {isDemoMode && (
+                    <span className="px-1.5 py-0.5 text-[10px] font-bold bg-amber-500 text-white rounded">
+                      DEMO
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground truncate">{effectiveUser.email}</p>
               </div>
             </div>
           </div>
@@ -194,9 +216,21 @@ export default function Dashboard() {
             <Link to="/" className="hover:text-foreground transition-colors">Strona główna</Link>
             <ChevronRight className="h-4 w-4" />
             <span className="text-foreground">Panel reklamodawcy</span>
+            {isDemoMode && (
+              <span className="ml-2 px-2 py-0.5 text-xs font-bold bg-amber-500 text-white rounded">
+                TRYB DEMO
+              </span>
+            )}
           </nav>
 
           <div className="ml-auto flex items-center gap-2">
+            {isDemoMode && (
+              <Link to="/login">
+                <Button variant="default" size="sm">
+                  Załóż prawdziwe konto
+                </Button>
+              </Link>
+            )}
             <Link to="/">
               <Button variant="outline" size="sm">
                 Wróć do portalu
@@ -204,6 +238,22 @@ export default function Dashboard() {
             </Link>
           </div>
         </header>
+
+        {/* Demo Mode Banner */}
+        {isDemoMode && (
+          <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2">
+            <Alert className="bg-transparent border-0 p-0">
+              <AlertTriangle className="h-4 w-4 text-amber-500" />
+              <AlertDescription className="text-amber-700 dark:text-amber-400 text-sm">
+                Przeglądasz panel w trybie demo. Dane są przykładowe, a działania nie będą zapisywane.{" "}
+                <Link to="/login" className="font-medium underline hover:no-underline">
+                  Załóż konto
+                </Link>
+                {" "}aby uzyskać pełny dostęp.
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
 
         {/* Page Content */}
         <main className="flex-1 p-4 md:p-6">
