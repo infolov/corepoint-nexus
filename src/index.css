@@ -60,6 +60,9 @@
     /* Category active highlight - #2094f3 */
     --category-active: 209 90% 58%;
 
+    /* Category bar background - #26272B */
+    --category-bar-bg: 228 7% 16%;
+
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;
@@ -109,6 +112,9 @@
 
     /* Category active highlight - #2094f3 */
     --category-active: 209 90% 58%;
+
+    /* Category bar background - #26272B */
+    --category-bar-bg: 228 7% 16%;
 
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
