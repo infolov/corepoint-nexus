@@ -57,11 +57,8 @@
     --source-reuters: 24 95% 53%;
     --source-bloomberg: 142 71% 45%;
 
-    /* Category active highlight - #3177E8 */
-    --category-active: 217 79% 55%;
-
-    /* Category bar background - #26272B */
-    --category-bar-bg: 228 7% 16%;
+    /* Category active highlight - #2094f3 */
+    --category-active: 209 90% 58%;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -110,11 +107,8 @@
     --card-shadow: 0 2px 8px -2px hsl(0 0% 0% / 0.3);
     --card-shadow-hover: 0 8px 24px -4px hsl(0 0% 0% / 0.4);
 
-    /* Category active highlight - #3177E8 */
-    --category-active: 217 79% 55%;
-
-    /* Category bar background - #26272B */
-    --category-bar-bg: 228 7% 16%;
+    /* Category active highlight - #2094f3 */
+    --category-active: 209 90% 58%;
 
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;

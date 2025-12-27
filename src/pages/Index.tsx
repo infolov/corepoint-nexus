@@ -13,6 +13,7 @@ import { Loader2 } from "lucide-react";
 import { useArticles, formatArticleForCard } from "@/hooks/use-articles";
 import { useRSSArticles, formatRSSArticleForCard } from "@/hooks/use-rss-articles";
 import { FloatingRefreshButton } from "@/components/ui/FloatingRefreshButton";
+
 import { supabase } from "@/integrations/supabase/client";
 import { newsArticles, businessArticles, sportArticles, techArticles, lifestyleArticles } from "@/data/mockNews";
 
@@ -20,11 +21,7 @@ import { newsArticles, businessArticles, sportArticles, techArticles, lifestyleA
 const allMockArticles = [...newsArticles, ...businessArticles, ...sportArticles, ...techArticles, ...lifestyleArticles];
 
 // Sort articles by popularity (view_count) and publication date
-const sortByPopularityAndDate = <T extends {
-  pubDateMs?: number;
-  createdAt?: string;
-  viewCount?: number;
-},>(array: T[]): T[] => {
+const sortByPopularityAndDate = <T extends { pubDateMs?: number; createdAt?: string; viewCount?: number }>(array: T[]): T[] => {
   return [...array].sort((a, b) => {
     // First sort by view count (popularity) - higher views first
     const viewsA = a.viewCount || 0;
@@ -32,7 +29,7 @@ const sortByPopularityAndDate = <T extends {
     if (viewsB !== viewsA) {
       return viewsB - viewsA;
     }
-
+    
     // Then sort by date - newer articles first
     // Use pubDateMs for RSS articles, createdAt for DB articles
     const dateA = a.pubDateMs || (a.createdAt ? new Date(a.createdAt).getTime() : 0);
@@ -78,6 +75,7 @@ const Index = () => {
       refetchRSS();
       refetchDB();
     }, 5 * 60 * 1000);
+
     return () => {
       if (refreshIntervalRef.current) {
         clearInterval(refreshIntervalRef.current);
@@ -145,16 +143,15 @@ const Index = () => {
     // Give RSS articles priority since they have real sources
     const formattedRSSArticles = rssArticles.map(article => ({
       ...formatRSSArticleForCard(article),
-      viewCount: 100,
-      // Give RSS articles priority over DB articles
-      pubDateMs: article.pubDateMs || Date.now()
+      viewCount: 100, // Give RSS articles priority over DB articles
+      pubDateMs: article.pubDateMs || Date.now(),
     }));
 
     // Format DB articles with viewCount and createdAt for sorting
     const formattedDbArticles = dbArticles.map(article => ({
       ...formatArticleForCard(article),
       viewCount: article.view_count || 0,
-      createdAt: article.created_at
+      createdAt: article.created_at,
     }));
 
     // Prioritize RSS articles, then add DB articles
@@ -168,17 +165,14 @@ const Index = () => {
       articles = sortByPopularityAndDate(formattedDbArticles);
     } else {
       // Use mock data as fallback
-      articles = sortByPopularityAndDate(allMockArticles.map(a => ({
-        ...a,
-        viewCount: 0
-      })));
+      articles = sortByPopularityAndDate(allMockArticles.map(a => ({ ...a, viewCount: 0 })));
     }
 
     // Filter by category if not "all"
     if (activeCategory !== "all") {
       // Check if it's a subcategory (format: category/subcategory)
       const [mainCategory, subCategory] = activeCategory.split("/");
-
+      
       // Map slugs to exact category names from RSS feeds
       const categoryMap: Record<string, string[]> = {
         wiadomosci: ["Wiadomości"],
@@ -192,7 +186,7 @@ const Index = () => {
         motoryzacja: ["Motoryzacja"],
         kultura: ["Kultura"]
       };
-
+      
       // Subcategory keywords for title search (only for subcategories)
       const subcategoryKeywords: Record<string, string[]> = {
         // Wiadomości
@@ -236,18 +230,24 @@ const Index = () => {
         "nauka/historia": ["Historia", "Historyczne"],
         "nauka/ekologia": ["Ekologia", "Klimat", "Środowisko"]
       };
+      
       if (subCategory) {
         // For subcategories: first filter by main category, then by title keywords
         const mainCategoryNames = categoryMap[mainCategory] || [];
         const keywords = subcategoryKeywords[activeCategory] || [];
+        
         articles = articles.filter(a => {
           // Must match main category
-          const matchesCategory = mainCategoryNames.some(cat => a.category?.toLowerCase() === cat.toLowerCase());
+          const matchesCategory = mainCategoryNames.some(cat => 
+            a.category?.toLowerCase() === cat.toLowerCase()
+          );
           if (!matchesCategory) return false;
-
+          
           // Then check title for subcategory keywords
           if (keywords.length > 0) {
-            return keywords.some(keyword => a.title?.toLowerCase().includes(keyword.toLowerCase()));
+            return keywords.some(keyword => 
+              a.title?.toLowerCase().includes(keyword.toLowerCase())
+            );
           }
           return true;
         });
@@ -255,7 +255,9 @@ const Index = () => {
         // For main categories: exact category match only
         const categoryNames = categoryMap[mainCategory] || [];
         if (categoryNames.length > 0) {
-          articles = articles.filter(a => categoryNames.some(cat => a.category?.toLowerCase() === cat.toLowerCase()));
+          articles = articles.filter(a => 
+            categoryNames.some(cat => a.category?.toLowerCase() === cat.toLowerCase())
+          );
         }
       }
     }
@@ -313,6 +315,7 @@ const Index = () => {
   const getArticlesForDisplay = useMemo(() => {
     const articlesToUse = user ? personalizedArticles : allArticles;
     if (articlesToUse.length === 0) return [];
+    
     const totalNeeded = visibleGrids * ARTICLES_PER_GRID;
     const result = [];
     for (let i = 0; i < totalNeeded; i++) {
@@ -339,7 +342,7 @@ const Index = () => {
       {/* Floating Refresh Button */}
       <FloatingRefreshButton onClick={handleRefresh} isLoading={isRefreshing || rssLoading || dbLoading} />
 
-      <main className="container py-4 sm:py-6 bg-[#28282a]">
+      <main className="container py-4 sm:py-6">
         {/* Top Ad Banner */}
         <div className="mb-6">
           <AdBanner variant="horizontal" className="w-full" />
@@ -355,7 +358,11 @@ const Index = () => {
 
               {/* Ad Banner after each grid of 12 articles */}
               <div className="mt-6 sm:mt-8">
-                {gridIndex === 0 ? <AdBanner variant="horizontal" className="w-full" /> : <AdCarousel className="w-full" />}
+                {gridIndex === 0 ? (
+                  <AdBanner variant="horizontal" className="w-full" />
+                ) : (
+                  <AdCarousel className="w-full" />
+                )}
               </div>
             </div>)}
 

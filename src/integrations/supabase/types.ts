@@ -130,30 +130,6 @@ export type Database = {
         }
         Relationships: []
       }
-      article_summaries: {
-        Row: {
-          article_id: string
-          created_at: string
-          id: string
-          summary: string
-          title_hash: string
-        }
-        Insert: {
-          article_id: string
-          created_at?: string
-          id?: string
-          summary: string
-          title_hash: string
-        }
-        Update: {
-          article_id?: string
-          created_at?: string
-          id?: string
-          summary?: string
-          title_hash?: string
-        }
-        Relationships: []
-      }
       articles: {
         Row: {
           author_id: string | null

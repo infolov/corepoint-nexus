@@ -14,12 +14,11 @@ interface ArticleSummaryProps {
   title: string;
   content: string;
   category: string;
-  articleId?: string;
 }
 
 type VoiceGender = "female" | "male";
 
-export const ArticleSummary = ({ title, content, category, articleId }: ArticleSummaryProps) => {
+export const ArticleSummary = ({ title, content, category }: ArticleSummaryProps) => {
   const [summary, setSummary] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -50,12 +49,7 @@ export const ArticleSummary = ({ title, content, category, articleId }: ArticleS
       
       try {
         const { data, error: fnError } = await supabase.functions.invoke("summarize-article", {
-          body: { 
-            title, 
-            content, 
-            category,
-            articleId: articleId || title.slice(0, 50).replace(/\s+/g, '-').toLowerCase(),
-          },
+          body: { title, content, category },
         });
 
         if (fnError) {
@@ -67,9 +61,6 @@ export const ArticleSummary = ({ title, content, category, articleId }: ArticleS
         }
 
         setSummary(data?.summary || null);
-        if (data?.cached) {
-          console.log("Summary loaded from cache");
-        }
       } catch (err) {
         console.error("Error fetching summary:", err);
         setError(err instanceof Error ? err.message : "Błąd podczas generowania podsumowania");
@@ -81,7 +72,7 @@ export const ArticleSummary = ({ title, content, category, articleId }: ArticleS
     if (title && content) {
       fetchSummary();
     }
-  }, [title, content, category, articleId]);
+  }, [title, content, category]);
 
   // Cleanup speech synthesis on unmount
   useEffect(() => {

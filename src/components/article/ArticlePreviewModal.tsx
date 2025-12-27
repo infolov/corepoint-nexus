@@ -74,7 +74,6 @@ export function ArticlePreviewModal({ isOpen, onClose, article }: ArticlePreview
             title: article.title,
             content: article.excerpt || article.title,
             category: article.category,
-            articleId: article.id || article.title.slice(0, 50).replace(/\s+/g, '-').toLowerCase(),
           }
         });
 
@@ -84,9 +83,6 @@ export function ArticlePreviewModal({ isOpen, onClose, article }: ArticlePreview
 
         if (data?.summary) {
           setSummary(data.summary);
-          if (data.cached) {
-            console.log("Summary loaded from cache");
-          }
         } else {
           setError("Nie udało się wygenerować podsumowania");
         }

@@ -150,13 +150,13 @@ export function Header() {
   return <header className="sticky top-0 z-50 w-full">
       {/* Top Bar */}
       <div className="bg-nav text-nav-foreground">
-        <div className="container flex h-16 items-center justify-between bg-neutral-800">
+        <div className="container flex h-16 items-center justify-between">
           {/* Left: Logo + Partner Space */}
           <div className="flex items-center gap-4 md:gap-6">
             <Link to="/" className="flex flex-col md:flex-row items-start md:items-center gap-0.5 md:gap-2.5">
               <div className="flex items-center gap-2">
                 
-                <span className="text-lg tracking-tight md:text-4xl font-semibold">
+                <span className="text-lg font-bold tracking-tight md:text-4xl">
                   informacje<span className="text-primary">.pl</span>
                 </span>
               </div>
