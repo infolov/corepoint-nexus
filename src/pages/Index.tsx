@@ -378,15 +378,31 @@ const Index = () => {
 
     // Get subcategory keywords for filtering
     const activeKeywords: string[] = [];
+    const customKeywordsByCategory: Record<string, string[]> = {};
+    
     userSubcategories.forEach(subId => {
-      const keywords = subcategoryKeywords[subId];
-      if (keywords) {
-        activeKeywords.push(...keywords);
+      // Check if this is a custom keyword (format: categoryId-keyword-keyword)
+      const customKeywordMatch = subId.match(/^([a-z]+)-keyword-(.+)$/i);
+      if (customKeywordMatch) {
+        const category = customKeywordMatch[1].toLowerCase();
+        const keyword = customKeywordMatch[2].toLowerCase();
+        if (!customKeywordsByCategory[category]) {
+          customKeywordsByCategory[category] = [];
+        }
+        customKeywordsByCategory[category].push(keyword);
+        activeKeywords.push(keyword);
+      } else {
+        // Regular subcategory
+        const keywords = subcategoryKeywords[subId];
+        if (keywords) {
+          activeKeywords.push(...keywords);
+        }
       }
     });
 
     console.log("User preferences:", userPreferences);
     console.log("User subcategories:", userSubcategories);
+    console.log("Custom keywords by category:", customKeywordsByCategory);
     console.log("Allowed categories:", Array.from(allowedCategories));
     console.log("Active keywords:", activeKeywords.slice(0, 10));
 
@@ -424,11 +440,13 @@ const Index = () => {
       return [];
     }
 
-    // Sort by preference order, subcategory match, and recency
+    // Sort by preference order, subcategory match, custom keywords, and recency
     const scoredArticles = filteredArticles.map(article => {
       let score = 0;
       const articleCategory = (article.category || "").toLowerCase();
       const articleTitle = (article.title || "").toLowerCase();
+      const articleExcerpt = (article.excerpt || "").toLowerCase();
+      const articleContent = articleTitle + " " + articleExcerpt;
       
       // Higher score for categories that appear first in preferences
       userPreferences.forEach((pref, index) => {
@@ -442,9 +460,22 @@ const Index = () => {
       
       // Bonus for matching subcategory keywords
       activeKeywords.forEach(keyword => {
-        if (articleTitle.includes(keyword.toLowerCase())) {
+        if (articleContent.includes(keyword.toLowerCase())) {
           score += 25; // High bonus for subcategory match
         }
+      });
+      
+      // Extra high bonus for custom user keywords - search in title AND content
+      Object.entries(customKeywordsByCategory).forEach(([category, keywords]) => {
+        const mappedCategory = slugToRSSCategory[category] || category;
+        const matchesCategory = articleCategory === mappedCategory || allowedCategories.size === 0;
+        
+        keywords.forEach(keyword => {
+          if (articleContent.includes(keyword)) {
+            // Higher score if category matches
+            score += matchesCategory ? 100 : 50;
+          }
+        });
       });
       
       // Bonus for recently viewed categories
