@@ -264,51 +264,75 @@ const Index = () => {
     return articles;
   }, [rssArticles, dbArticles, activeCategory]);
 
-  // Personalize articles for logged-in users
+  // Personalize articles for logged-in users - FILTER by selected categories
   const personalizedArticles = useMemo(() => {
-    if (!user || userPreferences.length === 0 && recentCategories.length === 0) {
+    if (!user || userPreferences.length === 0) {
       return allArticles;
     }
 
-    // Combine preferences and recent categories
-    const interestCategories = [...new Set([...userPreferences, ...recentCategories])];
+    // Map category names to match article categories
+    const categoryMap: Record<string, string[]> = {
+      "Wiadomości": ["wiadomości", "wiadomosci", "news"],
+      "Sport": ["sport"],
+      "Biznes": ["biznes", "business"],
+      "Technologia": ["technologia", "tech", "technology"],
+      "Lifestyle": ["lifestyle"],
+      "Rozrywka": ["rozrywka", "entertainment"],
+      "Zdrowie": ["zdrowie", "health"],
+      "Nauka": ["nauka", "science"],
+      "Motoryzacja": ["motoryzacja", "auto"],
+      "Kultura": ["kultura", "culture"],
+    };
 
-    // Score articles based on user interests
-    const scoredArticles = allArticles.map(article => {
-      let score = 0;
+    // Filter articles to show ONLY from selected categories
+    const filteredArticles = allArticles.filter(article => {
       const articleCategory = article.category?.toLowerCase() || "";
-      interestCategories.forEach((interest, index) => {
-        if (articleCategory.includes(interest.toLowerCase())) {
-          // Higher score for earlier interests (more recent/important)
-          score += (interestCategories.length - index) * 2;
+      
+      return userPreferences.some(pref => {
+        const prefLower = pref.toLowerCase();
+        // Check direct match
+        if (articleCategory === prefLower || articleCategory.includes(prefLower)) {
+          return true;
         }
+        // Check mapped categories
+        const mappedCategories = categoryMap[pref] || [];
+        return mappedCategories.some(mapped => 
+          articleCategory.includes(mapped.toLowerCase())
+        );
       });
-      return {
-        article,
-        score
-      };
     });
 
-    // Sort by score (highest first), then shuffle within same score for variety
-    scoredArticles.sort((a, b) => b.score - a.score);
-
-    // Mix personalized with general content (70% personalized, 30% general for variety)
-    const personalized = scoredArticles.filter(s => s.score > 0).map(s => s.article);
-    const general = scoredArticles.filter(s => s.score === 0).map(s => s.article);
-    const result = [];
-    let pIndex = 0;
-    let gIndex = 0;
-    for (let i = 0; i < allArticles.length; i++) {
-      // Every 4th article can be general for variety
-      if (i % 4 === 3 && gIndex < general.length) {
-        result.push(general[gIndex++]);
-      } else if (pIndex < personalized.length) {
-        result.push(personalized[pIndex++]);
-      } else if (gIndex < general.length) {
-        result.push(general[gIndex++]);
-      }
+    // If no articles match preferences, show all (fallback)
+    if (filteredArticles.length === 0) {
+      return allArticles;
     }
-    return result;
+
+    // Score by recency within filtered articles
+    const scoredArticles = filteredArticles.map(article => {
+      let score = 0;
+      const articleCategory = article.category?.toLowerCase() || "";
+      
+      // Higher score for categories that appear first in preferences
+      userPreferences.forEach((pref, index) => {
+        if (articleCategory.includes(pref.toLowerCase())) {
+          score += (userPreferences.length - index) * 2;
+        }
+      });
+      
+      // Bonus for recently viewed categories
+      recentCategories.forEach((cat, index) => {
+        if (articleCategory.includes(cat.toLowerCase())) {
+          score += (recentCategories.length - index);
+        }
+      });
+      
+      return { article, score };
+    });
+
+    // Sort by score (highest first)
+    scoredArticles.sort((a, b) => b.score - a.score);
+    
+    return scoredArticles.map(s => s.article);
   }, [allArticles, user, userPreferences, recentCategories]);
 
   // Generate enough articles for infinite scroll by cycling
