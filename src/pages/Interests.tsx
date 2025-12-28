@@ -65,8 +65,12 @@ export default function Interests() {
 
       if (error) throw error;
 
-      toast.success("Zainteresowania zostały zapisane");
-      navigate(-1);
+      const categoryNames = selectedCategories.length > 0 
+        ? selectedCategories.slice(0, 3).join(", ") + (selectedCategories.length > 3 ? ` +${selectedCategories.length - 3}` : "")
+        : "brak";
+      
+      toast.success(`Zainteresowania zapisane: ${categoryNames}`);
+      navigate("/", { replace: true });
     } catch (error) {
       console.error("Error saving preferences:", error);
       toast.error("Nie udało się zapisać zainteresowań");
