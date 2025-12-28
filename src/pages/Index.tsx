@@ -270,52 +270,57 @@ const Index = () => {
       return allArticles;
     }
 
-    // Map preference slugs to article category names (preferences are stored as slugs)
-    const categoryMap: Record<string, string[]> = {
-      "wiadomosci": ["wiadomości", "wiadomosci", "news"],
-      "sport": ["sport"],
-      "biznes": ["biznes", "business"],
-      "tech": ["technologia", "tech", "technology"],
-      "technologia": ["technologia", "tech", "technology"],
-      "lifestyle": ["lifestyle"],
-      "rozrywka": ["rozrywka", "entertainment"],
-      "zdrowie": ["zdrowie", "health"],
-      "nauka": ["nauka", "science"],
-      "motoryzacja": ["motoryzacja", "auto"],
-      "kultura": ["kultura", "culture"],
+    // Map user preference slugs to actual RSS article category names
+    // User preferences are stored as slugs: "wiadomosci", "sport", "technologia"
+    // RSS articles have categories like: "Wiadomości", "Sport", "Technologia"
+    const preferenceToCategory: Record<string, string[]> = {
+      "wiadomosci": ["wiadomości", "wiadomosci", "news", "polityka", "polska", "świat"],
+      "sport": ["sport", "piłka nożna", "koszykówka", "siatkówka", "tenis", "f1", "formula", "ekstraklasa"],
+      "biznes": ["biznes", "business", "ekonomia", "finanse", "giełda", "gospodarka"],
+      "technologia": ["technologia", "tech", "technology", "it", "software", "hardware", "gadżety"],
+      "lifestyle": ["lifestyle", "moda", "uroda", "kobieta", "styl życia"],
+      "rozrywka": ["rozrywka", "entertainment", "gwiazdy", "celebryci", "film", "muzyka", "seriale"],
+      "zdrowie": ["zdrowie", "health", "medycyna", "dieta", "fitness"],
+      "nauka": ["nauka", "science", "kosmos", "przyroda", "badania", "odkrycia"],
+      "motoryzacja": ["motoryzacja", "auto", "samochody", "moto"],
+      "kultura": ["kultura", "culture", "sztuka", "literatura", "teatr", "kino"],
     };
 
     // Filter articles to show ONLY from selected categories
     const filteredArticles = allArticles.filter(article => {
-      const articleCategory = article.category?.toLowerCase() || "";
+      const articleCategory = (article.category || "").toLowerCase();
+      const articleTitle = (article.title || "").toLowerCase();
       
       return userPreferences.some(pref => {
         const prefLower = pref.toLowerCase();
-        // Check direct match
-        if (articleCategory === prefLower || articleCategory.includes(prefLower)) {
-          return true;
-        }
-        // Check mapped categories
-        const mappedCategories = categoryMap[pref] || [];
-        return mappedCategories.some(mapped => 
-          articleCategory.includes(mapped.toLowerCase())
+        const matchingTerms = preferenceToCategory[prefLower] || [prefLower];
+        
+        // Check if article category matches any of the terms
+        return matchingTerms.some(term => 
+          articleCategory.includes(term) || articleCategory === term
         );
       });
     });
 
     // If no articles match preferences, show all (fallback)
     if (filteredArticles.length === 0) {
+      console.log("No articles matched preferences, showing all articles");
       return allArticles;
     }
 
-    // Score by recency within filtered articles
+    console.log(`Filtered ${filteredArticles.length} articles based on preferences:`, userPreferences);
+
+    // Score by preference order within filtered articles
     const scoredArticles = filteredArticles.map(article => {
       let score = 0;
-      const articleCategory = article.category?.toLowerCase() || "";
+      const articleCategory = (article.category || "").toLowerCase();
       
       // Higher score for categories that appear first in preferences
       userPreferences.forEach((pref, index) => {
-        if (articleCategory.includes(pref.toLowerCase())) {
+        const prefLower = pref.toLowerCase();
+        const matchingTerms = preferenceToCategory[prefLower] || [prefLower];
+        
+        if (matchingTerms.some(term => articleCategory.includes(term))) {
           score += (userPreferences.length - index) * 2;
         }
       });
