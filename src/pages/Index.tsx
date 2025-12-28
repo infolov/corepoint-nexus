@@ -64,6 +64,7 @@ const Index = () => {
     user
   } = useAuth();
   const [userPreferences, setUserPreferences] = useState<string[]>([]);
+  const [userSubcategories, setUserSubcategories] = useState<string[]>([]);
   const [recentCategories, setRecentCategories] = useState<string[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -105,9 +106,12 @@ const Index = () => {
         // Get notification preferences (selected categories)
         const {
           data: prefData
-        } = await supabase.from("user_notification_preferences").select("categories").eq("user_id", user.id).maybeSingle();
+        } = await supabase.from("user_notification_preferences").select("categories, tags").eq("user_id", user.id).maybeSingle();
         if (prefData?.categories) {
           setUserPreferences(prefData.categories);
+        }
+        if (prefData?.tags) {
+          setUserSubcategories(prefData.tags);
         }
 
         // Get recently viewed categories
@@ -264,10 +268,10 @@ const Index = () => {
     return articles;
   }, [rssArticles, dbArticles, activeCategory]);
 
-  // Personalize articles for logged-in users - FILTER by selected categories ONLY
+  // Personalize articles for logged-in users - FILTER by selected categories AND subcategories
   const personalizedArticles = useMemo(() => {
     // If no user or no preferences, show all articles
-    if (!user || userPreferences.length === 0) {
+    if (!user || (userPreferences.length === 0 && userSubcategories.length === 0)) {
       return allArticles;
     }
 
@@ -276,8 +280,7 @@ const Index = () => {
       return [];
     }
 
-    // Map user preference slugs (lowercase, no Polish chars) to RSS category names (with Polish chars, capitalized)
-    // RSS feeds use: "Wiadomości", "Sport", "Biznes", "Technologia", "Lifestyle", "Rozrywka", "Zdrowie", "Kultura", "Nauka", "Motoryzacja"
+    // Map user preference slugs to RSS category names
     const slugToRSSCategory: Record<string, string> = {
       "wiadomosci": "wiadomości",
       "sport": "sport",
@@ -292,7 +295,76 @@ const Index = () => {
       "motoryzacja": "motoryzacja",
     };
 
-    // Build a set of allowed category names (lowercase for comparison)
+    // Map subcategory IDs to keywords for matching article titles/content
+    const subcategoryKeywords: Record<string, string[]> = {
+      // Wiadomości
+      "wiadomosci-polska": ["polska", "polski", "polskie", "warszawa", "kraków", "gdańsk"],
+      "wiadomosci-swiat": ["świat", "świato", "międzynarodow", "europa", "usa", "chiny"],
+      "wiadomosci-polityka": ["polity", "sejm", "senat", "rząd", "prezydent", "minister"],
+      "wiadomosci-gospodarka": ["gospodar", "ekonom", "pkb", "inflacja", "nbp"],
+      "wiadomosci-spoleczenstwo": ["społecz", "obywatel", "protest", "manifestacja"],
+      // Biznes
+      "biznes-finanse": ["finans", "bank", "kredyt", "pożyczk", "oszczędnoś"],
+      "biznes-gielda": ["giełd", "akcj", "wig", "inwestycj", "notowani"],
+      "biznes-startupy": ["startup", "innowacj", "venture", "fundusz"],
+      "biznes-nieruchomosci": ["nieruchom", "mieszkan", "dom", "działk"],
+      "biznes-praca": ["prac", "zatrudnien", "rekrutacj", "pensj", "wynagrodzeni"],
+      // Sport
+      "sport-pilka-nozna": ["piłk", "football", "liga", "ekstraklasa", "bramk", "mecz"],
+      "sport-koszykowka": ["koszykówk", "nba", "basket"],
+      "sport-siatkowka": ["siatkówk", "volley"],
+      "sport-tenis": ["tenis", "wimbledon", "rakiet"],
+      "sport-sporty-motorowe": ["f1", "formuła", "wyścig", "motor", "rally"],
+      "sport-sporty-walki": ["boks", "mma", "ufc", "walka"],
+      "sport-hokej": ["hokej", "nhl", "krążek"],
+      "sport-lekkoatletyka": ["lekkoatletyk", "bieg", "maraton", "sprint"],
+      "sport-sporty-zimowe": ["narciar", "snowboard", "łyżw", "zimow"],
+      "sport-esport": ["esport", "gaming", "gra", "e-sport"],
+      // Technologia
+      "tech-ai": ["ai", "sztuczn", "inteligenc", "machine learning", "chatgpt", "gpt"],
+      "tech-smartfony": ["smartfon", "telefon", "iphone", "android", "samsung"],
+      "tech-gaming": ["gam", "gra", "playstation", "xbox", "nintendo"],
+      "tech-software": ["oprogramowan", "aplikacj", "software", "program"],
+      "tech-hardware": ["sprzęt", "hardware", "procesor", "karta graficzna"],
+      // Lifestyle
+      "lifestyle-moda": ["moda", "fashion", "styl", "ubrania"],
+      "lifestyle-uroda": ["urod", "kosmetyk", "makijaż", "pielęgnacj"],
+      "lifestyle-podroze": ["podróż", "wakacj", "turyst", "zwiedzani"],
+      "lifestyle-jedzenie": ["jedzen", "kuchni", "przepis", "restauracj", "gotowani"],
+      "lifestyle-design": ["design", "wnętrz", "architektur", "dekoracj"],
+      // Rozrywka
+      "rozrywka-filmy": ["film", "kino", "reżyser", "aktor"],
+      "rozrywka-seriale": ["serial", "netflix", "hbo", "odcin"],
+      "rozrywka-muzyka": ["muzyk", "koncert", "piosenk", "album"],
+      "rozrywka-gwiazdy": ["gwiazd", "celebryt", "influencer"],
+      "rozrywka-streaming": ["stream", "netflix", "disney", "hbo", "amazon"],
+      // Nauka
+      "nauka-kosmos": ["kosmos", "nasa", "spacex", "planet", "galaktyk"],
+      "nauka-medycyna": ["medycyn", "lekar", "szpital", "zdrowi", "chorob"],
+      "nauka-fizyka": ["fizyk", "kwantow", "cząstk", "atom"],
+      "nauka-biologia": ["biolog", "komórk", "dna", "ewolucj"],
+      "nauka-ekologia": ["ekolog", "klimat", "środowisk", "zieloni"],
+      // Zdrowie
+      "zdrowie-dieta": ["diet", "odchudzani", "kalori", "żywieni"],
+      "zdrowie-fitness": ["fitness", "trening", "ćwiczen", "siłowni"],
+      "zdrowie-psychologia": ["psycholog", "mental", "depresj", "stres"],
+      "zdrowie-choroby": ["chorob", "wirus", "bakteria", "infekcj"],
+      "zdrowie-profilaktyka": ["profilaktyk", "szczepien", "badani", "prewencj"],
+      // Kultura
+      "kultura-sztuka": ["sztuk", "obraz", "malarstw", "rzeźb"],
+      "kultura-teatr": ["teatr", "spektakl", "przedstawieni"],
+      "kultura-ksiazki": ["książk", "literatur", "powieść", "autor"],
+      "kultura-muzea": ["muze", "wystawka", "eksponat", "galeri"],
+      "kultura-festiwale": ["festiwal", "wydarzeni", "imprez"],
+      // Motoryzacja
+      "moto-samochody": ["samochód", "auto", "pojazd", "silnik"],
+      "moto-motocykle": ["motocykl", "jednoślad", "skuter"],
+      "moto-elektryczne": ["elektryczn", "ev", "tesla", "hybryd", "bateria"],
+      "moto-testy": ["test", "recenzj", "porównani"],
+      "moto-porady": ["porad", "wskazówk", "jak ", "instrukcj"],
+    };
+
+    // Build a set of allowed category names
     const allowedCategories = new Set<string>();
     userPreferences.forEach(pref => {
       const prefLower = pref.toLowerCase().trim();
@@ -300,37 +372,63 @@ const Index = () => {
       if (mappedCategory) {
         allowedCategories.add(mappedCategory);
       } else {
-        // If not in map, add the preference itself as fallback
         allowedCategories.add(prefLower);
       }
     });
 
-    console.log("User preferences:", userPreferences);
-    console.log("Allowed categories:", Array.from(allowedCategories));
+    // Get subcategory keywords for filtering
+    const activeKeywords: string[] = [];
+    userSubcategories.forEach(subId => {
+      const keywords = subcategoryKeywords[subId];
+      if (keywords) {
+        activeKeywords.push(...keywords);
+      }
+    });
 
-    // Filter articles to show ONLY those matching selected categories
+    console.log("User preferences:", userPreferences);
+    console.log("User subcategories:", userSubcategories);
+    console.log("Allowed categories:", Array.from(allowedCategories));
+    console.log("Active keywords:", activeKeywords.slice(0, 10));
+
+    // Filter articles
     const filteredArticles = allArticles.filter(article => {
       const articleCategory = (article.category || "").toLowerCase().trim();
+      const articleTitle = (article.title || "").toLowerCase();
       
-      // Check if article category is in allowed categories
-      const isAllowed = allowedCategories.has(articleCategory);
+      // First check: article must be in an allowed category
+      const isCategoryAllowed = allowedCategories.has(articleCategory);
       
-      return isAllowed;
+      if (!isCategoryAllowed) {
+        return false;
+      }
+
+      // If no subcategories selected, allow all articles from allowed categories
+      if (userSubcategories.length === 0) {
+        return true;
+      }
+
+      // If subcategories selected, prioritize articles matching keywords
+      // But still show articles from allowed categories even without keyword match
+      const hasKeywordMatch = activeKeywords.some(keyword => 
+        articleTitle.includes(keyword.toLowerCase())
+      );
+      
+      // We'll use keyword matching for scoring, not filtering
+      return true;
     });
 
     console.log(`Filtered ${filteredArticles.length} articles from ${allArticles.length} total`);
 
-    // If no articles match, do NOT fallback - show empty state or message
-    // This is intentional - user wants to see ONLY their selected categories
     if (filteredArticles.length === 0) {
       console.log("No articles match user preferences - showing empty");
       return [];
     }
 
-    // Sort by preference order and recency
+    // Sort by preference order, subcategory match, and recency
     const scoredArticles = filteredArticles.map(article => {
       let score = 0;
       const articleCategory = (article.category || "").toLowerCase();
+      const articleTitle = (article.title || "").toLowerCase();
       
       // Higher score for categories that appear first in preferences
       userPreferences.forEach((pref, index) => {
@@ -339,6 +437,13 @@ const Index = () => {
         
         if (articleCategory === mappedCategory) {
           score += (userPreferences.length - index) * 10;
+        }
+      });
+      
+      // Bonus for matching subcategory keywords
+      activeKeywords.forEach(keyword => {
+        if (articleTitle.includes(keyword.toLowerCase())) {
+          score += 25; // High bonus for subcategory match
         }
       });
       
@@ -355,7 +460,7 @@ const Index = () => {
     scoredArticles.sort((a, b) => b.score - a.score);
     
     return scoredArticles.map(s => s.article);
-  }, [allArticles, user, userPreferences, recentCategories]);
+  }, [allArticles, user, userPreferences, userSubcategories, recentCategories]);
 
   // Generate enough articles for infinite scroll by cycling
   const getArticlesForDisplay = useMemo(() => {
