@@ -119,16 +119,9 @@ export default function Interests() {
           </div>
 
           <div className="bg-card rounded-2xl p-6 border border-border">
-            <InterestsSelector
-              selectedCategories={selectedCategories}
-              selectedTags={selectedTags}
-              onCategoriesChange={setSelectedCategories}
-              onTagsChange={setSelectedTags}
-              onContinue={handleSave}
-              isLoading={saving}
-              showSkip={false}
-              submitLabel="Zapisz zainteresowania"
-            />
+            <p className="text-muted-foreground text-center">
+              Funkcja zainteresowań została wyłączona.
+            </p>
           </div>
         </div>
       </main>

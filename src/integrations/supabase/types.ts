@@ -540,6 +540,36 @@ export type Database = {
         }
         Relationships: []
       }
+      rss_sources: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          is_active: boolean
+          source_name: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          source_name: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          source_name?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
       sport_subcategories: {
         Row: {
           created_at: string
