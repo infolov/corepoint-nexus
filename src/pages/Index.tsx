@@ -266,7 +266,7 @@ const Index = () => {
 
   // Personalize articles for logged-in users - FILTER by selected categories
   const personalizedArticles = useMemo(() => {
-    if (!user || userPreferences.length === 0) {
+    if (!user || userPreferences.length === 0 || allArticles.length === 0) {
       return allArticles;
     }
 
@@ -275,9 +275,10 @@ const Index = () => {
     // RSS articles have categories like: "Wiadomości", "Sport", "Technologia"
     const preferenceToCategory: Record<string, string[]> = {
       "wiadomosci": ["wiadomości", "wiadomosci", "news", "polityka", "polska", "świat"],
-      "sport": ["sport", "piłka nożna", "koszykówka", "siatkówka", "tenis", "f1", "formula", "ekstraklasa"],
+      "sport": ["sport"],
       "biznes": ["biznes", "business", "ekonomia", "finanse", "giełda", "gospodarka"],
-      "technologia": ["technologia", "tech", "technology", "it", "software", "hardware", "gadżety"],
+      "technologia": ["technologia", "tech", "technology"],
+      "tech": ["technologia", "tech", "technology"],
       "lifestyle": ["lifestyle", "moda", "uroda", "kobieta", "styl życia"],
       "rozrywka": ["rozrywka", "entertainment", "gwiazdy", "celebryci", "film", "muzyka", "seriale"],
       "zdrowie": ["zdrowie", "health", "medycyna", "dieta", "fitness"],
@@ -288,27 +289,24 @@ const Index = () => {
 
     // Filter articles to show ONLY from selected categories
     const filteredArticles = allArticles.filter(article => {
-      const articleCategory = (article.category || "").toLowerCase();
-      const articleTitle = (article.title || "").toLowerCase();
+      const articleCategory = (article.category || "").toLowerCase().trim();
       
       return userPreferences.some(pref => {
-        const prefLower = pref.toLowerCase();
+        const prefLower = pref.toLowerCase().trim();
         const matchingTerms = preferenceToCategory[prefLower] || [prefLower];
         
         // Check if article category matches any of the terms
-        return matchingTerms.some(term => 
-          articleCategory.includes(term) || articleCategory === term
-        );
+        return matchingTerms.some(term => {
+          const termLower = term.toLowerCase();
+          return articleCategory === termLower || articleCategory.includes(termLower) || termLower.includes(articleCategory);
+        });
       });
     });
 
     // If no articles match preferences, show all (fallback)
     if (filteredArticles.length === 0) {
-      console.log("No articles matched preferences, showing all articles");
       return allArticles;
     }
-
-    console.log(`Filtered ${filteredArticles.length} articles based on preferences:`, userPreferences);
 
     // Score by preference order within filtered articles
     const scoredArticles = filteredArticles.map(article => {
@@ -320,7 +318,7 @@ const Index = () => {
         const prefLower = pref.toLowerCase();
         const matchingTerms = preferenceToCategory[prefLower] || [prefLower];
         
-        if (matchingTerms.some(term => articleCategory.includes(term))) {
+        if (matchingTerms.some(term => articleCategory.includes(term.toLowerCase()))) {
           score += (userPreferences.length - index) * 2;
         }
       });
