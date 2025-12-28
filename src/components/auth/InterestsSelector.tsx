@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Sparkles, Loader2, ChevronDown, ChevronRight } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ArrowRight, Sparkles, Loader2, ChevronDown, ChevronRight, Plus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Category {
@@ -163,6 +164,9 @@ export function InterestsSelector({
   submitLabel = "Kontynuuj",
 }: InterestsSelectorProps) {
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+  const [keywordInputs, setKeywordInputs] = useState<Record<string, string>>({});
+  const [customKeywords, setCustomKeywords] = useState<Record<string, string[]>>({});
+  const [otherSelected, setOtherSelected] = useState<Record<string, boolean>>({});
 
   const handleCategoryClick = (categoryId: string) => {
     if (expandedCategory === categoryId) {
@@ -186,6 +190,14 @@ export function InterestsSelector({
         const subIds = category.subcategories.map((s) => s.id);
         onTagsChange(selectedTags.filter((t) => !subIds.includes(t)));
       }
+      // Remove custom keywords for this category
+      const newKeywords = { ...customKeywords };
+      delete newKeywords[categoryId];
+      setCustomKeywords(newKeywords);
+      // Remove other selection
+      const newOther = { ...otherSelected };
+      delete newOther[categoryId];
+      setOtherSelected(newOther);
     } else {
       onCategoriesChange([...selectedCategories, categoryId]);
     }
@@ -199,10 +211,68 @@ export function InterestsSelector({
     }
   };
 
+  const handleAddKeyword = (categoryId: string) => {
+    const keyword = keywordInputs[categoryId]?.trim();
+    if (!keyword) return;
+    
+    const currentKeywords = customKeywords[categoryId] || [];
+    if (!currentKeywords.includes(keyword)) {
+      const newKeywords = {
+        ...customKeywords,
+        [categoryId]: [...currentKeywords, keyword],
+      };
+      setCustomKeywords(newKeywords);
+      
+      // Add keyword as a tag with category prefix
+      const keywordTag = `${categoryId}-keyword-${keyword.toLowerCase().replace(/\s+/g, '-')}`;
+      if (!selectedTags.includes(keywordTag)) {
+        onTagsChange([...selectedTags, keywordTag]);
+      }
+    }
+    
+    setKeywordInputs({ ...keywordInputs, [categoryId]: "" });
+  };
+
+  const handleRemoveKeyword = (categoryId: string, keyword: string) => {
+    const currentKeywords = customKeywords[categoryId] || [];
+    setCustomKeywords({
+      ...customKeywords,
+      [categoryId]: currentKeywords.filter((k) => k !== keyword),
+    });
+    
+    // Remove from tags
+    const keywordTag = `${categoryId}-keyword-${keyword.toLowerCase().replace(/\s+/g, '-')}`;
+    onTagsChange(selectedTags.filter((t) => t !== keywordTag));
+  };
+
+  const handleOtherToggle = (categoryId: string) => {
+    const newValue = !otherSelected[categoryId];
+    setOtherSelected({ ...otherSelected, [categoryId]: newValue });
+    
+    const otherTag = `${categoryId}-inne`;
+    if (newValue) {
+      if (!selectedTags.includes(otherTag)) {
+        onTagsChange([...selectedTags, otherTag]);
+      }
+    } else {
+      onTagsChange(selectedTags.filter((t) => t !== otherTag));
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent, categoryId: string) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleAddKeyword(categoryId);
+    }
+  };
+
   const getSelectedSubcategoriesCount = (categoryId: string) => {
     const category = categories.find((c) => c.id === categoryId);
     if (!category) return 0;
-    return category.subcategories.filter((s) => selectedTags.includes(s.id)).length;
+    const subCount = category.subcategories.filter((s) => selectedTags.includes(s.id)).length;
+    const keywordCount = customKeywords[categoryId]?.length || 0;
+    const otherCount = otherSelected[categoryId] ? 1 : 0;
+    return subCount + keywordCount + otherCount;
   };
 
   return (
@@ -257,7 +327,7 @@ export function InterestsSelector({
                     </span>
                     {selectedSubCount > 0 && (
                       <span className="text-xs text-muted-foreground">
-                        {selectedSubCount} podkategorii wybranych
+                        {selectedSubCount} {selectedSubCount === 1 ? "element wybrany" : selectedSubCount < 5 ? "elementy wybrane" : "elementów wybranych"}
                       </span>
                     )}
                   </div>
@@ -273,7 +343,8 @@ export function InterestsSelector({
 
               {/* Subcategories panel */}
               {isExpanded && (
-                <div className="border-t border-border bg-muted/30 p-4 animate-in fade-in slide-in-from-top-1 duration-200">
+                <div className="border-t border-border bg-muted/30 p-4 animate-in fade-in slide-in-from-top-1 duration-200 space-y-4">
+                  {/* Subcategories grid */}
                   <div className="grid grid-cols-2 gap-2">
                     {category.subcategories.map((sub) => (
                       <label
@@ -293,6 +364,72 @@ export function InterestsSelector({
                         <span className="text-foreground">{sub.name}</span>
                       </label>
                     ))}
+                    
+                    {/* "Inne" checkbox */}
+                    <label
+                      className={cn(
+                        "flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer transition-all text-sm",
+                        otherSelected[category.id]
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border/50 hover:border-primary/50 hover:bg-background"
+                      )}
+                    >
+                      <Checkbox
+                        checked={otherSelected[category.id] || false}
+                        onCheckedChange={() => handleOtherToggle(category.id)}
+                        className="h-4 w-4 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                      />
+                      <span className="text-foreground">Inne</span>
+                    </label>
+                  </div>
+
+                  {/* Custom keywords section */}
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground">
+                      Dodaj własne słowa kluczowe:
+                    </p>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Wpisz słowo kluczowe..."
+                        value={keywordInputs[category.id] || ""}
+                        onChange={(e) =>
+                          setKeywordInputs({ ...keywordInputs, [category.id]: e.target.value })
+                        }
+                        onKeyDown={(e) => handleKeyDown(e, category.id)}
+                        className="flex-1 h-9 text-sm"
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleAddKeyword(category.id)}
+                        disabled={!keywordInputs[category.id]?.trim()}
+                        className="h-9 px-3"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    
+                    {/* Display added keywords */}
+                    {customKeywords[category.id]?.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {customKeywords[category.id].map((keyword) => (
+                          <span
+                            key={keyword}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs"
+                          >
+                            {keyword}
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveKeyword(category.id, keyword)}
+                              className="hover:bg-primary/20 rounded-full p-0.5 transition-colors"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
