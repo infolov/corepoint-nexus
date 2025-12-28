@@ -56,12 +56,15 @@ export default function Interests() {
     try {
       const { error } = await supabase
         .from("user_notification_preferences")
-        .upsert({
-          user_id: user.id,
-          categories: selectedCategories,
-          tags: selectedTags,
-          updated_at: new Date().toISOString(),
-        });
+        .upsert(
+          {
+            user_id: user.id,
+            categories: selectedCategories,
+            tags: selectedTags,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id" }
+        );
 
       if (error) throw error;
 
