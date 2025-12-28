@@ -6,33 +6,31 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Polish RSS news sources
+// Polish RSS news sources - verified working feeds
 const RSS_SOURCES = [
   // ===== WIADOMOŚCI =====
   { url: 'https://www.polsatnews.pl/rss/wszystkie.xml', source: 'Polsat News', category: 'Wiadomości' },
   { url: 'https://tvn24.pl/najnowsze.xml', source: 'TVN24', category: 'Wiadomości' },
   { url: 'https://wiadomosci.wp.pl/rss.xml', source: 'Wirtualna Polska', category: 'Wiadomości' },
-  { url: 'https://www.rp.pl/rss/1019-kraj.xml', source: 'Rzeczpospolita', category: 'Wiadomości' },
   { url: 'https://www.gazetaprawna.pl/rss.xml', source: 'Gazeta Prawna', category: 'Wiadomości' },
   { url: 'https://www.rmf24.pl/fakty/feed', source: 'RMF24', category: 'Wiadomości' },
   { url: 'https://www.se.pl/rss/', source: 'Super Express', category: 'Wiadomości' },
-  { url: 'https://www.fakt.pl/rss.xml', source: 'Fakt', category: 'Wiadomości' },
   { url: 'https://natemat.pl/rss/wszystko', source: 'NaTemat', category: 'Wiadomości' },
   { url: 'https://wydarzenia.interia.pl/rss', source: 'Interia', category: 'Wiadomości' },
   { url: 'https://wiadomosci.gazeta.pl/pub/rss/wiadomosci.xml', source: 'Gazeta.pl', category: 'Wiadomości' },
   { url: 'https://www.o2.pl/rss/wiadomosci.xml', source: 'O2.pl', category: 'Wiadomości' },
+  { url: 'https://www.onet.pl/rss/wiadomosci.xml', source: 'Onet', category: 'Wiadomości' },
+  { url: 'https://tok.fm/rss.xml', source: 'TOK FM', category: 'Wiadomości' },
   
   // ===== BIZNES =====
   { url: 'https://www.bankier.pl/rss/wiadomosci.xml', source: 'Bankier.pl', category: 'Biznes' },
   { url: 'https://www.money.pl/rss/rss.xml', source: 'Money.pl', category: 'Biznes' },
-  { url: 'https://www.rp.pl/rss/1006-ekonomia.xml', source: 'Rzeczpospolita Ekonomia', category: 'Biznes' },
   { url: 'https://www.pb.pl/rss/wszystko.xml', source: 'Puls Biznesu', category: 'Biznes' },
   { url: 'https://biznes.interia.pl/rss', source: 'Interia Biznes', category: 'Biznes' },
-  { url: 'https://forsal.pl/rss.xml', source: 'Forsal', category: 'Biznes' },
   { url: 'https://finanse.wp.pl/rss.xml', source: 'WP Finanse', category: 'Biznes' },
-  { url: 'https://www.gazetaprawna.pl/rss/biznes.xml', source: 'Gazeta Prawna Biznes', category: 'Biznes' },
-  { url: 'https://businessinsider.com.pl/rss', source: 'Business Insider PL', category: 'Biznes' },
   { url: 'https://www.forbes.pl/rss', source: 'Forbes PL', category: 'Biznes' },
+  { url: 'https://stooq.pl/rss/', source: 'Stooq', category: 'Biznes' },
+  { url: 'https://www.parkiet.com/rss.xml', source: 'Parkiet', category: 'Biznes' },
   
   // ===== SPORT =====
   { url: 'https://sportowefakty.wp.pl/rss.xml', source: 'Sportowe Fakty', category: 'Sport' },
@@ -41,62 +39,61 @@ const RSS_SOURCES = [
   { url: 'https://sport.interia.pl/rss', source: 'Interia Sport', category: 'Sport' },
   { url: 'https://www.meczyki.pl/rss.xml', source: 'Meczyki.pl', category: 'Sport' },
   { url: 'https://www.goal.pl/feeds/rss', source: 'Goal.pl', category: 'Sport' },
-  { url: 'https://www.przegladysportowy.pl/rss.xml', source: 'Przegląd Sportowy', category: 'Sport' },
   { url: 'https://sport.onet.pl/rss.xml', source: 'Onet Sport', category: 'Sport' },
   { url: 'https://www.weszlo.com/feed/', source: 'Weszło', category: 'Sport' },
   { url: 'https://pilkanozna.pl/feed/', source: 'PilkaNozna.pl', category: 'Sport' },
+  { url: 'https://sportowefakty.wp.pl/pilka-nozna/rss.xml', source: 'SF Piłka Nożna', category: 'Sport' },
   
   // ===== TECHNOLOGIA =====
   { url: 'https://www.chip.pl/feed', source: 'Chip.pl', category: 'Technologia' },
   { url: 'https://tech.wp.pl/rss.xml', source: 'WP Tech', category: 'Technologia' },
   { url: 'https://www.dobreprogramy.pl/rss.xml', source: 'Dobreprogramy', category: 'Technologia' },
   { url: 'https://www.benchmark.pl/rss/aktualnosci.xml', source: 'Benchmark', category: 'Technologia' },
-  { url: 'https://www.komputerswiat.pl/rss.xml', source: 'Komputer Świat', category: 'Technologia' },
   { url: 'https://www.spidersweb.pl/feed', source: 'Spider\'s Web', category: 'Technologia' },
   { url: 'https://antyweb.pl/feed/', source: 'Antyweb', category: 'Technologia' },
   { url: 'https://www.tabletowo.pl/feed/', source: 'Tabletowo', category: 'Technologia' },
   { url: 'https://android.com.pl/feed/', source: 'Android.com.pl', category: 'Technologia' },
   { url: 'https://ithardware.pl/rss.xml', source: 'ITHardware', category: 'Technologia' },
+  { url: 'https://www.instalki.pl/rss.xml', source: 'Instalki', category: 'Technologia' },
+  { url: 'https://pclab.pl/rss.xml', source: 'PCLab', category: 'Technologia' },
   
   // ===== ROZRYWKA =====
-  { url: 'https://plejada.pl/rss.xml', source: 'Plejada', category: 'Rozrywka' },
   { url: 'https://rozrywka.wp.pl/rss.xml', source: 'WP Rozrywka', category: 'Rozrywka' },
   { url: 'https://www.pudelek.pl/rss.xml', source: 'Pudelek', category: 'Rozrywka' },
   { url: 'https://www.eska.pl/rss/hotplota.xml', source: 'Eska', category: 'Rozrywka' },
-  { url: 'https://www.gala.pl/rss.xml', source: 'Gala', category: 'Rozrywka' },
-  { url: 'https://www.viva.pl/rss.xml', source: 'Viva', category: 'Rozrywka' },
   { url: 'https://www.o2.pl/rss/rozrywka.xml', source: 'O2 Rozrywka', category: 'Rozrywka' },
   { url: 'https://plotek.pl/feed', source: 'Plotek', category: 'Rozrywka' },
+  { url: 'https://pomponik.pl/rss.xml', source: 'Pomponik', category: 'Rozrywka' },
+  { url: 'https://www.kozaczek.pl/rss.xml', source: 'Kozaczek', category: 'Rozrywka' },
   
   // ===== ZDROWIE =====
   { url: 'https://zdrowie.wp.pl/rss.xml', source: 'WP Zdrowie', category: 'Zdrowie' },
-  { url: 'https://www.medonet.pl/rss.xml', source: 'Medonet', category: 'Zdrowie' },
   { url: 'https://www.poradnikzdrowie.pl/rss.xml', source: 'Poradnik Zdrowie', category: 'Zdrowie' },
   { url: 'https://www.mp.pl/rss/pediatria.xml', source: 'Medycyna Praktyczna', category: 'Zdrowie' },
   { url: 'https://www.o2.pl/rss/zdrowie.xml', source: 'O2 Zdrowie', category: 'Zdrowie' },
   { url: 'https://kobieta.wp.pl/rss.xml', source: 'WP Kobieta', category: 'Lifestyle' },
+  { url: 'https://polki.pl/rss.xml', source: 'Polki.pl', category: 'Lifestyle' },
   
   // ===== KULTURA =====
   { url: 'https://kultura.wp.pl/rss.xml', source: 'WP Kultura', category: 'Kultura' },
-  { url: 'https://www.culture.pl/pl/rss', source: 'Culture.pl', category: 'Kultura' },
   { url: 'https://www.filmweb.pl/feed/news/latest', source: 'Filmweb', category: 'Kultura' },
   { url: 'https://kultura.gazeta.pl/pub/rss/kultura.xml', source: 'Gazeta Kultura', category: 'Kultura' },
   { url: 'https://www.polskieradio.pl/8/rss.xml', source: 'Polskie Radio Dwójka', category: 'Kultura' },
   { url: 'https://kulturalnemedia.pl/feed/', source: 'Kulturalne Media', category: 'Kultura' },
-  { url: 'https://www.dwutygodnik.com/rss', source: 'Dwutygodnik', category: 'Kultura' },
   { url: 'https://www.o2.pl/rss/kultura.xml', source: 'O2 Kultura', category: 'Kultura' },
+  { url: 'https://kultura.onet.pl/rss.xml', source: 'Onet Kultura', category: 'Kultura' },
+  { url: 'https://film.onet.pl/rss.xml', source: 'Onet Film', category: 'Kultura' },
   
   // ===== NAUKA =====
   { url: 'https://www.focus.pl/rss.xml', source: 'Focus', category: 'Nauka' },
   { url: 'https://naukawpolsce.pl/rss.xml', source: 'Nauka w Polsce', category: 'Nauka' },
-  { url: 'https://www.national-geographic.pl/rss', source: 'National Geographic PL', category: 'Nauka' },
   { url: 'https://kopalniawiedzy.pl/rss.xml', source: 'Kopalnia Wiedzy', category: 'Nauka' },
   { url: 'https://innpoland.pl/rss', source: 'InnPoland', category: 'Nauka' },
-  { url: 'https://urania.edu.pl/feed/', source: 'Urania', category: 'Nauka' },
   { url: 'https://geekweek.pl/feed/', source: 'GeekWeek', category: 'Nauka' },
   { url: 'https://www.o2.pl/rss/nauka.xml', source: 'O2 Nauka', category: 'Nauka' },
   { url: 'https://naukawpolsce.pap.pl/rss', source: 'PAP Nauka', category: 'Nauka' },
   { url: 'https://www.polskieradio.pl/23/rss.xml', source: 'PR Nauka', category: 'Nauka' },
+  { url: 'https://crazy-nauka.pl/feed/', source: 'Crazy Nauka', category: 'Nauka' },
   
   // ===== MOTORYZACJA =====
   { url: 'https://moto.wp.pl/rss.xml', source: 'WP Moto', category: 'Motoryzacja' },
@@ -107,8 +104,8 @@ const RSS_SOURCES = [
   { url: 'https://elektrowoz.pl/feed/', source: 'Elektrowóz', category: 'Motoryzacja' },
   { url: 'https://www.o2.pl/rss/moto.xml', source: 'O2 Moto', category: 'Motoryzacja' },
   { url: 'https://moto.interia.pl/rss', source: 'Interia Moto', category: 'Motoryzacja' },
-  { url: 'https://www.motofakty.pl/feed/', source: 'Motofakty', category: 'Motoryzacja' },
-  { url: 'https://sprzedajemy.pl/rss/motoryzacja', source: 'Sprzedajemy Moto', category: 'Motoryzacja' },
+  { url: 'https://moto.onet.pl/rss.xml', source: 'Onet Moto', category: 'Motoryzacja' },
+  { url: 'https://auto-swiat.pl/feed', source: 'Auto Świat', category: 'Motoryzacja' },
 ];
 
 interface Article {
@@ -237,12 +234,18 @@ function parseRSSItem(item: string, source: string, category: string): Article |
 async function fetchRSSFeed(feedUrl: string, source: string, category: string): Promise<Article[]> {
   try {
     console.log(`Fetching RSS from: ${feedUrl}`);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+    
     const response = await fetch(feedUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; NewsAggregator/1.0)',
         'Accept': 'application/rss+xml, application/xml, text/xml',
       },
+      signal: controller.signal,
     });
+    
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       console.error(`Failed to fetch ${feedUrl}: ${response.status}`);
@@ -263,7 +266,11 @@ async function fetchRSSFeed(feedUrl: string, source: string, category: string): 
     console.log(`Fetched ${articles.length} articles from ${source}`);
     return articles;
   } catch (error) {
-    console.error(`Error fetching ${feedUrl}:`, error);
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error(`Timeout fetching ${feedUrl}`);
+    } else {
+      console.error(`Error fetching ${feedUrl}:`, error);
+    }
     return [];
   }
 }
