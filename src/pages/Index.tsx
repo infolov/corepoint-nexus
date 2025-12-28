@@ -264,51 +264,70 @@ const Index = () => {
     return articles;
   }, [rssArticles, dbArticles, activeCategory]);
 
-  // Personalize articles for logged-in users - FILTER by selected categories
+  // Personalize articles for logged-in users - FILTER by selected categories ONLY
   const personalizedArticles = useMemo(() => {
-    if (!user || userPreferences.length === 0 || allArticles.length === 0) {
+    // If no user or no preferences, show all articles
+    if (!user || userPreferences.length === 0) {
       return allArticles;
     }
 
-    // Map user preference slugs to actual RSS article category names
-    // User preferences are stored as slugs: "wiadomosci", "sport", "technologia"
-    // RSS articles have categories like: "Wiadomości", "Sport", "Technologia"
-    const preferenceToCategory: Record<string, string[]> = {
-      "wiadomosci": ["wiadomości", "wiadomosci", "news", "polityka", "polska", "świat"],
-      "sport": ["sport"],
-      "biznes": ["biznes", "business", "ekonomia", "finanse", "giełda", "gospodarka"],
-      "technologia": ["technologia", "tech", "technology"],
-      "tech": ["technologia", "tech", "technology"],
-      "lifestyle": ["lifestyle", "moda", "uroda", "kobieta", "styl życia"],
-      "rozrywka": ["rozrywka", "entertainment", "gwiazdy", "celebryci", "film", "muzyka", "seriale"],
-      "zdrowie": ["zdrowie", "health", "medycyna", "dieta", "fitness"],
-      "nauka": ["nauka", "science", "kosmos", "przyroda", "badania", "odkrycia"],
-      "motoryzacja": ["motoryzacja", "auto", "samochody", "moto"],
-      "kultura": ["kultura", "culture", "sztuka", "literatura", "teatr", "kino"],
+    // If no articles yet, return empty
+    if (allArticles.length === 0) {
+      return [];
+    }
+
+    // Map user preference slugs (lowercase, no Polish chars) to RSS category names (with Polish chars, capitalized)
+    // RSS feeds use: "Wiadomości", "Sport", "Biznes", "Technologia", "Lifestyle", "Rozrywka", "Zdrowie", "Kultura", "Nauka", "Motoryzacja"
+    const slugToRSSCategory: Record<string, string> = {
+      "wiadomosci": "wiadomości",
+      "sport": "sport",
+      "biznes": "biznes",
+      "technologia": "technologia",
+      "tech": "technologia",
+      "lifestyle": "lifestyle",
+      "rozrywka": "rozrywka",
+      "zdrowie": "zdrowie",
+      "kultura": "kultura",
+      "nauka": "nauka",
+      "motoryzacja": "motoryzacja",
     };
 
-    // Filter articles to show ONLY from selected categories
+    // Build a set of allowed category names (lowercase for comparison)
+    const allowedCategories = new Set<string>();
+    userPreferences.forEach(pref => {
+      const prefLower = pref.toLowerCase().trim();
+      const mappedCategory = slugToRSSCategory[prefLower];
+      if (mappedCategory) {
+        allowedCategories.add(mappedCategory);
+      } else {
+        // If not in map, add the preference itself as fallback
+        allowedCategories.add(prefLower);
+      }
+    });
+
+    console.log("User preferences:", userPreferences);
+    console.log("Allowed categories:", Array.from(allowedCategories));
+
+    // Filter articles to show ONLY those matching selected categories
     const filteredArticles = allArticles.filter(article => {
       const articleCategory = (article.category || "").toLowerCase().trim();
       
-      return userPreferences.some(pref => {
-        const prefLower = pref.toLowerCase().trim();
-        const matchingTerms = preferenceToCategory[prefLower] || [prefLower];
-        
-        // Check if article category matches any of the terms
-        return matchingTerms.some(term => {
-          const termLower = term.toLowerCase();
-          return articleCategory === termLower || articleCategory.includes(termLower) || termLower.includes(articleCategory);
-        });
-      });
+      // Check if article category is in allowed categories
+      const isAllowed = allowedCategories.has(articleCategory);
+      
+      return isAllowed;
     });
 
-    // If no articles match preferences, show all (fallback)
+    console.log(`Filtered ${filteredArticles.length} articles from ${allArticles.length} total`);
+
+    // If no articles match, do NOT fallback - show empty state or message
+    // This is intentional - user wants to see ONLY their selected categories
     if (filteredArticles.length === 0) {
-      return allArticles;
+      console.log("No articles match user preferences - showing empty");
+      return [];
     }
 
-    // Score by preference order within filtered articles
+    // Sort by preference order and recency
     const scoredArticles = filteredArticles.map(article => {
       let score = 0;
       const articleCategory = (article.category || "").toLowerCase();
@@ -316,16 +335,16 @@ const Index = () => {
       // Higher score for categories that appear first in preferences
       userPreferences.forEach((pref, index) => {
         const prefLower = pref.toLowerCase();
-        const matchingTerms = preferenceToCategory[prefLower] || [prefLower];
+        const mappedCategory = slugToRSSCategory[prefLower] || prefLower;
         
-        if (matchingTerms.some(term => articleCategory.includes(term.toLowerCase()))) {
-          score += (userPreferences.length - index) * 2;
+        if (articleCategory === mappedCategory) {
+          score += (userPreferences.length - index) * 10;
         }
       });
       
       // Bonus for recently viewed categories
       recentCategories.forEach((cat, index) => {
-        if (articleCategory.includes(cat.toLowerCase())) {
+        if (articleCategory === cat.toLowerCase()) {
           score += (recentCategories.length - index);
         }
       });
@@ -333,7 +352,6 @@ const Index = () => {
       return { article, score };
     });
 
-    // Sort by score (highest first)
     scoredArticles.sort((a, b) => b.score - a.score);
     
     return scoredArticles.map(s => s.article);
