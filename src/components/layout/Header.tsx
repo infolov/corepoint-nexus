@@ -156,7 +156,7 @@ export function Header() {
             <Link to="/" className="flex flex-col md:flex-row items-start md:items-center gap-0.5 md:gap-2.5">
               <div className="flex items-center gap-2">
                 
-                <span className="text-lg font-bold tracking-tight md:text-5xl">
+                <span className="text-lg tracking-tight md:text-5xl font-semibold pb-[10px]">
                   informacje<span className="text-primary">.pl</span>
                 </span>
               </div>
