@@ -270,18 +270,19 @@ const Index = () => {
       return allArticles;
     }
 
-    // Map category names to match article categories
+    // Map preference slugs to article category names (preferences are stored as slugs)
     const categoryMap: Record<string, string[]> = {
-      "Wiadomości": ["wiadomości", "wiadomosci", "news"],
-      "Sport": ["sport"],
-      "Biznes": ["biznes", "business"],
-      "Technologia": ["technologia", "tech", "technology"],
-      "Lifestyle": ["lifestyle"],
-      "Rozrywka": ["rozrywka", "entertainment"],
-      "Zdrowie": ["zdrowie", "health"],
-      "Nauka": ["nauka", "science"],
-      "Motoryzacja": ["motoryzacja", "auto"],
-      "Kultura": ["kultura", "culture"],
+      "wiadomosci": ["wiadomości", "wiadomosci", "news"],
+      "sport": ["sport"],
+      "biznes": ["biznes", "business"],
+      "tech": ["technologia", "tech", "technology"],
+      "technologia": ["technologia", "tech", "technology"],
+      "lifestyle": ["lifestyle"],
+      "rozrywka": ["rozrywka", "entertainment"],
+      "zdrowie": ["zdrowie", "health"],
+      "nauka": ["nauka", "science"],
+      "motoryzacja": ["motoryzacja", "auto"],
+      "kultura": ["kultura", "culture"],
     };
 
     // Filter articles to show ONLY from selected categories
