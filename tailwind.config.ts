@@ -16,6 +16,7 @@ export default {
       fontFamily: {
         sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
         heading: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+        calibri: ['Calibri Light', 'Calibri', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
