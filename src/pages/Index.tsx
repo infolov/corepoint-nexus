@@ -64,7 +64,6 @@ const Index = () => {
     user
   } = useAuth();
   const [userPreferences, setUserPreferences] = useState<string[]>([]);
-  const [userSubcategories, setUserSubcategories] = useState<string[]>([]);
   const [recentCategories, setRecentCategories] = useState<string[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -106,12 +105,9 @@ const Index = () => {
         // Get notification preferences (selected categories)
         const {
           data: prefData
-        } = await supabase.from("user_notification_preferences").select("categories, tags").eq("user_id", user.id).maybeSingle();
+        } = await supabase.from("user_notification_preferences").select("categories").eq("user_id", user.id).maybeSingle();
         if (prefData?.categories) {
           setUserPreferences(prefData.categories);
-        }
-        if (prefData?.tags) {
-          setUserSubcategories(prefData.tags);
         }
 
         // Get recently viewed categories
@@ -268,219 +264,65 @@ const Index = () => {
     return articles;
   }, [rssArticles, dbArticles, activeCategory]);
 
-  // Personalize articles for logged-in users - FILTER by selected categories AND subcategories
+  // Personalize articles for logged-in users - FILTER by selected categories
   const personalizedArticles = useMemo(() => {
-    // If no user or no preferences, show all articles
-    if (!user || (userPreferences.length === 0 && userSubcategories.length === 0)) {
+    if (!user || userPreferences.length === 0) {
       return allArticles;
     }
 
-    // If no articles yet, return empty
-    if (allArticles.length === 0) {
-      return [];
-    }
-
-    // Map user preference slugs to RSS category names
-    const slugToRSSCategory: Record<string, string> = {
-      "wiadomosci": "wiadomości",
-      "sport": "sport",
-      "biznes": "biznes",
-      "technologia": "technologia",
-      "tech": "technologia",
-      "lifestyle": "lifestyle",
-      "rozrywka": "rozrywka",
-      "zdrowie": "zdrowie",
-      "kultura": "kultura",
-      "nauka": "nauka",
-      "motoryzacja": "motoryzacja",
+    // Map preference slugs to article category names (preferences are stored as slugs)
+    const categoryMap: Record<string, string[]> = {
+      "wiadomosci": ["wiadomości", "wiadomosci", "news"],
+      "sport": ["sport"],
+      "biznes": ["biznes", "business"],
+      "tech": ["technologia", "tech", "technology"],
+      "technologia": ["technologia", "tech", "technology"],
+      "lifestyle": ["lifestyle"],
+      "rozrywka": ["rozrywka", "entertainment"],
+      "zdrowie": ["zdrowie", "health"],
+      "nauka": ["nauka", "science"],
+      "motoryzacja": ["motoryzacja", "auto"],
+      "kultura": ["kultura", "culture"],
     };
 
-    // Map subcategory IDs to keywords for matching article titles/content
-    const subcategoryKeywords: Record<string, string[]> = {
-      // Wiadomości
-      "wiadomosci-polska": ["polska", "polski", "polskie", "warszawa", "kraków", "gdańsk"],
-      "wiadomosci-swiat": ["świat", "świato", "międzynarodow", "europa", "usa", "chiny"],
-      "wiadomosci-polityka": ["polity", "sejm", "senat", "rząd", "prezydent", "minister"],
-      "wiadomosci-gospodarka": ["gospodar", "ekonom", "pkb", "inflacja", "nbp"],
-      "wiadomosci-spoleczenstwo": ["społecz", "obywatel", "protest", "manifestacja"],
-      // Biznes
-      "biznes-finanse": ["finans", "bank", "kredyt", "pożyczk", "oszczędnoś"],
-      "biznes-gielda": ["giełd", "akcj", "wig", "inwestycj", "notowani"],
-      "biznes-startupy": ["startup", "innowacj", "venture", "fundusz"],
-      "biznes-nieruchomosci": ["nieruchom", "mieszkan", "dom", "działk"],
-      "biznes-praca": ["prac", "zatrudnien", "rekrutacj", "pensj", "wynagrodzeni"],
-      // Sport
-      "sport-pilka-nozna": ["piłk", "football", "liga", "ekstraklasa", "bramk", "mecz"],
-      "sport-koszykowka": ["koszykówk", "nba", "basket"],
-      "sport-siatkowka": ["siatkówk", "volley"],
-      "sport-tenis": ["tenis", "wimbledon", "rakiet"],
-      "sport-sporty-motorowe": ["f1", "formuła", "wyścig", "motor", "rally"],
-      "sport-sporty-walki": ["boks", "mma", "ufc", "walka"],
-      "sport-hokej": ["hokej", "nhl", "krążek"],
-      "sport-lekkoatletyka": ["lekkoatletyk", "bieg", "maraton", "sprint"],
-      "sport-sporty-zimowe": ["narciar", "snowboard", "łyżw", "zimow"],
-      "sport-esport": ["esport", "gaming", "gra", "e-sport"],
-      // Technologia
-      "tech-ai": ["ai", "sztuczn", "inteligenc", "machine learning", "chatgpt", "gpt"],
-      "tech-smartfony": ["smartfon", "telefon", "iphone", "android", "samsung"],
-      "tech-gaming": ["gam", "gra", "playstation", "xbox", "nintendo"],
-      "tech-software": ["oprogramowan", "aplikacj", "software", "program"],
-      "tech-hardware": ["sprzęt", "hardware", "procesor", "karta graficzna"],
-      // Lifestyle
-      "lifestyle-moda": ["moda", "fashion", "styl", "ubrania"],
-      "lifestyle-uroda": ["urod", "kosmetyk", "makijaż", "pielęgnacj"],
-      "lifestyle-podroze": ["podróż", "wakacj", "turyst", "zwiedzani"],
-      "lifestyle-jedzenie": ["jedzen", "kuchni", "przepis", "restauracj", "gotowani"],
-      "lifestyle-design": ["design", "wnętrz", "architektur", "dekoracj"],
-      // Rozrywka
-      "rozrywka-filmy": ["film", "kino", "reżyser", "aktor"],
-      "rozrywka-seriale": ["serial", "netflix", "hbo", "odcin"],
-      "rozrywka-muzyka": ["muzyk", "koncert", "piosenk", "album"],
-      "rozrywka-gwiazdy": ["gwiazd", "celebryt", "influencer"],
-      "rozrywka-streaming": ["stream", "netflix", "disney", "hbo", "amazon"],
-      // Nauka
-      "nauka-kosmos": ["kosmos", "nasa", "spacex", "planet", "galaktyk"],
-      "nauka-medycyna": ["medycyn", "lekar", "szpital", "zdrowi", "chorob"],
-      "nauka-fizyka": ["fizyk", "kwantow", "cząstk", "atom"],
-      "nauka-biologia": ["biolog", "komórk", "dna", "ewolucj"],
-      "nauka-ekologia": ["ekolog", "klimat", "środowisk", "zieloni"],
-      // Zdrowie
-      "zdrowie-dieta": ["diet", "odchudzani", "kalori", "żywieni"],
-      "zdrowie-fitness": ["fitness", "trening", "ćwiczen", "siłowni"],
-      "zdrowie-psychologia": ["psycholog", "mental", "depresj", "stres"],
-      "zdrowie-choroby": ["chorob", "wirus", "bakteria", "infekcj"],
-      "zdrowie-profilaktyka": ["profilaktyk", "szczepien", "badani", "prewencj"],
-      // Kultura
-      "kultura-sztuka": ["sztuk", "obraz", "malarstw", "rzeźb"],
-      "kultura-teatr": ["teatr", "spektakl", "przedstawieni"],
-      "kultura-ksiazki": ["książk", "literatur", "powieść", "autor"],
-      "kultura-muzea": ["muze", "wystawka", "eksponat", "galeri"],
-      "kultura-festiwale": ["festiwal", "wydarzeni", "imprez"],
-      // Motoryzacja
-      "moto-samochody": ["samochód", "auto", "pojazd", "silnik"],
-      "moto-motocykle": ["motocykl", "jednoślad", "skuter"],
-      "moto-elektryczne": ["elektryczn", "ev", "tesla", "hybryd", "bateria"],
-      "moto-testy": ["test", "recenzj", "porównani"],
-      "moto-porady": ["porad", "wskazówk", "jak ", "instrukcj"],
-    };
-
-    // Build a set of allowed category names
-    const allowedCategories = new Set<string>();
-    userPreferences.forEach(pref => {
-      const prefLower = pref.toLowerCase().trim();
-      const mappedCategory = slugToRSSCategory[prefLower];
-      if (mappedCategory) {
-        allowedCategories.add(mappedCategory);
-      } else {
-        allowedCategories.add(prefLower);
-      }
-    });
-
-    // Get subcategory keywords for filtering
-    const activeKeywords: string[] = [];
-    const customKeywordsByCategory: Record<string, string[]> = {};
-    
-    userSubcategories.forEach(subId => {
-      // Check if this is a custom keyword (format: categoryId-keyword-keyword)
-      const customKeywordMatch = subId.match(/^([a-z]+)-keyword-(.+)$/i);
-      if (customKeywordMatch) {
-        const category = customKeywordMatch[1].toLowerCase();
-        const keyword = customKeywordMatch[2].toLowerCase();
-        if (!customKeywordsByCategory[category]) {
-          customKeywordsByCategory[category] = [];
-        }
-        customKeywordsByCategory[category].push(keyword);
-        activeKeywords.push(keyword);
-      } else {
-        // Regular subcategory
-        const keywords = subcategoryKeywords[subId];
-        if (keywords) {
-          activeKeywords.push(...keywords);
-        }
-      }
-    });
-
-    console.log("User preferences:", userPreferences);
-    console.log("User subcategories:", userSubcategories);
-    console.log("Custom keywords by category:", customKeywordsByCategory);
-    console.log("Allowed categories:", Array.from(allowedCategories));
-    console.log("Active keywords:", activeKeywords.slice(0, 10));
-
-    // Filter articles
+    // Filter articles to show ONLY from selected categories
     const filteredArticles = allArticles.filter(article => {
-      const articleCategory = (article.category || "").toLowerCase().trim();
-      const articleTitle = (article.title || "").toLowerCase();
+      const articleCategory = article.category?.toLowerCase() || "";
       
-      // First check: article must be in an allowed category
-      const isCategoryAllowed = allowedCategories.has(articleCategory);
-      
-      if (!isCategoryAllowed) {
-        return false;
-      }
-
-      // If no subcategories selected, allow all articles from allowed categories
-      if (userSubcategories.length === 0) {
-        return true;
-      }
-
-      // If subcategories selected, prioritize articles matching keywords
-      // But still show articles from allowed categories even without keyword match
-      const hasKeywordMatch = activeKeywords.some(keyword => 
-        articleTitle.includes(keyword.toLowerCase())
-      );
-      
-      // We'll use keyword matching for scoring, not filtering
-      return true;
+      return userPreferences.some(pref => {
+        const prefLower = pref.toLowerCase();
+        // Check direct match
+        if (articleCategory === prefLower || articleCategory.includes(prefLower)) {
+          return true;
+        }
+        // Check mapped categories
+        const mappedCategories = categoryMap[pref] || [];
+        return mappedCategories.some(mapped => 
+          articleCategory.includes(mapped.toLowerCase())
+        );
+      });
     });
 
-    console.log(`Filtered ${filteredArticles.length} articles from ${allArticles.length} total`);
-
+    // If no articles match preferences, show all (fallback)
     if (filteredArticles.length === 0) {
-      console.log("No articles match user preferences - showing empty");
-      return [];
+      return allArticles;
     }
 
-    // Sort by preference order, subcategory match, custom keywords, and recency
+    // Score by recency within filtered articles
     const scoredArticles = filteredArticles.map(article => {
       let score = 0;
-      const articleCategory = (article.category || "").toLowerCase();
-      const articleTitle = (article.title || "").toLowerCase();
-      const articleExcerpt = (article.excerpt || "").toLowerCase();
-      const articleContent = articleTitle + " " + articleExcerpt;
+      const articleCategory = article.category?.toLowerCase() || "";
       
       // Higher score for categories that appear first in preferences
       userPreferences.forEach((pref, index) => {
-        const prefLower = pref.toLowerCase();
-        const mappedCategory = slugToRSSCategory[prefLower] || prefLower;
-        
-        if (articleCategory === mappedCategory) {
-          score += (userPreferences.length - index) * 10;
+        if (articleCategory.includes(pref.toLowerCase())) {
+          score += (userPreferences.length - index) * 2;
         }
-      });
-      
-      // Bonus for matching subcategory keywords
-      activeKeywords.forEach(keyword => {
-        if (articleContent.includes(keyword.toLowerCase())) {
-          score += 25; // High bonus for subcategory match
-        }
-      });
-      
-      // Extra high bonus for custom user keywords - search in title AND content
-      Object.entries(customKeywordsByCategory).forEach(([category, keywords]) => {
-        const mappedCategory = slugToRSSCategory[category] || category;
-        const matchesCategory = articleCategory === mappedCategory || allowedCategories.size === 0;
-        
-        keywords.forEach(keyword => {
-          if (articleContent.includes(keyword)) {
-            // Higher score if category matches
-            score += matchesCategory ? 100 : 50;
-          }
-        });
       });
       
       // Bonus for recently viewed categories
       recentCategories.forEach((cat, index) => {
-        if (articleCategory === cat.toLowerCase()) {
+        if (articleCategory.includes(cat.toLowerCase())) {
           score += (recentCategories.length - index);
         }
       });
@@ -488,10 +330,11 @@ const Index = () => {
       return { article, score };
     });
 
+    // Sort by score (highest first)
     scoredArticles.sort((a, b) => b.score - a.score);
     
     return scoredArticles.map(s => s.article);
-  }, [allArticles, user, userPreferences, userSubcategories, recentCategories]);
+  }, [allArticles, user, userPreferences, recentCategories]);
 
   // Generate enough articles for infinite scroll by cycling
   const getArticlesForDisplay = useMemo(() => {

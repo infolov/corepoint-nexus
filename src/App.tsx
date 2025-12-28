@@ -27,7 +27,6 @@ import DashboardAdminCampaigns from "./pages/dashboard/DashboardAdminCampaigns";
 import DashboardAdminUsers from "./pages/dashboard/DashboardAdminUsers";
 import DashboardAdminPlacements from "./pages/dashboard/DashboardAdminPlacements";
 import DashboardAdminStats from "./pages/dashboard/DashboardAdminStats";
-import DashboardAdminRSS from "./pages/dashboard/DashboardAdminRSS";
 
 const queryClient = new QueryClient();
 
@@ -60,7 +59,6 @@ const App = () => (
               <Route path="admin/users" element={<DashboardAdminUsers />} />
               <Route path="admin/placements" element={<DashboardAdminPlacements />} />
               <Route path="admin/stats" element={<DashboardAdminStats />} />
-              <Route path="admin/rss" element={<DashboardAdminRSS />} />
             </Route>
             <Route path="/sport/:subcategory" element={<Category />} />
             <Route path="/:category" element={<Category />} />
