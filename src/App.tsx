@@ -12,6 +12,7 @@ import Category from "./pages/Category";
 import Article from "./pages/Article";
 import Search from "./pages/Search";
 import NotificationSettings from "./pages/NotificationSettings";
+import Interests from "./pages/Interests";
 import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/dashboard/Dashboard";
 import DashboardHome from "./pages/dashboard/DashboardHome";
@@ -43,6 +44,7 @@ const App = () => (
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/artykul/:id" element={<Article />} />
             <Route path="/notifications/settings" element={<NotificationSettings />} />
+            <Route path="/interests" element={<Interests />} />
             <Route path="/szukaj" element={<Search />} />
             <Route path="/dashboard" element={<Dashboard />}>
               <Route index element={<DashboardHome />} />

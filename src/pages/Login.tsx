@@ -1,27 +1,35 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Mail, Lock, User, Building, Loader2, Play } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, Building, Loader2, Play, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { InterestsSelector } from "@/components/auth/InterestsSelector";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useDemo } from "@/contexts/DemoContext";
 import { toast } from "sonner";
 
 type AuthMode = "login" | "register" | "advertiser";
+type RegistrationStep = "form" | "interests";
 
 export default function Login() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { enterDemoMode, isDemoMode } = useDemo();
   const [mode, setMode] = useState<AuthMode>("login");
+  const [registrationStep, setRegistrationStep] = useState<RegistrationStep>("form");
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [company, setCompany] = useState("");
   const [loading, setLoading] = useState(false);
+  
+  // Interests state
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [newUserId, setNewUserId] = useState<string | null>(null);
 
   const handleDemoLogin = () => {
     enterDemoMode();
@@ -73,7 +81,7 @@ export default function Login() {
         // Register (both regular and advertiser)
         const redirectUrl = `${window.location.origin}/`;
         
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -95,15 +103,58 @@ export default function Login() {
           return;
         }
 
-        toast.success("Konto utworzone pomyślnie! Możesz się teraz zalogować.");
-        setMode("login");
-        setPassword("");
+        // Move to interests step
+        if (data.user) {
+          setNewUserId(data.user.id);
+          setRegistrationStep("interests");
+          toast.success("Konto utworzone! Wybierz swoje zainteresowania.");
+        }
       }
     } catch (error) {
       toast.error("Wystąpił błąd. Spróbuj ponownie.");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSaveInterests = async () => {
+    if (!newUserId) {
+      navigate("/");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from("user_notification_preferences")
+        .upsert({
+          user_id: newUserId,
+          categories: selectedCategories,
+          tags: selectedTags,
+          updated_at: new Date().toISOString(),
+        });
+
+      if (error) {
+        console.error("Error saving interests:", error);
+      }
+
+      toast.success("Świetnie! Twoje konto jest gotowe.");
+      navigate("/");
+    } catch (error) {
+      console.error("Error saving interests:", error);
+      navigate("/");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSkipInterests = () => {
+    toast.success("Konto utworzone! Możesz zmienić zainteresowania później.");
+    navigate("/");
+  };
+
+  const handleBackToForm = () => {
+    setRegistrationStep("form");
   };
 
   const handleGoogleLogin = async () => {
@@ -134,58 +185,82 @@ export default function Login() {
       <main className="flex-1 flex items-center justify-center py-12 px-4">
         <div className="w-full max-w-md">
           <div className="bg-card rounded-2xl shadow-lg p-8">
-            {/* Logo */}
-            <div className="text-center mb-8">
-              <Link to="/" className="inline-flex items-center gap-2">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-hero-gradient">
-                  <span className="text-2xl font-bold text-primary-foreground">I</span>
+            {/* Interests Step */}
+            {registrationStep === "interests" ? (
+              <div>
+                <button
+                  onClick={handleBackToForm}
+                  className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-4 transition-colors text-sm"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  <span>Wróć</span>
+                </button>
+                <InterestsSelector
+                  selectedCategories={selectedCategories}
+                  selectedTags={selectedTags}
+                  onCategoriesChange={setSelectedCategories}
+                  onTagsChange={setSelectedTags}
+                  onContinue={handleSaveInterests}
+                  onSkip={handleSkipInterests}
+                  isLoading={loading}
+                  showSkip={true}
+                  submitLabel="Zakończ rejestrację"
+                />
+              </div>
+            ) : (
+              <>
+                {/* Logo */}
+                <div className="text-center mb-8">
+                  <Link to="/" className="inline-flex items-center gap-2">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-hero-gradient">
+                      <span className="text-2xl font-bold text-primary-foreground">I</span>
+                    </div>
+                  </Link>
+                  <h1 className="mt-4 text-2xl font-bold">
+                    {mode === "login" && "Zaloguj się"}
+                    {mode === "register" && "Utwórz konto"}
+                    {mode === "advertiser" && "Konto reklamodawcy"}
+                  </h1>
+                  <p className="text-muted-foreground text-sm mt-2">
+                    {mode === "login" && "Witaj ponownie! Zaloguj się do swojego konta."}
+                    {mode === "register" && "Załóż konto, aby śledzić ulubione tematy."}
+                    {mode === "advertiser" && "Załóż konto i zacznij promować swoją markę."}
+                  </p>
                 </div>
-              </Link>
-              <h1 className="mt-4 text-2xl font-bold">
-                {mode === "login" && "Zaloguj się"}
-                {mode === "register" && "Utwórz konto"}
-                {mode === "advertiser" && "Konto reklamodawcy"}
-              </h1>
-              <p className="text-muted-foreground text-sm mt-2">
-                {mode === "login" && "Witaj ponownie! Zaloguj się do swojego konta."}
-                {mode === "register" && "Załóż konto, aby śledzić ulubione tematy."}
-                {mode === "advertiser" && "Załóż konto i zacznij promować swoją markę."}
-              </p>
-            </div>
 
-            {/* Auth Mode Tabs */}
-            <div className="flex gap-1 p-1 bg-muted rounded-lg mb-6">
-              <button
-                className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all ${
-                  mode === "login"
-                    ? "bg-card text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                onClick={() => setMode("login")}
-              >
-                Logowanie
-              </button>
-              <button
-                className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all ${
-                  mode === "register"
-                    ? "bg-card text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                onClick={() => setMode("register")}
-              >
-                Rejestracja
-              </button>
-              <button
-                className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all ${
-                  mode === "advertiser"
-                    ? "bg-card text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                onClick={() => setMode("advertiser")}
-              >
-                Partner
-              </button>
-            </div>
+                {/* Auth Mode Tabs */}
+                <div className="flex gap-1 p-1 bg-muted rounded-lg mb-6">
+                  <button
+                    className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all ${
+                      mode === "login"
+                        ? "bg-card text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    onClick={() => setMode("login")}
+                  >
+                    Logowanie
+                  </button>
+                  <button
+                    className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all ${
+                      mode === "register"
+                        ? "bg-card text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    onClick={() => setMode("register")}
+                  >
+                    Rejestracja
+                  </button>
+                  <button
+                    className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all ${
+                      mode === "advertiser"
+                        ? "bg-card text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    onClick={() => setMode("advertiser")}
+                  >
+                    Partner
+                  </button>
+                </div>
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -348,6 +423,8 @@ export default function Login() {
               <Play className="h-4 w-4 mr-2" />
               Konto demo reklamodawcy
             </Button>
+              </>
+            )}
           </div>
 
           {/* Bottom Link */}
