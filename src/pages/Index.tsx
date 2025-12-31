@@ -3,8 +3,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { CategoryBar } from "@/components/navigation/CategoryBar";
 import { NewsCard } from "@/components/news/NewsCard";
-import { AdBanner } from "@/components/widgets/AdBanner";
-import { LocalAdBanner } from "@/components/widgets/LocalAdBanner";
+import { AuctionAdSlot } from "@/components/widgets/AuctionAdSlot";
 import { AdCarousel } from "@/components/widgets/AdCarousel";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import { useDisplayMode } from "@/hooks/use-display-mode";
@@ -368,9 +367,9 @@ const Index = () => {
       <FloatingRefreshButton onClick={handleRefresh} isLoading={isRefreshing || rssLoading || dbLoading} />
 
       <main className="container py-4 sm:py-6">
-        {/* Top Ad Banner */}
+        {/* Top Ad Banner - Using Auction Engine */}
         <div className="mb-6">
-          <AdBanner variant="horizontal" className="w-full" />
+          <AuctionAdSlot variant="horizontal" className="w-full" slotIndex={0} />
         </div>
 
         {/* Main Content - Ad + 4x3 Grid pattern */}
@@ -381,12 +380,20 @@ const Index = () => {
                 {gridArticles.map((article, articleIndex) => <NewsCard key={`${article.id}-${gridIndex}-${articleIndex}`} id={article.id} title={article.title} category={article.category} image={article.image} timestamp={article.timestamp} badge={article.badge} source={article.source} sourceUrl={article.sourceUrl} variant="default" />)}
               </div>
 
-              {/* Ad Banner after each grid of 12 articles */}
+              {/* Ad Banner after each grid - Using Auction Engine */}
               <div className="mt-6 sm:mt-8">
                 {gridIndex === 0 ? (
-                  <AdBanner variant="horizontal" className="w-full" />
+                  <AuctionAdSlot 
+                    variant="horizontal" 
+                    className="w-full" 
+                    slotIndex={gridIndex + 1} 
+                  />
                 ) : (
-                  <AdCarousel className="w-full" />
+                  <AuctionAdSlot 
+                    variant="horizontal" 
+                    className="w-full" 
+                    slotIndex={gridIndex + 1}
+                  />
                 )}
               </div>
             </div>)}
