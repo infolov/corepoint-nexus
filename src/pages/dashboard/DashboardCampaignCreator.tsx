@@ -14,7 +14,9 @@ import {
   Square,
   FileText,
   X,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Globe,
+  MapPin
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,6 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useAdmin } from "@/hooks/use-admin";
@@ -33,6 +36,7 @@ import { cn } from "@/lib/utils";
 import { BookingCalendar } from "@/components/dashboard/BookingCalendar";
 import { EmissionTypeSelector, EmissionType } from "@/components/dashboard/EmissionTypeSelector";
 import { PricingPackages, PricingPackage } from "@/components/dashboard/PricingPackages";
+import { PolandMapSelector } from "@/components/dashboard/PolandMapSelector";
 
 interface AdPlacement {
   id: string;
@@ -53,9 +57,10 @@ const placementIcons: Record<string, any> = {
 const STEPS = [
   { id: 1, name: "Miejsce", icon: Target },
   { id: 2, name: "Emisja", icon: Zap },
-  { id: 3, name: "Termin", icon: Calendar },
-  { id: 4, name: "Podsumowanie", icon: CreditCard },
-  { id: 5, name: "Kreacja", icon: Upload },
+  { id: 3, name: "Zasięg", icon: Globe },
+  { id: 4, name: "Termin", icon: Calendar },
+  { id: 5, name: "Podsumowanie", icon: CreditCard },
+  { id: 6, name: "Kreacja", icon: Upload },
 ];
 
 // Pricing (PLN per day)
@@ -88,6 +93,10 @@ export default function DashboardCampaignCreator() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Targeting state
+  const [isGlobal, setIsGlobal] = useState(true);
+  const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -201,9 +210,10 @@ export default function DashboardCampaignCreator() {
     switch (currentStep) {
       case 1: return !!selectedPlacement;
       case 2: return !!emissionType && (emissionType === "exclusive" || !!selectedSlot);
-      case 3: return !!startDate && !!endDate;
-      case 4: return !!campaignName && totalPrice > 0;
-      case 5: return true;
+      case 3: return isGlobal || !!selectedRegion; // Targeting validation
+      case 4: return !!startDate && !!endDate;
+      case 5: return !!campaignName && totalPrice > 0;
+      case 6: return true;
       default: return false;
     }
   };
@@ -261,7 +271,9 @@ export default function DashboardCampaignCreator() {
         total_credits: isAdmin ? 0 : totalPrice,
         target_url: targetUrl || null,
         content_url: uploadedContentUrl,
-        status: "pending"
+        status: "pending",
+        is_global: isGlobal,
+        region: isGlobal ? null : selectedRegion
       });
 
       if (error) throw error;
@@ -407,8 +419,94 @@ export default function DashboardCampaignCreator() {
             </div>
           )}
 
-          {/* Step 3: Date Selection */}
+          {/* Step 3: Targeting */}
           {currentStep === 3 && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-xl font-semibold mb-2">Wybierz zasięg kampanii</h2>
+                <p className="text-muted-foreground">
+                  Określ czy reklama ma być wyświetlana w całej Polsce czy tylko w wybranym regionie.
+                </p>
+              </div>
+
+              {/* Targeting Toggle */}
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Card
+                    className={cn(
+                      "cursor-pointer transition-all hover:shadow-lg",
+                      isGlobal && "ring-2 ring-primary border-primary"
+                    )}
+                    onClick={() => {
+                      setIsGlobal(true);
+                      setSelectedRegion(null);
+                    }}
+                  >
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Globe className="h-5 w-5 text-primary" />
+                          <CardTitle className="text-lg">Cała Polska</CardTitle>
+                        </div>
+                        {isGlobal && <Check className="h-5 w-5 text-primary" />}
+                      </div>
+                      <CardDescription>Kampania ogólnopolska</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground">
+                        Twoja reklama będzie wyświetlana wszystkim użytkownikom w Polsce.
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card
+                    className={cn(
+                      "cursor-pointer transition-all hover:shadow-lg",
+                      !isGlobal && "ring-2 ring-primary border-primary"
+                    )}
+                    onClick={() => setIsGlobal(false)}
+                  >
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-5 w-5 text-primary" />
+                          <CardTitle className="text-lg">Region</CardTitle>
+                        </div>
+                        {!isGlobal && <Check className="h-5 w-5 text-primary" />}
+                      </div>
+                      <CardDescription>Kampania lokalna</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground">
+                        Twoja reklama będzie wyświetlana tylko użytkownikom z wybranego województwa.
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Poland Map Selector - only show when local is selected */}
+                {!isGlobal && (
+                  <div className="mt-6">
+                    <Label className="text-base font-medium mb-4 block">
+                      Wybierz województwo <span className="text-destructive">*</span>
+                    </Label>
+                    <PolandMapSelector
+                      selectedRegion={selectedRegion}
+                      onSelect={setSelectedRegion}
+                    />
+                    {!selectedRegion && (
+                      <p className="text-sm text-destructive mt-2">
+                        Wybierz region, aby kontynuować
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Step 4: Date Selection */}
+          {currentStep === 4 && (
             <div className="space-y-6">
               <div>
                 <h2 className="text-xl font-semibold mb-2">Wybierz termin kampanii</h2>
@@ -467,8 +565,8 @@ export default function DashboardCampaignCreator() {
             </div>
           )}
 
-          {/* Step 4: Summary & Payment */}
-          {currentStep === 4 && (
+          {/* Step 5: Summary & Payment */}
+          {currentStep === 5 && (
             <div className="space-y-6">
               <div>
                 <h2 className="text-xl font-semibold mb-2">Podsumowanie zamówienia</h2>
@@ -525,6 +623,22 @@ export default function DashboardCampaignCreator() {
                     <span className="text-muted-foreground">Liczba dni</span>
                     <span className="font-medium">{daysCount}</span>
                   </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Zasięg</span>
+                    <span className="font-medium flex items-center gap-1">
+                      {isGlobal ? (
+                        <>
+                          <Globe className="h-4 w-4" />
+                          Cała Polska
+                        </>
+                      ) : (
+                        <>
+                          <MapPin className="h-4 w-4" />
+                          {selectedRegion?.charAt(0).toUpperCase() + selectedRegion?.slice(1).replace(/-/g, ' ')}
+                        </>
+                      )}
+                    </span>
+                  </div>
                   <Separator />
                   <div className="flex justify-between text-lg font-bold">
                     <span>Do zapłaty</span>
@@ -567,8 +681,8 @@ export default function DashboardCampaignCreator() {
             </div>
           )}
 
-          {/* Step 5: Creative Upload */}
-          {currentStep === 5 && (
+          {/* Step 6: Creative Upload */}
+          {currentStep === 6 && (
             <div className="space-y-6">
               <div>
                 <h2 className="text-xl font-semibold mb-2">Wgraj kreację reklamową</h2>
