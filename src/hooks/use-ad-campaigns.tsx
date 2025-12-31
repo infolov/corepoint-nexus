@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface AdCampaign {
@@ -10,9 +10,16 @@ export interface AdCampaign {
   target_url: string | null;
   placement_slug: string;
   placement_name: string;
+  is_global: boolean;
+  region: string | null;
 }
 
-export function useAdCampaigns() {
+interface UseAdCampaignsOptions {
+  userRegion?: string;
+}
+
+export function useAdCampaigns(options: UseAdCampaignsOptions = {}) {
+  const { userRegion } = options;
   const [campaigns, setCampaigns] = useState<AdCampaign[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -30,6 +37,8 @@ export function useAdCampaigns() {
           content_url,
           content_text,
           target_url,
+          is_global,
+          region,
           ad_placements!inner(slug, name)
         `)
         .eq("status", "active")
@@ -51,6 +60,8 @@ export function useAdCampaigns() {
         target_url: campaign.target_url,
         placement_slug: campaign.ad_placements?.slug || "",
         placement_name: campaign.ad_placements?.name || "",
+        is_global: campaign.is_global,
+        region: campaign.region,
       }));
 
       setCampaigns(formattedCampaigns);
@@ -67,8 +78,22 @@ export function useAdCampaigns() {
   }, [fetchCampaigns]);
 
   const getCampaignsByPlacement = useCallback((placementSlug: string) => {
-    return campaigns.filter(c => c.placement_slug === placementSlug);
-  }, [campaigns]);
+    return campaigns.filter(c => {
+      // Must match placement
+      if (c.placement_slug !== placementSlug) return false;
+      
+      // Global campaigns show everywhere
+      if (c.is_global) return true;
+      
+      // Local campaigns require region match
+      if (userRegion && c.region) {
+        return c.region.toLowerCase() === userRegion.toLowerCase();
+      }
+      
+      // No region specified - don't show local campaigns
+      return false;
+    });
+  }, [campaigns, userRegion]);
 
   const getRandomCampaign = useCallback((placementSlug: string) => {
     const placementCampaigns = getCampaignsByPlacement(placementSlug);
@@ -77,31 +102,13 @@ export function useAdCampaigns() {
   }, [getCampaignsByPlacement]);
 
   const trackImpression = useCallback(async (campaignId: string) => {
-    const today = new Date().toISOString().split("T")[0];
-    
     try {
-      // Try to update existing record
-      const { data: existing } = await supabase
-        .from("campaign_stats")
-        .select("id, impressions")
-        .eq("campaign_id", campaignId)
-        .eq("date", today)
-        .maybeSingle();
-
-      if (existing) {
-        await supabase
-          .from("campaign_stats")
-          .update({ impressions: (existing.impressions || 0) + 1 })
-          .eq("id", existing.id);
-      } else {
-        await supabase
-          .from("campaign_stats")
-          .insert({
-            campaign_id: campaignId,
-            date: today,
-            impressions: 1,
-            clicks: 0
-          });
+      const { error } = await supabase.rpc('increment_campaign_impression', {
+        p_campaign_id: campaignId
+      });
+      
+      if (error) {
+        console.error("Error tracking impression:", error);
       }
     } catch (error) {
       console.error("Error tracking impression:", error);
@@ -109,30 +116,13 @@ export function useAdCampaigns() {
   }, []);
 
   const trackClick = useCallback(async (campaignId: string) => {
-    const today = new Date().toISOString().split("T")[0];
-    
     try {
-      const { data: existing } = await supabase
-        .from("campaign_stats")
-        .select("id, clicks")
-        .eq("campaign_id", campaignId)
-        .eq("date", today)
-        .maybeSingle();
-
-      if (existing) {
-        await supabase
-          .from("campaign_stats")
-          .update({ clicks: (existing.clicks || 0) + 1 })
-          .eq("id", existing.id);
-      } else {
-        await supabase
-          .from("campaign_stats")
-          .insert({
-            campaign_id: campaignId,
-            date: today,
-            impressions: 0,
-            clicks: 1
-          });
+      const { error } = await supabase.rpc('increment_campaign_click', {
+        p_campaign_id: campaignId
+      });
+      
+      if (error) {
+        console.error("Error tracking click:", error);
       }
     } catch (error) {
       console.error("Error tracking click:", error);
