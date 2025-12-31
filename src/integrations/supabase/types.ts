@@ -22,8 +22,10 @@ export type Database = {
           created_at: string
           end_date: string
           id: string
+          is_global: boolean
           name: string
           placement_id: string
+          region: string | null
           rejection_reason: string | null
           start_date: string
           status: string
@@ -39,8 +41,10 @@ export type Database = {
           created_at?: string
           end_date: string
           id?: string
+          is_global?: boolean
           name: string
           placement_id: string
+          region?: string | null
           rejection_reason?: string | null
           start_date: string
           status?: string
@@ -56,8 +60,10 @@ export type Database = {
           created_at?: string
           end_date?: string
           id?: string
+          is_global?: boolean
           name?: string
           placement_id?: string
+          region?: string | null
           rejection_reason?: string | null
           start_date?: string
           status?: string
@@ -763,6 +769,14 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_campaign_click: {
+        Args: { p_campaign_id: string }
+        Returns: undefined
+      }
+      increment_campaign_impression: {
+        Args: { p_campaign_id: string }
+        Returns: undefined
       }
     }
     Enums: {
