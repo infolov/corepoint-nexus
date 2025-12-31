@@ -69,14 +69,19 @@ export function calculateDynamicScore(
   let targetingBonus = 0;
   let frequencyPenalty = 0;
 
-  // Targeting Bonus: +50% for matching local campaigns
+  // Targeting Bonus: +50% for matching local campaigns with specific targeting
   if (ad.type === 'local') {
     const locationMatch = checkLocationMatch(ad, userLocation);
     if (locationMatch) {
-      targetingBonus = baseScore * 0.5;
-      finalScore += targetingBonus;
+      // Only give bonus if ad has actual geographic targeting (not untargeted)
+      const hasTargeting = ad.targetVoivodeship || ad.targetPowiat || ad.targetGmina || 
+                          (ad.targetCity && ad.targetCity.length > 0);
+      if (hasTargeting) {
+        targetingBonus = baseScore * 0.5;
+        finalScore += targetingBonus;
+      }
     } else {
-      // Non-matching local ads get 0 score (filtered out)
+      // Non-matching local ads with targeting get 0 score (filtered out)
       return {
         score: 0,
         debugInfo: {
@@ -113,33 +118,38 @@ export function calculateDynamicScore(
 /**
  * Check if user location matches ad targeting
  * Hierarchical matching: Voivodeship > Powiat > Gmina > City
+ * Ads with NO targeting (no voivodeship/powiat/gmina) are considered "untargeted local" and match everyone
  */
 function checkLocationMatch(ad: AuctionAd, userLocation: UserLocation): boolean {
-  if (!userLocation.voivodeship) return false;
+  // If ad has no geographic targeting at all, it matches everyone (untargeted local ad)
+  const hasNoTargeting = !ad.targetVoivodeship && !ad.targetPowiat && !ad.targetGmina && 
+                         (!ad.targetCity || ad.targetCity.length === 0);
+  if (hasNoTargeting) {
+    return true;
+  }
 
-  // Must match voivodeship at minimum
+  // If ad has voivodeship targeting, user must have location set
   if (ad.targetVoivodeship) {
+    if (!userLocation.voivodeship) return false;
     if (ad.targetVoivodeship.toLowerCase() !== userLocation.voivodeship.toLowerCase()) {
       return false;
     }
   }
 
   // Check powiat if specified
-  if (ad.targetPowiat && userLocation.powiat) {
+  if (ad.targetPowiat) {
+    if (!userLocation.powiat) return false;
     if (ad.targetPowiat.toLowerCase() !== userLocation.powiat.toLowerCase()) {
       return false;
     }
-  } else if (ad.targetPowiat && !userLocation.powiat) {
-    return false;
   }
 
   // Check gmina if specified
-  if (ad.targetGmina && userLocation.gmina) {
+  if (ad.targetGmina) {
+    if (!userLocation.gmina) return false;
     if (ad.targetGmina.toLowerCase() !== userLocation.gmina.toLowerCase()) {
       return false;
     }
-  } else if (ad.targetGmina && !userLocation.gmina) {
-    return false;
   }
 
   // Check city targeting
