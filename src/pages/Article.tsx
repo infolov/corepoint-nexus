@@ -228,6 +228,11 @@ const Article = () => {
               </Button>
             </div>
 
+            {/* Ad Banner above sources */}
+            <div className="mb-6">
+              <AdBanner variant="horizontal" className="w-full" />
+            </div>
+
             {/* Source Link */}
             <div className="p-5 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 rounded-xl">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
