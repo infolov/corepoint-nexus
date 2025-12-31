@@ -5,6 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 interface UserSettings {
   language: string;
   voivodeship: string | null;
+  county: string | null;  // powiat
+  city: string | null;
+  locality: string | null; // gmina
 }
 
 export function useUserSettings() {
@@ -12,6 +15,9 @@ export function useUserSettings() {
   const [settings, setSettings] = useState<UserSettings>({
     language: "pl",
     voivodeship: null,
+    county: null,
+    city: null,
+    locality: null,
   });
   const [loading, setLoading] = useState(true);
 
@@ -29,6 +35,9 @@ export function useUserSettings() {
       setSettings({
         language: parsed.language || "pl",
         voivodeship: parsed.voivodeship || null,
+        county: parsed.county || null,
+        city: parsed.city || null,
+        locality: parsed.locality || null,
       });
     }
 
@@ -37,7 +46,7 @@ export function useUserSettings() {
       try {
         const { data, error } = await supabase
           .from("user_site_settings")
-          .select("language, voivodeship")
+          .select("language, voivodeship, county, city, locality")
           .eq("user_id", user.id)
           .maybeSingle();
 
@@ -45,6 +54,9 @@ export function useUserSettings() {
           setSettings({
             language: data.language || "pl",
             voivodeship: data.voivodeship || null,
+            county: data.county || null,
+            city: data.city || null,
+            locality: data.locality || null,
           });
         }
       } catch (error) {
@@ -59,5 +71,13 @@ export function useUserSettings() {
     loadSettings();
   };
 
-  return { settings, loading, refreshSettings };
+  // Helper to get UserLocation for auction engine
+  const getUserLocation = () => ({
+    voivodeship: settings.voivodeship || undefined,
+    powiat: settings.county || undefined,
+    gmina: settings.locality || undefined,
+    city: settings.city || undefined,
+  });
+
+  return { settings, loading, refreshSettings, getUserLocation };
 }
