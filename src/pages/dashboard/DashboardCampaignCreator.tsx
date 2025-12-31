@@ -36,7 +36,7 @@ import { cn } from "@/lib/utils";
 import { BookingCalendar } from "@/components/dashboard/BookingCalendar";
 import { EmissionTypeSelector, EmissionType } from "@/components/dashboard/EmissionTypeSelector";
 import { PricingPackages, PricingPackage } from "@/components/dashboard/PricingPackages";
-import { PolandMapSelector } from "@/components/dashboard/PolandMapSelector";
+import { AdministrativeTargeting } from "@/components/dashboard/AdministrativeTargeting";
 
 interface AdPlacement {
   id: string;
@@ -96,7 +96,9 @@ export default function DashboardCampaignCreator() {
   
   // Targeting state
   const [isGlobal, setIsGlobal] = useState(true);
-  const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
+  const [selectedVoivodeship, setSelectedVoivodeship] = useState("");
+  const [selectedPowiat, setSelectedPowiat] = useState("");
+  const [selectedGmina, setSelectedGmina] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -210,7 +212,7 @@ export default function DashboardCampaignCreator() {
     switch (currentStep) {
       case 1: return !!selectedPlacement;
       case 2: return !!emissionType && (emissionType === "exclusive" || !!selectedSlot);
-      case 3: return isGlobal || !!selectedRegion; // Targeting validation
+      case 3: return isGlobal || !!selectedVoivodeship; // Targeting validation - at least voivodeship required
       case 4: return !!startDate && !!endDate;
       case 5: return !!campaignName && totalPrice > 0;
       case 6: return true;
@@ -273,7 +275,9 @@ export default function DashboardCampaignCreator() {
         content_url: uploadedContentUrl,
         status: "pending",
         is_global: isGlobal,
-        region: isGlobal ? null : selectedRegion
+        region: isGlobal ? null : selectedVoivodeship || null,
+        target_powiat: isGlobal ? null : selectedPowiat || null,
+        target_gmina: isGlobal ? null : selectedGmina || null
       });
 
       if (error) throw error;
@@ -439,7 +443,9 @@ export default function DashboardCampaignCreator() {
                     )}
                     onClick={() => {
                       setIsGlobal(true);
-                      setSelectedRegion(null);
+                      setSelectedVoivodeship("");
+                      setSelectedPowiat("");
+                      setSelectedGmina("");
                     }}
                   >
                     <CardHeader className="pb-2">
@@ -488,15 +494,22 @@ export default function DashboardCampaignCreator() {
                 {!isGlobal && (
                   <div className="mt-6">
                     <Label className="text-base font-medium mb-4 block">
-                      Wybierz województwo <span className="text-destructive">*</span>
+                      Określ lokalizację <span className="text-destructive">*</span>
                     </Label>
-                    <PolandMapSelector
-                      selectedRegion={selectedRegion}
-                      onSelect={setSelectedRegion}
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Wybierz województwo (wymagane), opcjonalnie powiat i gminę dla dokładniejszego targetowania.
+                    </p>
+                    <AdministrativeTargeting
+                      voivodeship={selectedVoivodeship}
+                      powiat={selectedPowiat}
+                      gmina={selectedGmina}
+                      onVoivodeshipChange={setSelectedVoivodeship}
+                      onPowiatChange={setSelectedPowiat}
+                      onGminaChange={setSelectedGmina}
                     />
-                    {!selectedRegion && (
+                    {!selectedVoivodeship && (
                       <p className="text-sm text-destructive mt-2">
-                        Wybierz region, aby kontynuować
+                        Wybierz przynajmniej województwo, aby kontynuować
                       </p>
                     )}
                   </div>
@@ -634,7 +647,13 @@ export default function DashboardCampaignCreator() {
                       ) : (
                         <>
                           <MapPin className="h-4 w-4" />
-                          {selectedRegion?.charAt(0).toUpperCase() + selectedRegion?.slice(1).replace(/-/g, ' ')}
+                          {selectedGmina ? (
+                            `${selectedGmina}, pow. ${selectedPowiat}`
+                          ) : selectedPowiat ? (
+                            `pow. ${selectedPowiat}, woj. ${selectedVoivodeship}`
+                          ) : (
+                            `woj. ${selectedVoivodeship?.charAt(0).toUpperCase()}${selectedVoivodeship?.slice(1)}`
+                          )}
                         </>
                       )}
                     </span>

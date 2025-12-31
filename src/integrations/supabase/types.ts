@@ -29,6 +29,8 @@ export type Database = {
           rejection_reason: string | null
           start_date: string
           status: string
+          target_gmina: string | null
+          target_powiat: string | null
           target_url: string | null
           total_credits: number
           updated_at: string
@@ -48,6 +50,8 @@ export type Database = {
           rejection_reason?: string | null
           start_date: string
           status?: string
+          target_gmina?: string | null
+          target_powiat?: string | null
           target_url?: string | null
           total_credits: number
           updated_at?: string
@@ -67,6 +71,8 @@ export type Database = {
           rejection_reason?: string | null
           start_date?: string
           status?: string
+          target_gmina?: string | null
+          target_powiat?: string | null
           target_url?: string | null
           total_credits?: number
           updated_at?: string

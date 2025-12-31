@@ -12,14 +12,24 @@ export interface AdCampaign {
   placement_name: string;
   is_global: boolean;
   region: string | null;
+  target_powiat: string | null;
+  target_gmina: string | null;
+}
+
+export interface UserLocation {
+  voivodeship?: string;
+  powiat?: string;
+  gmina?: string;
 }
 
 interface UseAdCampaignsOptions {
+  userLocation?: UserLocation;
+  // Legacy support
   userRegion?: string;
 }
 
 export function useAdCampaigns(options: UseAdCampaignsOptions = {}) {
-  const { userRegion } = options;
+  const { userLocation, userRegion } = options;
   const [campaigns, setCampaigns] = useState<AdCampaign[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -39,6 +49,8 @@ export function useAdCampaigns(options: UseAdCampaignsOptions = {}) {
           target_url,
           is_global,
           region,
+          target_powiat,
+          target_gmina,
           ad_placements!inner(slug, name)
         `)
         .eq("status", "active")
@@ -62,6 +74,8 @@ export function useAdCampaigns(options: UseAdCampaignsOptions = {}) {
         placement_name: campaign.ad_placements?.name || "",
         is_global: campaign.is_global,
         region: campaign.region,
+        target_powiat: campaign.target_powiat,
+        target_gmina: campaign.target_gmina,
       }));
 
       setCampaigns(formattedCampaigns);
@@ -78,6 +92,11 @@ export function useAdCampaigns(options: UseAdCampaignsOptions = {}) {
   }, [fetchCampaigns]);
 
   const getCampaignsByPlacement = useCallback((placementSlug: string) => {
+    // Resolve user location from new format or legacy format
+    const userVoivodeship = userLocation?.voivodeship || userRegion;
+    const userPowiat = userLocation?.powiat;
+    const userGmina = userLocation?.gmina;
+
     return campaigns.filter(c => {
       // Must match placement
       if (c.placement_slug !== placementSlug) return false;
@@ -85,15 +104,35 @@ export function useAdCampaigns(options: UseAdCampaignsOptions = {}) {
       // Global campaigns show everywhere
       if (c.is_global) return true;
       
-      // Local campaigns require region match
-      if (userRegion && c.region) {
-        return c.region.toLowerCase() === userRegion.toLowerCase();
+      // No user location - don't show local campaigns
+      if (!userVoivodeship) return false;
+
+      // Check hierarchical matching
+      // Campaign must match at voivodeship level at minimum
+      if (!c.region || c.region.toLowerCase() !== userVoivodeship.toLowerCase()) {
+        return false;
       }
-      
-      // No region specified - don't show local campaigns
-      return false;
+
+      // If campaign targets specific powiat
+      if (c.target_powiat) {
+        // User must have powiat and it must match
+        if (!userPowiat || c.target_powiat.toLowerCase() !== userPowiat.toLowerCase()) {
+          return false;
+        }
+
+        // If campaign targets specific gmina
+        if (c.target_gmina) {
+          // User must have gmina and it must match
+          if (!userGmina || c.target_gmina.toLowerCase() !== userGmina.toLowerCase()) {
+            return false;
+          }
+        }
+      }
+
+      // All checks passed - campaign matches user's location
+      return true;
     });
-  }, [campaigns, userRegion]);
+  }, [campaigns, userLocation, userRegion]);
 
   const getRandomCampaign = useCallback((placementSlug: string) => {
     const placementCampaigns = getCampaignsByPlacement(placementSlug);
