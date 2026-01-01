@@ -47,6 +47,9 @@ interface AdPlacement {
   credit_cost: number;
 }
 
+// Placements that are restricted to global-only targeting
+const GLOBAL_ONLY_PLACEMENT_SLUGS = ["top-banner"];
+
 const placementIcons: Record<string, any> = {
   "top-banner": Monitor,
   "sidebar-square": Square,
@@ -376,7 +379,16 @@ export default function DashboardCampaignCreator() {
                         "cursor-pointer transition-all hover:shadow-lg",
                         isSelected && "ring-2 ring-primary border-primary"
                       )}
-                      onClick={() => setSelectedPlacement(placement.id)}
+                      onClick={() => {
+                        setSelectedPlacement(placement.id);
+                        // Auto-set global targeting for top-banner
+                        if (GLOBAL_ONLY_PLACEMENT_SLUGS.includes(placement.slug)) {
+                          setIsGlobal(true);
+                          setSelectedVoivodeship("");
+                          setSelectedPowiat("");
+                          setSelectedGmina("");
+                        }
+                      }}
                     >
                       <CardHeader className="pb-2">
                         <div className="flex items-center justify-between">
@@ -433,28 +445,17 @@ export default function DashboardCampaignCreator() {
                 </p>
               </div>
 
-              {/* Targeting Toggle */}
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Card
-                    className={cn(
-                      "cursor-pointer transition-all hover:shadow-lg",
-                      isGlobal && "ring-2 ring-primary border-primary"
-                    )}
-                    onClick={() => {
-                      setIsGlobal(true);
-                      setSelectedVoivodeship("");
-                      setSelectedPowiat("");
-                      setSelectedGmina("");
-                    }}
-                  >
+              {/* Check if selected placement is global-only */}
+              {selectedPlacementData && GLOBAL_ONLY_PLACEMENT_SLUGS.includes(selectedPlacementData.slug) ? (
+                <div className="space-y-4">
+                  <Card className="ring-2 ring-primary border-primary bg-primary/5">
                     <CardHeader className="pb-2">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Globe className="h-5 w-5 text-primary" />
                           <CardTitle className="text-lg">Cała Polska</CardTitle>
                         </div>
-                        {isGlobal && <Check className="h-5 w-5 text-primary" />}
+                        <Check className="h-5 w-5 text-primary" />
                       </div>
                       <CardDescription>Kampania ogólnopolska</CardDescription>
                     </CardHeader>
@@ -464,31 +465,72 @@ export default function DashboardCampaignCreator() {
                       </p>
                     </CardContent>
                   </Card>
-
-                  <Card
-                    className={cn(
-                      "cursor-pointer transition-all hover:shadow-lg",
-                      !isGlobal && "ring-2 ring-primary border-primary"
-                    )}
-                    onClick={() => setIsGlobal(false)}
-                  >
-                    <CardHeader className="pb-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <MapPin className="h-5 w-5 text-primary" />
-                          <CardTitle className="text-lg">Region</CardTitle>
-                        </div>
-                        {!isGlobal && <Check className="h-5 w-5 text-primary" />}
-                      </div>
-                      <CardDescription>Kampania lokalna</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-muted-foreground">
-                        Twoja reklama będzie wyświetlana tylko użytkownikom z wybranego województwa.
-                      </p>
-                    </CardContent>
-                  </Card>
+                  
+                  <div className="flex items-center gap-2 p-4 bg-muted/50 rounded-lg border border-border">
+                    <Globe className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                    <p className="text-sm text-muted-foreground">
+                      <strong>Top Banner na stronie głównej</strong> jest dostępny wyłącznie jako reklama ogólnopolska. 
+                      Wybór regionu nie jest możliwy dla tego miejsca reklamowego.
+                    </p>
+                  </div>
                 </div>
+              ) : (
+                /* Targeting Toggle - normal flow for other placements */
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Card
+                      className={cn(
+                        "cursor-pointer transition-all hover:shadow-lg",
+                        isGlobal && "ring-2 ring-primary border-primary"
+                      )}
+                      onClick={() => {
+                        setIsGlobal(true);
+                        setSelectedVoivodeship("");
+                        setSelectedPowiat("");
+                        setSelectedGmina("");
+                      }}
+                    >
+                      <CardHeader className="pb-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Globe className="h-5 w-5 text-primary" />
+                            <CardTitle className="text-lg">Cała Polska</CardTitle>
+                          </div>
+                          {isGlobal && <Check className="h-5 w-5 text-primary" />}
+                        </div>
+                        <CardDescription>Kampania ogólnopolska</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-muted-foreground">
+                          Twoja reklama będzie wyświetlana wszystkim użytkownikom w Polsce.
+                        </p>
+                      </CardContent>
+                    </Card>
+
+                    <Card
+                      className={cn(
+                        "cursor-pointer transition-all hover:shadow-lg",
+                        !isGlobal && "ring-2 ring-primary border-primary"
+                      )}
+                      onClick={() => setIsGlobal(false)}
+                    >
+                      <CardHeader className="pb-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-5 w-5 text-primary" />
+                            <CardTitle className="text-lg">Region</CardTitle>
+                          </div>
+                          {!isGlobal && <Check className="h-5 w-5 text-primary" />}
+                        </div>
+                        <CardDescription>Kampania lokalna</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-muted-foreground">
+                          Twoja reklama będzie wyświetlana tylko użytkownikom z wybranego województwa.
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </div>
 
                 {/* Poland Map Selector - only show when local is selected */}
                 {!isGlobal && (
@@ -514,7 +556,8 @@ export default function DashboardCampaignCreator() {
                     )}
                   </div>
                 )}
-              </div>
+                </div>
+              )}
             </div>
           )}
 
