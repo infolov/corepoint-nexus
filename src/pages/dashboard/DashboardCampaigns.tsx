@@ -10,7 +10,11 @@ import {
   MousePointerClick,
   MoreVertical,
   Calendar,
-  ExternalLink
+  ExternalLink,
+  Image,
+  Target,
+  CreditCard,
+  BarChart3
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,11 +26,22 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useDemo } from "@/contexts/DemoContext";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, addDays, addMonths } from "date-fns";
 import { pl } from "date-fns/locale";
+import { toast } from "sonner";
 
 interface Campaign {
   id: string;
@@ -121,6 +136,11 @@ export default function DashboardCampaigns() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
+  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [extendOpen, setExtendOpen] = useState(false);
+  const [newEndDate, setNewEndDate] = useState<Date | undefined>(undefined);
+  const [extending, setExtending] = useState(false);
 
   useEffect(() => {
     // If demo mode, use demo campaigns
@@ -189,6 +209,58 @@ export default function DashboardCampaigns() {
   });
 
   const counts = getCounts();
+
+  const openDetails = (campaign: Campaign) => {
+    setSelectedCampaign(campaign);
+    setDetailsOpen(true);
+  };
+
+  const openExtend = (campaign: Campaign) => {
+    setSelectedCampaign(campaign);
+    setNewEndDate(addMonths(parseISO(campaign.end_date), 1));
+    setExtendOpen(true);
+  };
+
+  const handleExtendCampaign = async () => {
+    if (!selectedCampaign || !newEndDate || isDemoMode) {
+      if (isDemoMode) {
+        toast.success("Kampania została przedłużona (tryb demo)");
+        setExtendOpen(false);
+        return;
+      }
+      return;
+    }
+
+    setExtending(true);
+    try {
+      const { error } = await supabase
+        .from("ad_campaigns")
+        .update({ end_date: format(newEndDate, "yyyy-MM-dd") })
+        .eq("id", selectedCampaign.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setCampaigns(prev => prev.map(c => 
+        c.id === selectedCampaign.id 
+          ? { ...c, end_date: format(newEndDate, "yyyy-MM-dd") }
+          : c
+      ));
+
+      toast.success("Kampania została przedłużona");
+      setExtendOpen(false);
+    } catch (error) {
+      console.error("Error extending campaign:", error);
+      toast.error("Nie udało się przedłużyć kampanii");
+    } finally {
+      setExtending(false);
+    }
+  };
+
+  const getCTR = (campaign: Campaign) => {
+    if (!campaign.impressions || campaign.impressions === 0) return "0.00";
+    return ((campaign.clicks || 0) / campaign.impressions * 100).toFixed(2);
+  };
 
   return (
     <div className="space-y-6">
@@ -315,7 +387,7 @@ export default function DashboardCampaigns() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => openDetails(campaign)}>
                                 <Eye className="h-4 w-4 mr-2" />
                                 Szczegóły
                               </DropdownMenuItem>
@@ -327,8 +399,8 @@ export default function DashboardCampaigns() {
                                   </a>
                                 </DropdownMenuItem>
                               )}
-                              {campaign.status === "active" && (
-                                <DropdownMenuItem>
+                              {(campaign.status === "active" || campaign.status === "completed") && (
+                                <DropdownMenuItem onClick={() => openExtend(campaign)}>
                                   <Calendar className="h-4 w-4 mr-2" />
                                   Przedłuż kampanię
                                 </DropdownMenuItem>
@@ -345,6 +417,211 @@ export default function DashboardCampaigns() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Campaign Details Dialog */}
+      <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Megaphone className="h-5 w-5" />
+              {selectedCampaign?.name}
+            </DialogTitle>
+            <DialogDescription>
+              Szczegółowe informacje o kampanii
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedCampaign && (
+            <div className="space-y-6">
+              {/* Status & Dates */}
+              <div className="flex items-center gap-3">
+                <Badge variant={statusConfig[selectedCampaign.status]?.variant || "secondary"}>
+                  {statusConfig[selectedCampaign.status]?.label || selectedCampaign.status}
+                </Badge>
+                <span className="text-sm text-muted-foreground">
+                  {format(parseISO(selectedCampaign.start_date), "d MMMM yyyy", { locale: pl })} - {format(parseISO(selectedCampaign.end_date), "d MMMM yyyy", { locale: pl })}
+                </span>
+              </div>
+
+              {/* Preview Image */}
+              {selectedCampaign.content_url && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <Image className="h-4 w-4" />
+                    Podgląd reklamy
+                  </div>
+                  <div className="relative aspect-video rounded-lg overflow-hidden border bg-muted">
+                    <img 
+                      src={selectedCampaign.content_url} 
+                      alt="Podgląd reklamy"
+                      className="object-contain w-full h-full"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="p-4 rounded-lg bg-muted/50 text-center">
+                  <Eye className="h-5 w-5 mx-auto mb-2 text-muted-foreground" />
+                  <div className="text-2xl font-bold">{(selectedCampaign.impressions || 0).toLocaleString()}</div>
+                  <div className="text-xs text-muted-foreground">Wyświetleń</div>
+                </div>
+                <div className="p-4 rounded-lg bg-muted/50 text-center">
+                  <MousePointerClick className="h-5 w-5 mx-auto mb-2 text-muted-foreground" />
+                  <div className="text-2xl font-bold">{(selectedCampaign.clicks || 0).toLocaleString()}</div>
+                  <div className="text-xs text-muted-foreground">Kliknięć</div>
+                </div>
+                <div className="p-4 rounded-lg bg-muted/50 text-center">
+                  <BarChart3 className="h-5 w-5 mx-auto mb-2 text-muted-foreground" />
+                  <div className="text-2xl font-bold">{getCTR(selectedCampaign)}%</div>
+                  <div className="text-xs text-muted-foreground">CTR</div>
+                </div>
+                <div className="p-4 rounded-lg bg-muted/50 text-center">
+                  <CreditCard className="h-5 w-5 mx-auto mb-2 text-muted-foreground" />
+                  <div className="text-2xl font-bold">{selectedCampaign.total_credits}</div>
+                  <div className="text-xs text-muted-foreground">Kredytów</div>
+                </div>
+              </div>
+
+              {/* Additional Info */}
+              <div className="space-y-3 text-sm">
+                {selectedCampaign.placement_name && (
+                  <div className="flex items-center gap-2">
+                    <Target className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">Placement:</span>
+                    <span className="font-medium">{selectedCampaign.placement_name}</span>
+                  </div>
+                )}
+                {selectedCampaign.target_url && (
+                  <div className="flex items-center gap-2">
+                    <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">Link docelowy:</span>
+                    <a 
+                      href={selectedCampaign.target_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="font-medium text-primary hover:underline truncate max-w-xs"
+                    >
+                      {selectedCampaign.target_url}
+                    </a>
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-muted-foreground">Utworzono:</span>
+                  <span className="font-medium">
+                    {format(parseISO(selectedCampaign.created_at), "d MMMM yyyy, HH:mm", { locale: pl })}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDetailsOpen(false)}>
+              Zamknij
+            </Button>
+            {selectedCampaign && (selectedCampaign.status === "active" || selectedCampaign.status === "completed") && (
+              <Button variant="gradient" onClick={() => {
+                setDetailsOpen(false);
+                openExtend(selectedCampaign);
+              }}>
+                <Calendar className="h-4 w-4 mr-2" />
+                Przedłuż kampanię
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Extend Campaign Dialog */}
+      <Dialog open={extendOpen} onOpenChange={setExtendOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Przedłuż kampanię</DialogTitle>
+            <DialogDescription>
+              Wybierz nową datę zakończenia dla kampanii "{selectedCampaign?.name}"
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedCampaign && (
+            <div className="space-y-4">
+              <div className="text-sm text-muted-foreground">
+                Obecna data zakończenia: <span className="font-medium text-foreground">
+                  {format(parseISO(selectedCampaign.end_date), "d MMMM yyyy", { locale: pl })}
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Nowa data zakończenia</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-start text-left font-normal">
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {newEndDate ? format(newEndDate, "d MMMM yyyy", { locale: pl }) : "Wybierz datę"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={newEndDate}
+                      onSelect={setNewEndDate}
+                      disabled={(date) => date < addDays(parseISO(selectedCampaign.end_date), 1)}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              {/* Quick extend buttons */}
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setNewEndDate(addDays(parseISO(selectedCampaign.end_date), 7))}
+                >
+                  +7 dni
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setNewEndDate(addDays(parseISO(selectedCampaign.end_date), 14))}
+                >
+                  +14 dni
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setNewEndDate(addMonths(parseISO(selectedCampaign.end_date), 1))}
+                >
+                  +1 miesiąc
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setNewEndDate(addMonths(parseISO(selectedCampaign.end_date), 3))}
+                >
+                  +3 miesiące
+                </Button>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setExtendOpen(false)}>
+              Anuluj
+            </Button>
+            <Button 
+              variant="gradient" 
+              onClick={handleExtendCampaign}
+              disabled={!newEndDate || extending}
+            >
+              {extending ? "Przedłużanie..." : "Przedłuż kampanię"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
