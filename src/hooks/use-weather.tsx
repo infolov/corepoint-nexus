@@ -126,10 +126,9 @@ export function useWeather(defaultStationId: string = "12375") {
     isLoading: true,
     error: null,
   });
-  const [stationId, setStationId] = useState<string | null>(null);
-  const [geoResolved, setGeoResolved] = useState(false);
+  const [stationId, setStationId] = useState<string>(defaultStationId);
 
-  // Get user's location and find nearest station FIRST
+  // Get user's location and find nearest station
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -138,36 +137,23 @@ export function useWeather(defaultStationId: string = "12375") {
             position.coords.latitude,
             position.coords.longitude
           );
-          console.log(`Geolocation: ${position.coords.latitude}, ${position.coords.longitude} -> Nearest station: ${nearest.name} (${nearest.id})`);
           setStationId(nearest.id);
-          setGeoResolved(true);
         },
-        (error) => {
+        () => {
           // Geolocation denied or failed, use default (Warszawa)
-          console.log(`Geolocation failed: ${error.message}, using default station`);
           setStationId(defaultStationId);
-          setGeoResolved(true);
         },
-        { 
-          timeout: 10000, // 10 second timeout
-          maximumAge: 300000, // 5 min cache (shorter for accuracy)
-          enableHighAccuracy: true // Request high accuracy
-        }
+        { timeout: 5000, maximumAge: 600000 } // 10 min cache
       );
-    } else {
-      // No geolocation support
-      console.log("Geolocation not supported, using default station");
-      setStationId(defaultStationId);
-      setGeoResolved(true);
     }
   }, [defaultStationId]);
 
-  const fetchWeather = async (id: string) => {
+  const fetchWeather = async () => {
     try {
       setState(prev => ({ ...prev, isLoading: true, error: null }));
       
       const response = await fetch(
-        `https://danepubliczne.imgw.pl/api/data/synop/id/${id}`
+        `https://danepubliczne.imgw.pl/api/data/synop/id/${stationId}`
       );
       
       if (!response.ok) {
@@ -185,25 +171,21 @@ export function useWeather(defaultStationId: string = "12375") {
     }
   };
 
-  // Fetch weather data ONLY after geolocation is resolved
+  // Fetch weather data
   useEffect(() => {
-    if (!geoResolved || !stationId) return;
-    
-    fetchWeather(stationId);
+    fetchWeather();
     
     // Refresh weather every 30 minutes
-    const interval = setInterval(() => fetchWeather(stationId), 30 * 60 * 1000);
+    const interval = setInterval(fetchWeather, 30 * 60 * 1000);
     
     return () => clearInterval(interval);
-  }, [stationId, geoResolved]);
+  }, [stationId]);
 
   const refetch = () => {
-    if (stationId) {
-      fetchWeather(stationId);
-    }
+    fetchWeather();
   };
 
-  return { ...state, stationId: stationId || defaultStationId, refetch };
+  return { ...state, stationId, refetch };
 }
 
 export { STATIONS, findNearestStation };
