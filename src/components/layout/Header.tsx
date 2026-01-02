@@ -110,6 +110,27 @@ export function Header() {
     };
     fetchForecast();
   }, []);
+  // Check if it's daytime (6:00 - 20:00)
+  const isDaytime = (): boolean => {
+    const hour = new Date().getHours();
+    return hour >= 6 && hour < 20;
+  };
+
+  // Get dynamic weather icon based on precipitation and time
+  const getMainWeatherIcon = (precipitation: string, className: string = "h-5 w-5") => {
+    const precip = parseFloat(precipitation);
+    
+    if (precip > 0) {
+      return <CloudRain className={`${className} text-primary`} />;
+    }
+    
+    if (isDaytime()) {
+      return <Sun className={`${className} text-weather-sunny`} />;
+    }
+    
+    return <Moon className={`${className} text-muted-foreground`} />;
+  };
+
   const getWeatherIcon = (type: string) => {
     switch (type) {
       case "sun":
@@ -200,20 +221,14 @@ export function Header() {
               <PopoverTrigger asChild>
                 <button className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-nav-foreground/80 text-sm hover:bg-nav-foreground/10 rounded-lg transition-colors">
                   {weatherLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : weatherData ? <>
-                      <MapPin className="h-4 w-4 border-accent text-white bg-[#0f1729]" />
+                      <MapPin className="h-4 w-4 text-primary" />
                       <span className="font-medium">{weatherData.stacja}</span>
-                      <div className="relative flex items-center">
-                        <Cloud className="h-5 w-5 text-white" />
-                        <Sun className="h-4 w-4 text-weather-sunny -ml-2" />
-                      </div>
+                      {getMainWeatherIcon(weatherData.suma_opadu, "h-5 w-5")}
                       <span className="font-semibold">{Math.round(parseFloat(weatherData.temperatura))}°C</span>
                     </> : <>
                       <MapPin className="h-4 w-4" />
                       <span className="text-xs text-nav-foreground/60">Warszawa</span>
-                      <div className="relative flex items-center">
-                        <Cloud className="h-5 w-5 text-white" />
-                        <Sun className="h-4 w-4 text-weather-sunny -ml-2" />
-                      </div>
+                      <Cloud className="h-5 w-5 text-muted-foreground" />
                       <span className="font-semibold">--°C</span>
                     </>}
                 </button>
@@ -227,10 +242,7 @@ export function Header() {
                       <span className="font-semibold">{weatherData?.stacja || "Warszawa"}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="relative flex items-center">
-                        <Cloud className="h-8 w-8 text-white" />
-                        <Sun className="h-6 w-6 text-weather-sunny -ml-3" />
-                      </div>
+                      {weatherData ? getMainWeatherIcon(weatherData.suma_opadu, "h-8 w-8") : <Cloud className="h-8 w-8 text-muted-foreground" />}
                       <span className="text-2xl font-bold">
                         {weatherData ? Math.round(parseFloat(weatherData.temperatura)) : "--"}°C
                       </span>
