@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useUserSettings } from "@/hooks/use-user-settings";
 
 export interface Article {
   id: string;
@@ -20,85 +21,21 @@ interface UseArticlesOptions {
 }
 
 const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
-const CACHE_KEY = "cached_articles";
-const CACHE_EXPIRY = 2 * 60 * 1000; // 2 minutes cache
-
-interface CachedData {
-  articles: Article[];
-  timestamp: number;
-  category?: string;
-}
-
-// Get user voivodeship from localStorage (non-blocking)
-function getUserVoivodeship(): string | null {
-  try {
-    const localSettings = localStorage.getItem("userSettings");
-    if (localSettings) {
-      const parsed = JSON.parse(localSettings);
-      return parsed.voivodeship || null;
-    }
-  } catch {
-    // Ignore parse errors
-  }
-  return null;
-}
-
-// Cache helpers
-function getCachedArticles(category?: string): Article[] | null {
-  try {
-    const cached = localStorage.getItem(CACHE_KEY);
-    if (!cached) return null;
-    
-    const data: CachedData = JSON.parse(cached);
-    const isExpired = Date.now() - data.timestamp > CACHE_EXPIRY;
-    const categoryMatch = data.category === category;
-    
-    if (!isExpired && categoryMatch && data.articles.length > 0) {
-      console.log("Using cached articles:", data.articles.length);
-      return data.articles;
-    }
-  } catch {
-    // Ignore cache errors
-  }
-  return null;
-}
-
-function setCachedArticles(articles: Article[], category?: string): void {
-  try {
-    const data: CachedData = {
-      articles,
-      timestamp: Date.now(),
-      category
-    };
-    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
-  } catch {
-    // Ignore storage errors
-  }
-}
 
 export function useArticles(options: UseArticlesOptions = {}) {
   const { category, limit = 20 } = options;
-  const [articles, setArticles] = useState<Article[]>(() => {
-    // Initialize with cached data immediately (no loading delay)
-    return getCachedArticles(category) || [];
-  });
-  const [loading, setLoading] = useState(() => {
-    // If we have cached data, don't show loading
-    return getCachedArticles(category) === null;
-  });
+  const { settings, loading: settingsLoading } = useUserSettings();
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchArticles = useCallback(async (showLoading = true) => {
-    // Only show loading if we don't have cached data
-    if (showLoading && articles.length === 0) setLoading(true);
+    if (showLoading) setLoading(true);
     setError(null);
 
     try {
-      // Get voivodeship directly from localStorage (non-blocking)
-      const voivodeship = getUserVoivodeship();
-      
       let query = supabase
         .from("articles")
         .select("id, title, excerpt, content, category, image, badge, created_at, region, view_count")
@@ -112,17 +49,15 @@ export function useArticles(options: UseArticlesOptions = {}) {
       }
 
       // Filter by user's voivodeship - include articles for the region OR national articles (region is null)
-      if (voivodeship) {
-        query = query.or(`region.eq.${voivodeship},region.is.null`);
+      if (settings.voivodeship) {
+        query = query.or(`region.eq.${settings.voivodeship},region.is.null`);
       }
 
       const { data, error: fetchError } = await query;
 
       if (fetchError) throw fetchError;
 
-      const newArticles = data || [];
-      setArticles(newArticles);
-      setCachedArticles(newArticles, category);
+      setArticles(data || []);
       setLastUpdated(new Date());
     } catch (err) {
       console.error("Error fetching articles:", err);
@@ -130,30 +65,31 @@ export function useArticles(options: UseArticlesOptions = {}) {
     } finally {
       setLoading(false);
     }
-  }, [category, limit, articles.length]);
+  }, [category, limit, settings.voivodeship]);
 
   useEffect(() => {
-    // Fetch immediately without waiting for anything
-    fetchArticles();
+    if (!settingsLoading) {
+      fetchArticles();
 
-    // Set up auto-refresh every 5 minutes
-    intervalRef.current = setInterval(() => {
-      console.log("Auto-refreshing database articles...");
-      fetchArticles(false); // Don't show loading spinner for auto-refresh
-    }, REFRESH_INTERVAL);
+      // Set up auto-refresh every 5 minutes
+      intervalRef.current = setInterval(() => {
+        console.log("Auto-refreshing database articles...");
+        fetchArticles(false); // Don't show loading spinner for auto-refresh
+      }, REFRESH_INTERVAL);
 
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, []);
+      return () => {
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+        }
+      };
+    }
+  }, [fetchArticles, settingsLoading]);
 
   const refetch = () => {
     fetchArticles();
   };
 
-  return { articles, loading, error, refetch, lastUpdated };
+  return { articles, loading: loading || settingsLoading, error, refetch, lastUpdated };
 }
 
 // Helper to format article for NewsCard component
