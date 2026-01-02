@@ -17,7 +17,8 @@ import {
   Users,
   LayoutGrid,
   AlertTriangle,
-  Building2
+  Building2,
+  Eye
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
@@ -33,6 +34,7 @@ const sidebarLinks = [
   { name: "Kredyty reklamowe", href: "/dashboard/credits", icon: CreditCard },
   { name: "Statystyki kampanii", href: "/dashboard/stats", icon: BarChart3 },
   { name: "Moje kampanie", href: "/dashboard/campaigns", icon: Megaphone },
+  { name: "Podgląd reklam", href: "/dashboard/preview", icon: Eye },
   { name: "Ustawienia konta", href: "/dashboard/settings", icon: Settings },
 ];
 
