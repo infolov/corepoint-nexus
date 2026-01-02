@@ -16,17 +16,67 @@ export interface RSSArticle {
 }
 
 const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
+const RSS_CACHE_KEY = "cached_rss_articles";
+const RSS_CACHE_EXPIRY = 3 * 60 * 1000; // 3 minutes cache
+
+interface CachedRSSData {
+  articles: RSSArticle[];
+  timestamp: number;
+}
+
+// Cache helpers for RSS
+function getCachedRSSArticles(): RSSArticle[] | null {
+  try {
+    const cached = localStorage.getItem(RSS_CACHE_KEY);
+    if (!cached) return null;
+    
+    const data: CachedRSSData = JSON.parse(cached);
+    const isExpired = Date.now() - data.timestamp > RSS_CACHE_EXPIRY;
+    
+    if (!isExpired && data.articles.length > 0) {
+      console.log("Using cached RSS articles:", data.articles.length);
+      return data.articles;
+    }
+  } catch {
+    // Ignore cache errors
+  }
+  return null;
+}
+
+function setCachedRSSArticles(articles: RSSArticle[]): void {
+  try {
+    const data: CachedRSSData = {
+      articles,
+      timestamp: Date.now()
+    };
+    localStorage.setItem(RSS_CACHE_KEY, JSON.stringify(data));
+  } catch {
+    // Ignore storage errors
+  }
+}
 
 export function useRSSArticles() {
-  const [articles, setArticles] = useState<RSSArticle[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [articles, setArticles] = useState<RSSArticle[]>(() => {
+    // Initialize with cached data immediately
+    return getCachedRSSArticles() || [];
+  });
+  const [loading, setLoading] = useState(() => {
+    // If we have cached data, don't show loading
+    return getCachedRSSArticles() === null;
+  });
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const articlesRef = useRef<RSSArticle[]>([]);
+  const isFetchingRef = useRef(false);
 
   const fetchArticles = useCallback(async (showLoading = true) => {
-    if (showLoading) setLoading(true);
+    // Prevent duplicate fetches
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
+    
+    // Only show loading if we don't have any articles
+    if (showLoading && articles.length === 0) setLoading(true);
     setError(null);
 
     try {
@@ -81,14 +131,16 @@ export function useRSSArticles() {
       
       articlesRef.current = finalArticles;
       setArticles(finalArticles);
+      setCachedRSSArticles(finalArticles);
       setLastUpdated(new Date());
     } catch (err) {
       console.error("Error fetching articles:", err);
       setError("Błąd podczas ładowania artykułów");
     } finally {
       setLoading(false);
+      isFetchingRef.current = false;
     }
-  }, []);
+  }, [articles.length]);
 
   // Initial fetch and auto-refresh setup
   useEffect(() => {
