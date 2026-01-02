@@ -14,6 +14,7 @@ import Search from "./pages/Search";
 import NotificationSettings from "./pages/NotificationSettings";
 import Interests from "./pages/Interests";
 import NotFound from "./pages/NotFound";
+import WeatherDetails from "./pages/WeatherDetails";
 import Dashboard from "./pages/dashboard/Dashboard";
 import DashboardHome from "./pages/dashboard/DashboardHome";
 import DashboardCalendar from "./pages/dashboard/DashboardCalendar";
@@ -46,6 +47,7 @@ const App = () => (
             <Route path="/notifications/settings" element={<NotificationSettings />} />
             <Route path="/interests" element={<Interests />} />
             <Route path="/szukaj" element={<Search />} />
+            <Route path="/pogoda-szczegoly" element={<WeatherDetails />} />
             <Route path="/dashboard" element={<Dashboard />}>
               <Route index element={<DashboardHome />} />
               <Route path="calendar" element={<DashboardCalendar />} />

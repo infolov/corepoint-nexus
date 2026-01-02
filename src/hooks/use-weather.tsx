@@ -148,31 +148,31 @@ export function useWeather(defaultStationId: string = "12375") {
     }
   }, [defaultStationId]);
 
+  const fetchWeather = async () => {
+    try {
+      setState(prev => ({ ...prev, isLoading: true, error: null }));
+      
+      const response = await fetch(
+        `https://danepubliczne.imgw.pl/api/data/synop/id/${stationId}`
+      );
+      
+      if (!response.ok) {
+        throw new Error("Nie udało się pobrać danych pogodowych");
+      }
+      
+      const data = await response.json();
+      setState({ data, isLoading: false, error: null });
+    } catch (err) {
+      setState({ 
+        data: null, 
+        isLoading: false, 
+        error: err instanceof Error ? err.message : "Błąd pobierania pogody" 
+      });
+    }
+  };
+
   // Fetch weather data
   useEffect(() => {
-    const fetchWeather = async () => {
-      try {
-        setState(prev => ({ ...prev, isLoading: true, error: null }));
-        
-        const response = await fetch(
-          `https://danepubliczne.imgw.pl/api/data/synop/id/${stationId}`
-        );
-        
-        if (!response.ok) {
-          throw new Error("Nie udało się pobrać danych pogodowych");
-        }
-        
-        const data = await response.json();
-        setState({ data, isLoading: false, error: null });
-      } catch (err) {
-        setState({ 
-          data: null, 
-          isLoading: false, 
-          error: err instanceof Error ? err.message : "Błąd pobierania pogody" 
-        });
-      }
-    };
-
     fetchWeather();
     
     // Refresh weather every 30 minutes
@@ -181,7 +181,11 @@ export function useWeather(defaultStationId: string = "12375") {
     return () => clearInterval(interval);
   }, [stationId]);
 
-  return { ...state, stationId };
+  const refetch = () => {
+    fetchWeather();
+  };
+
+  return { ...state, stationId, refetch };
 }
 
 export { STATIONS, findNearestStation };
