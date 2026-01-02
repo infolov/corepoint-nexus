@@ -206,19 +206,14 @@ export function Header() {
         <div className="container flex h-16 items-center justify-between">
           {/* Left: Logo + Partner Space */}
           <div className="flex items-center gap-4 md:gap-6">
-            <Link to="/" className="flex flex-col md:flex-row items-start md:items-center gap-0.5 md:gap-2.5">
-              <div className="flex items-center gap-2">
-                
-                <span className="text-lg font-bold tracking-tight md:text-4xl">
-                  informacje<span className="text-primary">.pl</span>
-                </span>
-              </div>
-              {/* Mobile Partner - below logo */}
-              <DynamicHeaderBranding variant="mobile" className="pl-10" />
+            <Link to="/" className="flex items-center gap-2">
+              <span className="text-lg font-bold tracking-tight md:text-4xl">
+                informacje<span className="text-primary">.pl</span>
+              </span>
             </Link>
 
-            {/* Desktop Partner Space - Dynamic branding with rotation */}
-            <DynamicHeaderBranding variant="desktop" />
+            {/* Partner Branding - Dynamic with rotation on category pages */}
+            <DynamicHeaderBranding />
           </div>
 
           {/* Actions */}

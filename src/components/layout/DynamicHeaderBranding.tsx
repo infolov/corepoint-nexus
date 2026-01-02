@@ -5,7 +5,6 @@ import { cn } from "@/lib/utils";
 
 interface DynamicHeaderBrandingProps {
   className?: string;
-  variant?: "desktop" | "mobile";
 }
 
 /**
@@ -14,7 +13,7 @@ interface DynamicHeaderBrandingProps {
  * - Rotates between site partner and category partner on category pages (if category partner exists)
  * - Falls back to site partner if no category partner
  */
-export function DynamicHeaderBranding({ className, variant = "desktop" }: DynamicHeaderBrandingProps) {
+export function DynamicHeaderBranding({ className }: DynamicHeaderBrandingProps) {
   const location = useLocation();
   const { sitePartner, getCategoryPartner, hasCategoryPartner, loading } = usePartners();
   const [showCategoryPartner, setShowCategoryPartner] = useState(false);
@@ -69,48 +68,22 @@ export function DynamicHeaderBranding({ className, variant = "desktop" }: Dynami
     : "Partner Serwisu:";
 
   if (loading) {
-    return <PartnerPlaceholder variant={variant} />;
+    return <PartnerPlaceholder />;
   }
 
-  if (variant === "mobile") {
-    return (
-      <div className={cn("flex items-center gap-1.5", className)}>
-        <span className="text-[10px] text-nav-foreground/60">Partner:</span>
-        <div 
-          className={cn(
-            "h-5 w-16 bg-nav-foreground/10 rounded flex items-center justify-center transition-opacity duration-300",
-            isTransitioning && "opacity-0"
-          )}
-        >
-          {displayPartner ? (
-            displayPartner.logo_url ? (
-              <img 
-                src={displayPartner.logo_url} 
-                alt={displayPartner.name} 
-                className="h-4 max-w-full object-contain"
-              />
-            ) : (
-              <span className="text-[8px] text-nav-foreground/70 truncate px-1">
-                {displayPartner.logo_text || displayPartner.name}
-              </span>
-            )
-          ) : (
-            <span className="text-[8px] text-nav-foreground/50">Logo</span>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // Desktop variant
   return (
     <div className={cn(
-      "hidden md:flex items-center gap-3 px-4 py-2 border-l border-nav-foreground/20 transition-opacity duration-300",
+      "flex items-center gap-2 md:gap-3 px-2 md:px-4 py-1 md:py-2 border-l border-nav-foreground/20 transition-opacity duration-300",
       isTransitioning && "opacity-0",
       className
     )}>
-      <span className="text-sm text-nav-foreground/60 whitespace-nowrap">{displayLabel}</span>
-      <div className="h-10 w-28 bg-nav-foreground/10 rounded-lg flex items-center justify-center overflow-hidden">
+      <span className="text-[10px] md:text-sm text-nav-foreground/60 whitespace-nowrap">
+        {shouldRotate && showCategoryPartner 
+          ? <><span className="hidden md:inline">{`Partner ${getCategoryDisplayName(currentCategory)}:`}</span><span className="md:hidden">Partner:</span></>
+          : <><span className="hidden md:inline">Partner Serwisu:</span><span className="md:hidden">Partner:</span></>
+        }
+      </span>
+      <div className="h-6 md:h-10 w-16 md:w-28 bg-nav-foreground/10 rounded md:rounded-lg flex items-center justify-center overflow-hidden">
         {displayPartner ? (
           displayPartner.logo_url ? (
             <a 
@@ -118,11 +91,12 @@ export function DynamicHeaderBranding({ className, variant = "desktop" }: Dynami
               target="_blank" 
               rel="noopener noreferrer"
               className="h-full w-full flex items-center justify-center"
+              onClick={(e) => e.stopPropagation()}
             >
               <img 
                 src={displayPartner.logo_url} 
                 alt={displayPartner.name} 
-                className="h-8 max-w-full object-contain"
+                className="h-4 md:h-8 max-w-full object-contain"
               />
             </a>
           ) : (
@@ -130,33 +104,28 @@ export function DynamicHeaderBranding({ className, variant = "desktop" }: Dynami
               href={displayPartner.target_url || "#"} 
               target="_blank" 
               rel="noopener noreferrer"
-              className="text-sm text-nav-foreground/70 hover:text-nav-foreground transition-colors truncate px-2"
+              className="text-[8px] md:text-sm text-nav-foreground/70 hover:text-nav-foreground transition-colors truncate px-1 md:px-2"
+              onClick={(e) => e.stopPropagation()}
             >
               {displayPartner.logo_text || displayPartner.name}
             </a>
           )
         ) : (
-          <span className="text-sm text-nav-foreground/50">Logo partnera</span>
+          <span className="text-[8px] md:text-sm text-nav-foreground/50">Logo</span>
         )}
       </div>
     </div>
   );
 }
 
-function PartnerPlaceholder({ variant }: { variant: "desktop" | "mobile" }) {
-  if (variant === "mobile") {
-    return (
-      <div className="flex items-center gap-1.5">
-        <span className="text-[10px] text-nav-foreground/60">Partner:</span>
-        <div className="h-5 w-16 bg-nav-foreground/10 rounded animate-pulse" />
-      </div>
-    );
-  }
-
+function PartnerPlaceholder() {
   return (
-    <div className="hidden md:flex items-center gap-3 px-4 py-2 border-l border-nav-foreground/20">
-      <span className="text-sm text-nav-foreground/60">Partner Serwisu:</span>
-      <div className="h-10 w-28 bg-nav-foreground/10 rounded-lg animate-pulse" />
+    <div className="flex items-center gap-2 md:gap-3 px-2 md:px-4 py-1 md:py-2 border-l border-nav-foreground/20">
+      <span className="text-[10px] md:text-sm text-nav-foreground/60">
+        <span className="hidden md:inline">Partner Serwisu:</span>
+        <span className="md:hidden">Partner:</span>
+      </span>
+      <div className="h-6 md:h-10 w-16 md:w-28 bg-nav-foreground/10 rounded md:rounded-lg animate-pulse" />
     </div>
   );
 }
