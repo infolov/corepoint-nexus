@@ -1,0 +1,287 @@
+import { useNavigate } from "react-router-dom";
+import { 
+  ArrowLeft, 
+  MapPin, 
+  Thermometer, 
+  Wind, 
+  Droplets, 
+  CloudRain, 
+  Gauge, 
+  Compass,
+  Sun,
+  Moon,
+  Cloud,
+  Loader2,
+  RefreshCw
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useWeather } from "@/hooks/use-weather";
+import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
+
+// Get wind direction arrow rotation
+const getWindRotation = (degrees: string): number => {
+  const deg = parseFloat(degrees);
+  if (isNaN(deg)) return 0;
+  return deg;
+};
+
+// Get wind direction name in Polish
+const getWindDirectionName = (degrees: string): string => {
+  const deg = parseFloat(degrees);
+  if (isNaN(deg)) return "—";
+  
+  const directions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+  const directionsPL = ["Północny", "Północno-wschodni", "Wschodni", "Południowo-wschodni", 
+                        "Południowy", "Południowo-zachodni", "Zachodni", "Północno-zachodni"];
+  const index = Math.round(deg / 45) % 8;
+  return directionsPL[index];
+};
+
+// Check if it's currently daytime (simplified: 6:00 - 20:00)
+const isDaytime = (): boolean => {
+  const hour = new Date().getHours();
+  return hour >= 6 && hour < 20;
+};
+
+// Get weather condition based on precipitation
+const getWeatherCondition = (precipitation: string): { icon: React.ReactNode; label: string } => {
+  const precip = parseFloat(precipitation);
+  
+  if (precip > 0) {
+    return { 
+      icon: <CloudRain className="h-20 w-20 text-primary" />, 
+      label: "Opady" 
+    };
+  }
+  
+  if (isDaytime()) {
+    return { 
+      icon: <Sun className="h-20 w-20 text-weather-sunny" />, 
+      label: "Słonecznie" 
+    };
+  }
+  
+  return { 
+    icon: <Moon className="h-20 w-20 text-muted-foreground" />, 
+    label: "Bezchmurnie" 
+  };
+};
+
+export default function WeatherDetails() {
+  const navigate = useNavigate();
+  const { data, isLoading, error, stationId, refetch } = useWeather();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="container py-12">
+          <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            <p className="text-muted-foreground">Ładowanie danych pogodowych...</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="container py-12">
+          <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
+            <Cloud className="h-16 w-16 text-muted-foreground" />
+            <h2 className="text-xl font-semibold">Nie udało się pobrać danych</h2>
+            <p className="text-muted-foreground">{error || "Spróbuj ponownie później"}</p>
+            <Button variant="outline" onClick={() => navigate("/")}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Powrót
+            </Button>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  const weatherCondition = getWeatherCondition(data.suma_opadu);
+  const windDirRotation = getWindRotation(data.kierunek_wiatru);
+  const windDirName = getWindDirectionName(data.kierunek_wiatru);
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Header />
+      
+      <main className="container py-8">
+        {/* Back button */}
+        <Button 
+          variant="ghost" 
+          onClick={() => navigate("/")}
+          className="mb-6 -ml-2"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Powrót do strony głównej
+        </Button>
+
+        {/* Main weather card with glassmorphism */}
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/20 via-primary/10 to-transparent backdrop-blur-xl border border-white/20 shadow-2xl p-8 mb-8">
+          {/* Background decoration */}
+          <div className="absolute -top-20 -right-20 w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
+          <div className="absolute -bottom-10 -left-10 w-48 h-48 bg-weather-sunny/20 rounded-full blur-3xl" />
+          
+          <div className="relative z-10">
+            {/* Station name and refresh */}
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-2xl bg-primary/20 backdrop-blur-sm">
+                  <MapPin className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h1 className="text-2xl md:text-3xl font-bold">{data.stacja}</h1>
+                  <p className="text-sm text-muted-foreground">
+                    Stacja IMGW • ID: {data.id_stacji}
+                  </p>
+                </div>
+              </div>
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => refetch?.()}
+                className="rounded-full backdrop-blur-sm bg-background/50"
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Main temperature display */}
+            <div className="flex flex-col md:flex-row items-center gap-8 mb-8">
+              <div className="flex items-center gap-6">
+                {weatherCondition.icon}
+                <div>
+                  <span className="text-6xl md:text-8xl font-bold tracking-tight">
+                    {Math.round(parseFloat(data.temperatura))}°
+                  </span>
+                  <p className="text-xl text-muted-foreground mt-1">{weatherCondition.label}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Measurement time */}
+            <p className="text-sm text-muted-foreground">
+              Pomiar: {data.data_pomiaru} o godz. {data.godzina_pomiaru}:00
+            </p>
+          </div>
+        </div>
+
+        {/* Weather parameters grid */}
+        <h2 className="text-xl font-semibold mb-4">Szczegółowe parametry</h2>
+        
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {/* Temperature */}
+          <div className="group relative overflow-hidden rounded-2xl bg-card border border-border p-6 hover:border-primary/50 transition-all duration-300">
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 rounded-xl bg-orange-500/10">
+                  <Thermometer className="h-5 w-5 text-orange-500" />
+                </div>
+                <span className="text-sm font-medium text-muted-foreground">Temperatura</span>
+              </div>
+              <p className="text-3xl font-bold">{data.temperatura}°C</p>
+            </div>
+          </div>
+
+          {/* Wind speed */}
+          <div className="group relative overflow-hidden rounded-2xl bg-card border border-border p-6 hover:border-primary/50 transition-all duration-300">
+            <div className="absolute inset-0 bg-gradient-to-br from-sky-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 rounded-xl bg-sky-500/10">
+                  <Wind className="h-5 w-5 text-sky-500" />
+                </div>
+                <span className="text-sm font-medium text-muted-foreground">Prędkość wiatru</span>
+              </div>
+              <p className="text-3xl font-bold">{data.predkosc_wiatru} <span className="text-base font-normal">km/h</span></p>
+            </div>
+          </div>
+
+          {/* Wind direction */}
+          <div className="group relative overflow-hidden rounded-2xl bg-card border border-border p-6 hover:border-primary/50 transition-all duration-300">
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 rounded-xl bg-indigo-500/10">
+                  <Compass 
+                    className="h-5 w-5 text-indigo-500 transition-transform duration-500" 
+                    style={{ transform: `rotate(${windDirRotation}deg)` }}
+                  />
+                </div>
+                <span className="text-sm font-medium text-muted-foreground">Kierunek wiatru</span>
+              </div>
+              <p className="text-2xl font-bold">{windDirName}</p>
+              <p className="text-sm text-muted-foreground">{data.kierunek_wiatru}°</p>
+            </div>
+          </div>
+
+          {/* Humidity */}
+          <div className="group relative overflow-hidden rounded-2xl bg-card border border-border p-6 hover:border-primary/50 transition-all duration-300">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 rounded-xl bg-blue-500/10">
+                  <Droplets className="h-5 w-5 text-blue-500" />
+                </div>
+                <span className="text-sm font-medium text-muted-foreground">Wilgotność</span>
+              </div>
+              <p className="text-3xl font-bold">{data.wilgotnosc_wzgledna}<span className="text-base font-normal">%</span></p>
+            </div>
+          </div>
+
+          {/* Precipitation */}
+          <div className="group relative overflow-hidden rounded-2xl bg-card border border-border p-6 hover:border-primary/50 transition-all duration-300">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 rounded-xl bg-primary/10">
+                  <CloudRain className="h-5 w-5 text-primary" />
+                </div>
+                <span className="text-sm font-medium text-muted-foreground">Suma opadu</span>
+              </div>
+              <p className="text-3xl font-bold">{data.suma_opadu} <span className="text-base font-normal">mm</span></p>
+            </div>
+          </div>
+
+          {/* Pressure */}
+          <div className="group relative overflow-hidden rounded-2xl bg-card border border-border p-6 hover:border-primary/50 transition-all duration-300">
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 rounded-xl bg-emerald-500/10">
+                  <Gauge className="h-5 w-5 text-emerald-500" />
+                </div>
+                <span className="text-sm font-medium text-muted-foreground">Ciśnienie</span>
+              </div>
+              <p className="text-3xl font-bold">
+                {data.cisnienie || "—"} 
+                {data.cisnienie && <span className="text-base font-normal"> hPa</span>}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Data source info */}
+        <div className="mt-8 p-4 rounded-xl bg-muted/50 border border-border">
+          <p className="text-sm text-muted-foreground text-center">
+            Dane pochodzą z Instytutu Meteorologii i Gospodarki Wodnej (IMGW).
+            Aktualizacja co 30 minut.
+          </p>
+        </div>
+      </main>
+
+      <Footer />
+    </div>
+  );
+}

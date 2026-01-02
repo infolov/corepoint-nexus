@@ -262,8 +262,8 @@ export function Header() {
                   </div>
 
                   {/* More button */}
-                  <Link to="/pogoda" className="block w-full text-center text-sm font-medium text-primary hover:underline pt-2">
-                    Więcej →
+                  <Link to="/pogoda-szczegoly" className="block w-full text-center text-sm font-medium text-primary hover:underline pt-2">
+                    Więcej szczegółów →
                   </Link>
                 </div>
               </PopoverContent>

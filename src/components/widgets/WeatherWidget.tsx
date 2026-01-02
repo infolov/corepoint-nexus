@@ -1,165 +1,91 @@
-import { Sun, Cloud, CloudRain, Wind, Droplets, MapPin, Loader2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Sun, Moon, Cloud, CloudRain, MapPin, Loader2, ChevronRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useWeather } from "@/hooks/use-weather";
+import { Button } from "@/components/ui/button";
 
-interface WeatherData {
-  city: string;
-  temp: number;
-  description: string;
-  humidity: number;
-  windSpeed: number;
-  icon: "sun" | "cloud" | "rain";
-  forecast: { day: string; temp: number; icon: "sun" | "cloud" | "rain" }[];
-}
+// Check if it's currently daytime (simplified: 6:00 - 20:00)
+const isDaytime = (): boolean => {
+  const hour = new Date().getHours();
+  return hour >= 6 && hour < 20;
+};
 
-const WeatherIcon = ({ type, className = "h-6 w-6" }: { type: "sun" | "cloud" | "rain"; className?: string }) => {
-  switch (type) {
-    case "sun":
-      return <Sun className={`${className} text-weather-sunny`} />;
-    case "cloud":
-      return <Cloud className={`${className} text-weather-cloudy`} />;
-    case "rain":
-      return <CloudRain className={`${className} text-primary`} />;
+// Get weather icon based on precipitation and time
+const getWeatherIcon = (precipitation: string) => {
+  const precip = parseFloat(precipitation);
+  
+  if (precip > 0) {
+    return <CloudRain className="h-10 w-10 text-primary" />;
   }
-};
-
-const getWeatherIcon = (code: number): "sun" | "cloud" | "rain" => {
-  if (code === 0 || code === 1) return "sun";
-  if (code >= 2 && code <= 3) return "cloud";
-  return "rain";
-};
-
-const getWeatherDescription = (code: number): string => {
-  if (code === 0) return "Bezchmurnie";
-  if (code === 1) return "Przeważnie słonecznie";
-  if (code === 2) return "Częściowe zachmurzenie";
-  if (code === 3) return "Pochmurno";
-  if (code >= 45 && code <= 48) return "Mgła";
-  if (code >= 51 && code <= 55) return "Mżawka";
-  if (code >= 61 && code <= 65) return "Deszcz";
-  if (code >= 71 && code <= 77) return "Śnieg";
-  if (code >= 80 && code <= 82) return "Przelotne opady";
-  if (code >= 95) return "Burza";
-  return "Zmienna pogoda";
-};
-
-const getDayName = (dateStr: string, index: number): string => {
-  if (index === 0) return "Dziś";
-  const days = ["Nd", "Pn", "Wt", "Śr", "Cz", "Pt", "So"];
-  const date = new Date(dateStr);
-  return days[date.getDay()];
+  
+  if (isDaytime()) {
+    return <Sun className="h-10 w-10 text-weather-sunny" />;
+  }
+  
+  return <Moon className="h-10 w-10 text-muted-foreground" />;
 };
 
 export function WeatherWidget() {
-  const [weather, setWeather] = useState<WeatherData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const { data, isLoading, error } = useWeather();
 
-  useEffect(() => {
-    const fetchWeather = async (lat: number, lon: number) => {
-      try {
-        // Get city name from coordinates
-        const geoResponse = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=pl`
-        );
-        const geoData = await geoResponse.json();
-        const city = geoData.address?.city || geoData.address?.town || geoData.address?.village || "Nieznana lokalizacja";
-
-        // Get weather from Open-Meteo (free, no API key needed)
-        const weatherResponse = await fetch(
-          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max&timezone=Europe/Warsaw&forecast_days=5`
-        );
-        const weatherData = await weatherResponse.json();
-
-        const forecast = weatherData.daily.time.map((date: string, i: number) => ({
-          day: getDayName(date, i),
-          temp: Math.round(weatherData.daily.temperature_2m_max[i]),
-          icon: getWeatherIcon(weatherData.daily.weather_code[i]),
-        }));
-
-        setWeather({
-          city,
-          temp: Math.round(weatherData.current.temperature_2m),
-          description: getWeatherDescription(weatherData.current.weather_code),
-          humidity: weatherData.current.relative_humidity_2m,
-          windSpeed: Math.round(weatherData.current.wind_speed_10m),
-          icon: getWeatherIcon(weatherData.current.weather_code),
-          forecast,
-        });
-      } catch (err) {
-        setError("Nie udało się pobrać pogody");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    // Try to get user's location
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          fetchWeather(position.coords.latitude, position.coords.longitude);
-        },
-        () => {
-          // Default to Warsaw if geolocation denied
-          fetchWeather(52.2297, 21.0122);
-        }
-      );
-    } else {
-      // Default to Warsaw if geolocation not supported
-      fetchWeather(52.2297, 21.0122);
-    }
-  }, []);
-
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="bg-card rounded-xl p-5 shadow-sm flex items-center justify-center h-40">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent backdrop-blur-xl border border-white/20 p-5 shadow-lg">
+        <div className="flex items-center justify-center h-24">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        </div>
       </div>
     );
   }
 
-  if (error || !weather) {
+  if (error || !data) {
     return (
-      <div className="bg-card rounded-xl p-5 shadow-sm">
-        <p className="text-muted-foreground text-sm">{error || "Brak danych"}</p>
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-muted/50 to-transparent backdrop-blur-xl border border-border p-5 shadow-lg">
+        <div className="flex items-center justify-center h-24">
+          <p className="text-sm text-muted-foreground">{error || "Brak danych pogodowych"}</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-card rounded-xl p-5 shadow-sm">
-      <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-        <MapPin className="h-4 w-4 text-primary" />
-        Pogoda - {weather.city}
-      </h3>
+    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent backdrop-blur-xl border border-white/20 p-5 shadow-lg group hover:border-primary/30 transition-all duration-300">
+      {/* Background decoration */}
+      <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/10 rounded-full blur-2xl" />
+      <div className="absolute -bottom-5 -left-5 w-20 h-20 bg-weather-sunny/10 rounded-full blur-xl" />
       
-      {/* Current Weather */}
-      <div className="flex items-center justify-between mb-6 pb-4 border-b border-border">
-        <div className="flex items-center gap-4">
-          <WeatherIcon type={weather.icon} className="h-12 w-12" />
-          <div>
-            <span className="text-4xl font-bold">{weather.temp}°</span>
-            <p className="text-muted-foreground text-sm">{weather.description}</p>
+      <div className="relative z-10">
+        {/* Header with location */}
+        <div className="flex items-center gap-2 mb-4">
+          <MapPin className="h-4 w-4 text-primary" />
+          <span className="text-sm font-medium truncate">{data.stacja}</span>
+        </div>
+        
+        {/* Main weather display */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-4">
+            {getWeatherIcon(data.suma_opadu)}
+            <div>
+              <span className="text-4xl font-bold tracking-tight">
+                {Math.round(parseFloat(data.temperatura))}°
+              </span>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {parseFloat(data.suma_opadu) > 0 ? "Opady" : isDaytime() ? "Słonecznie" : "Bezchmurnie"}
+              </p>
+            </div>
           </div>
         </div>
-        <div className="text-right text-sm text-muted-foreground space-y-1">
-          <p className="flex items-center justify-end gap-1">
-            <Wind className="h-4 w-4" /> {weather.windSpeed} km/h
-          </p>
-          <p className="flex items-center justify-end gap-1">
-            <Droplets className="h-4 w-4" /> {weather.humidity}%
-          </p>
-        </div>
-      </div>
 
-      {/* Forecast */}
-      <div className="flex justify-between">
-        {weather.forecast.map((day) => (
-          <div key={day.day} className="flex flex-col items-center gap-1">
-            <span className="text-xs text-muted-foreground">{day.day}</span>
-            <WeatherIcon type={day.icon} />
-            <span className="text-sm font-medium">{day.temp}°</span>
-          </div>
-        ))}
+        {/* More button */}
+        <Button 
+          variant="ghost" 
+          size="sm"
+          onClick={() => navigate("/pogoda-szczegoly")}
+          className="w-full justify-between text-sm font-medium hover:bg-primary/10 -mx-1"
+        >
+          Więcej szczegółów
+          <ChevronRight className="h-4 w-4" />
+        </Button>
       </div>
     </div>
   );
