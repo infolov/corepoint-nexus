@@ -11,6 +11,10 @@ import {
   Sun,
   Moon,
   Cloud,
+  CloudSnow,
+  CloudSun,
+  CloudMoon,
+  Snowflake,
   Loader2,
   RefreshCw
 } from "lucide-react";
@@ -31,7 +35,6 @@ const getWindDirectionName = (degrees: string): string => {
   const deg = parseFloat(degrees);
   if (isNaN(deg)) return "—";
   
-  const directions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
   const directionsPL = ["Północny", "Północno-wschodni", "Wschodni", "Południowo-wschodni", 
                         "Południowy", "Południowo-zachodni", "Zachodni", "Północno-zachodni"];
   const index = Math.round(deg / 45) % 8;
@@ -44,18 +47,62 @@ const isDaytime = (): boolean => {
   return hour >= 6 && hour < 20;
 };
 
-// Get weather condition based on precipitation
-const getWeatherCondition = (precipitation: string): { icon: React.ReactNode; label: string } => {
+// Get weather condition based on precipitation, temperature and humidity
+const getWeatherCondition = (
+  precipitation: string, 
+  temperature: string, 
+  humidity: string
+): { icon: React.ReactNode; label: string } => {
   const precip = parseFloat(precipitation);
+  const temp = parseFloat(temperature);
+  const humid = parseFloat(humidity);
+  const daytime = isDaytime();
   
-  if (precip > 0) {
+  // Snow conditions
+  if (precip > 0 && temp <= 0) {
+    if (precip > 3) {
+      return { 
+        icon: <Snowflake className="h-20 w-20 text-sky-300" />, 
+        label: "Intensywne opady śniegu" 
+      };
+    }
     return { 
-      icon: <CloudRain className="h-20 w-20 text-primary" />, 
-      label: "Opady" 
+      icon: <CloudSnow className="h-20 w-20 text-sky-200" />, 
+      label: "Opady śniegu" 
     };
   }
   
-  if (isDaytime()) {
+  // Rain conditions
+  if (precip > 0) {
+    return { 
+      icon: <CloudRain className="h-20 w-20 text-primary" />, 
+      label: precip > 5 ? "Intensywne opady deszczu" : "Opady deszczu"
+    };
+  }
+  
+  // Cloudy based on humidity
+  if (humid > 80) {
+    return { 
+      icon: <Cloud className="h-20 w-20 text-muted-foreground" />, 
+      label: "Pochmurno" 
+    };
+  }
+  
+  if (humid > 60) {
+    if (daytime) {
+      return { 
+        icon: <CloudSun className="h-20 w-20 text-weather-sunny" />, 
+        label: "Częściowe zachmurzenie" 
+      };
+    }
+    return { 
+      icon: <CloudMoon className="h-20 w-20 text-muted-foreground" />, 
+      label: "Częściowe zachmurzenie" 
+    };
+  }
+  
+  // Clear weather
+  if (daytime) {
     return { 
       icon: <Sun className="h-20 w-20 text-weather-sunny" />, 
       label: "Słonecznie" 
@@ -107,7 +154,7 @@ export default function WeatherDetails() {
     );
   }
 
-  const weatherCondition = getWeatherCondition(data.suma_opadu);
+  const weatherCondition = getWeatherCondition(data.suma_opadu, data.temperatura, data.wilgotnosc_wzgledna);
   const windDirRotation = getWindRotation(data.kierunek_wiatru);
   const windDirName = getWindDirectionName(data.kierunek_wiatru);
 

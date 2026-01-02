@@ -1,4 +1,4 @@
-import { Sun, Moon, Cloud, CloudRain, MapPin, Loader2, ChevronRight } from "lucide-react";
+import { Sun, Moon, Cloud, CloudRain, CloudSnow, CloudSun, CloudMoon, Snowflake, MapPin, Loader2, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useWeather } from "@/hooks/use-weather";
 import { Button } from "@/components/ui/button";
@@ -9,19 +9,71 @@ const isDaytime = (): boolean => {
   return hour >= 6 && hour < 20;
 };
 
-// Get weather icon based on precipitation and time
-const getWeatherIcon = (precipitation: string) => {
+// Get weather icon based on precipitation, temperature, humidity and time
+const getWeatherIcon = (
+  precipitation: string, 
+  temperature: string, 
+  humidity: string,
+  className: string = "h-10 w-10"
+) => {
   const precip = parseFloat(precipitation);
+  const temp = parseFloat(temperature);
+  const humid = parseFloat(humidity);
+  const daytime = isDaytime();
   
+  // Snow conditions: precipitation + freezing temperature
+  if (precip > 0 && temp <= 0) {
+    if (precip > 3) {
+      return <Snowflake className={`${className} text-sky-300`} />;
+    }
+    return <CloudSnow className={`${className} text-sky-200`} />;
+  }
+  
+  // Rain conditions
   if (precip > 0) {
-    return <CloudRain className="h-10 w-10 text-primary" />;
+    return <CloudRain className={`${className} text-primary`} />;
   }
   
-  if (isDaytime()) {
-    return <Sun className="h-10 w-10 text-weather-sunny" />;
+  // Cloudy conditions based on humidity (>80% = overcast, 60-80% = partly cloudy)
+  if (humid > 80) {
+    return <Cloud className={`${className} text-muted-foreground`} />;
   }
   
-  return <Moon className="h-10 w-10 text-muted-foreground" />;
+  if (humid > 60) {
+    // Partly cloudy
+    if (daytime) {
+      return <CloudSun className={`${className} text-weather-sunny`} />;
+    }
+    return <CloudMoon className={`${className} text-muted-foreground`} />;
+  }
+  
+  // Clear weather
+  if (daytime) {
+    return <Sun className={`${className} text-weather-sunny`} />;
+  }
+  
+  return <Moon className={`${className} text-muted-foreground`} />;
+};
+
+// Get weather description in Polish
+const getWeatherDescription = (
+  precipitation: string, 
+  temperature: string, 
+  humidity: string
+): string => {
+  const precip = parseFloat(precipitation);
+  const temp = parseFloat(temperature);
+  const humid = parseFloat(humidity);
+  
+  if (precip > 0 && temp <= 0) {
+    return precip > 3 ? "Intensywne opady śniegu" : "Opady śniegu";
+  }
+  if (precip > 0) {
+    return precip > 5 ? "Intensywne opady deszczu" : "Opady deszczu";
+  }
+  if (humid > 80) return "Pochmurno";
+  if (humid > 60) return "Częściowe zachmurzenie";
+  return isDaytime() ? "Słonecznie" : "Bezchmurnie";
 };
 
 export function WeatherWidget() {
@@ -64,13 +116,13 @@ export function WeatherWidget() {
         {/* Main weather display */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
-            {getWeatherIcon(data.suma_opadu)}
+            {getWeatherIcon(data.suma_opadu, data.temperatura, data.wilgotnosc_wzgledna)}
             <div>
               <span className="text-4xl font-bold tracking-tight">
                 {Math.round(parseFloat(data.temperatura))}°
               </span>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {parseFloat(data.suma_opadu) > 0 ? "Opady" : isDaytime() ? "Słonecznie" : "Bezchmurnie"}
+                {getWeatherDescription(data.suma_opadu, data.temperatura, data.wilgotnosc_wzgledna)}
               </p>
             </div>
           </div>
