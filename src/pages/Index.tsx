@@ -11,7 +11,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
 import { useArticles, formatArticleForCard } from "@/hooks/use-articles";
 import { useRSSArticles, formatRSSArticleForCard } from "@/hooks/use-rss-articles";
-import { FloatingRefreshButton } from "@/components/ui/FloatingRefreshButton";
+
 
 import { supabase } from "@/integrations/supabase/client";
 import { newsArticles, businessArticles, sportArticles, techArticles, lifestyleArticles } from "@/data/mockNews";
@@ -363,8 +363,6 @@ const Index = () => {
       {/* Floating Category Bar */}
       <CategoryBar activeCategory={activeCategory} onCategoryChange={setActiveCategory} />
 
-      {/* Floating Refresh Button */}
-      <FloatingRefreshButton onClick={handleRefresh} isLoading={isRefreshing || rssLoading || dbLoading} />
 
       <main className="container py-4 sm:py-6">
         {/* Top Ad Banner - Using Auction Engine */}
