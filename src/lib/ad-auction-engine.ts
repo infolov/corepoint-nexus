@@ -70,28 +70,24 @@ export function calculateDynamicScore(
   let frequencyPenalty = 0;
 
   // Targeting Bonus: +50% for matching local campaigns with specific targeting
+  // Non-matching local ads get reduced score but still participate (no complete exclusion)
   if (ad.type === 'local') {
-    const locationMatch = checkLocationMatch(ad, userLocation);
-    if (locationMatch) {
-      // Only give bonus if ad has actual geographic targeting (not untargeted)
-      const hasTargeting = ad.targetVoivodeship || ad.targetPowiat || ad.targetGmina || 
-                          (ad.targetCity && ad.targetCity.length > 0);
-      if (hasTargeting) {
+    const hasTargeting = ad.targetVoivodeship || ad.targetPowiat || ad.targetGmina || 
+                        (ad.targetCity && ad.targetCity.length > 0);
+    
+    if (hasTargeting) {
+      const locationMatch = checkLocationMatch(ad, userLocation);
+      if (locationMatch) {
+        // Matching local ads get +50% bonus
         targetingBonus = baseScore * 0.5;
         finalScore += targetingBonus;
+      } else if (!userLocation.voivodeship) {
+        // User has no location set - show local ads with reduced priority (-30%)
+        finalScore = baseScore * 0.7;
+      } else {
+        // User location doesn't match - show with much reduced priority (-70%)
+        finalScore = baseScore * 0.3;
       }
-    } else {
-      // Non-matching local ads with targeting get 0 score (filtered out)
-      return {
-        score: 0,
-        debugInfo: {
-          baseScore,
-          targetingBonus: 0,
-          frequencyPenalty: 0,
-          type: ad.type,
-          bidPrice: ad.bidPrice
-        }
-      };
     }
   }
 
