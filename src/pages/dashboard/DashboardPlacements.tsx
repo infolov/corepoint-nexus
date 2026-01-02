@@ -27,86 +27,77 @@ interface AdPlacement {
 
 const placementIcons: Record<string, any> = {
   "top-banner": Monitor,
-  "sidebar-square": Square,
-  "sponsored-article": FileText,
-  "footer": Monitor,
-  "popup": Square,
-  "mobile-banner": Smartphone,
-  "sponsored-video": Video,
-};
-
-const placementPreviews: Record<string, string> = {
-  "top-banner": "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800&h=200&fit=crop",
-  "sidebar-square": "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=300&h=300&fit=crop",
-  "sponsored-article": "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=600&h=400&fit=crop",
-  "mobile-banner": "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=400&h=100&fit=crop",
+  "article-top": Monitor,
+  "article-middle": FileText,
+  "article-bottom": Monitor,
+  "feed-tile": Square,
+  "feed-carousel": Video,
 };
 
 // Site layout visualization showing ad placements
 function SiteLayoutPreview({ highlightedPlacement }: { highlightedPlacement: string | null }) {
+  const isHighlighted = (slug: string) => highlightedPlacement === slug;
+  const baseClasses = "border-2 rounded flex items-center justify-center text-xs transition-colors";
+  const activeClasses = "bg-primary/20 border-primary text-primary font-medium";
+  const inactiveClasses = "bg-muted border-dashed border-muted-foreground/30 text-muted-foreground";
+
   return (
-    <div className="border rounded-lg p-4 bg-muted/30 space-y-2">
-      <p className="text-xs text-muted-foreground text-center mb-4">Podgląd strony</p>
+    <div className="border rounded-lg p-4 bg-muted/30 space-y-3">
+      <p className="text-xs text-muted-foreground text-center mb-2">Strona główna</p>
       
       {/* Header */}
-      <div className="bg-background border rounded h-8 flex items-center px-2 text-xs text-muted-foreground">
-        Nagłówek strony
+      <div className="bg-background border rounded h-6 flex items-center px-2 text-[10px] text-muted-foreground">
+        Nagłówek (Partner Serwisu)
       </div>
       
       {/* Top Banner */}
-      <div className={`border-2 rounded h-12 flex items-center justify-center text-xs transition-colors ${
-        highlightedPlacement === "top-banner" 
-          ? "bg-primary/20 border-primary text-primary font-medium" 
-          : "bg-muted border-dashed border-muted-foreground/30 text-muted-foreground"
-      }`}>
-        Baner - Strona Główna
+      <div className={`${baseClasses} h-10 ${isHighlighted("top-banner") ? activeClasses : inactiveClasses}`}>
+        Baner Górny
       </div>
       
-      {/* Content area with sidebar */}
-      <div className="flex gap-2">
-        <div className="flex-1 space-y-2">
-          {/* Content blocks */}
-          <div className="bg-background border rounded h-20" />
-          
-          {/* Sponsored Article */}
-          <div className={`border-2 rounded h-16 flex items-center justify-center text-xs transition-colors ${
-            highlightedPlacement === "sponsored-article" 
-              ? "bg-primary/20 border-primary text-primary font-medium" 
-              : "bg-muted border-dashed border-muted-foreground/30 text-muted-foreground"
-          }`}>
-            Artykuł sponsorowany
-          </div>
-          
-          <div className="bg-background border rounded h-20" />
+      {/* Feed with tiles and carousel */}
+      <div className="grid grid-cols-3 gap-1">
+        {[1,2,3,4,5,6].map(i => (
+          <div key={i} className="bg-background border rounded h-8" />
+        ))}
+        {/* Feed Carousel slot */}
+        <div className={`col-span-3 ${baseClasses} h-12 ${isHighlighted("feed-carousel") ? activeClasses : inactiveClasses}`}>
+          Karuzela w Feedzie
+        </div>
+        {[7,8,9,10,11].map(i => (
+          <div key={i} className="bg-background border rounded h-8" />
+        ))}
+        {/* Feed Tile slot */}
+        <div className={`${baseClasses} h-8 ${isHighlighted("feed-tile") ? activeClasses : inactiveClasses}`}>
+          Kafelek
+        </div>
+      </div>
+
+      <div className="border-t pt-3 mt-3">
+        <p className="text-xs text-muted-foreground text-center mb-2">Strona artykułu</p>
+        
+        {/* Article Top */}
+        <div className={`${baseClasses} h-8 mb-2 ${isHighlighted("article-top") ? activeClasses : inactiveClasses}`}>
+          Baner Górny (Artykuł)
         </div>
         
-        {/* Sidebar */}
-        <div className="w-24 space-y-2">
-          <div className="bg-background border rounded h-16" />
-          
-          {/* Sidebar Square */}
-          <div className={`border-2 rounded h-24 flex items-center justify-center text-xs text-center transition-colors ${
-            highlightedPlacement === "sidebar-square" 
-              ? "bg-primary/20 border-primary text-primary font-medium" 
-              : "bg-muted border-dashed border-muted-foreground/30 text-muted-foreground"
-          }`}>
-            Baner boczny
-          </div>
+        {/* Article content */}
+        <div className="bg-background border rounded h-12 mb-2 flex items-center justify-center text-[10px] text-muted-foreground">
+          Treść artykułu
         </div>
-      </div>
-      
-      {/* Mobile Banner */}
-      <div className={`border-2 rounded h-8 flex items-center justify-center text-xs transition-colors ${
-        highlightedPlacement === "mobile-banner" 
-          ? "bg-primary/20 border-primary text-primary font-medium" 
-          : "bg-muted border-dashed border-muted-foreground/30 text-muted-foreground"
-      }`}>
-        Baner mobilny (tylko mobile)
-      </div>
-      
-      {/* Footer */}
-      <div className="bg-background border rounded h-8 flex items-center px-2 text-xs text-muted-foreground">
-        Stopka strony
+        
+        {/* Article Middle */}
+        <div className={`${baseClasses} h-8 mb-2 ${isHighlighted("article-middle") ? activeClasses : inactiveClasses}`}>
+          Baner Środkowy
+        </div>
+        
+        {/* More content */}
+        <div className="bg-background border rounded h-12 mb-2" />
+        
+        {/* Article Bottom */}
+        <div className={`${baseClasses} h-8 ${isHighlighted("article-bottom") ? activeClasses : inactiveClasses}`}>
+          Baner Dolny
+        </div>
       </div>
     </div>
   );
