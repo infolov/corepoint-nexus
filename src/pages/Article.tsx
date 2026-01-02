@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Clock, Share2, ExternalLink, Loader2, ThumbsUp, ThumbsDown, Bookmark, BookmarkCheck, ChevronRight, Home } from "lucide-react";
 import { useRecentlyViewed } from "@/hooks/use-recently-viewed";
 import { ArticleSummary } from "@/components/article/ArticleSummary";
-import { useRSSArticles } from "@/hooks/use-rss-articles";
+// useRSSArticles removed - articles now load from cache for instant display
 import { AdBanner } from "@/components/widgets/AdBanner";
 import { NewsCard } from "@/components/news/NewsCard";
 import { toast } from "sonner";
@@ -32,21 +32,47 @@ const Article = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { trackArticleView } = useRecentlyViewed();
-  const { articles: rssArticles, loading: rssLoading } = useRSSArticles();
   const [isSaved, setIsSaved] = useState(false);
   const [cachedArticle, setCachedArticle] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Load cached article from localStorage on mount
+  // Load cached article from localStorage FIRST (instant load)
   useEffect(() => {
     if (id) {
+      // Try sessionStorage first (set when clicking on article)
+      const sessionCached = sessionStorage.getItem(`article_${id}`);
+      if (sessionCached) {
+        try {
+          setCachedArticle(JSON.parse(sessionCached));
+          setIsLoading(false);
+          return;
+        } catch (e) {
+          console.error("Error parsing session cached article:", e);
+        }
+      }
+      
+      // Fallback to localStorage
       const cached = localStorage.getItem(`article_${id}`);
       if (cached) {
         try {
           setCachedArticle(JSON.parse(cached));
+          setIsLoading(false);
+          return;
         } catch (e) {
           console.error("Error parsing cached article:", e);
         }
       }
+      
+      // Check mock articles
+      const mockArticle = allMockArticles.find((a) => a.id === id);
+      if (mockArticle) {
+        setCachedArticle(mockArticle);
+        setIsLoading(false);
+        return;
+      }
+      
+      // No cached article found
+      setIsLoading(false);
     }
   }, [id]);
 
@@ -85,12 +111,8 @@ const Article = () => {
     }
   };
 
-  // Find article from RSS or mock data or cache
-  const rssArticle = rssArticles.find((a) => a.id === id);
-  const mockArticle = allMockArticles.find((a) => a.id === id);
-  
-  // Use cached article if RSS/mock not found
-  const article = rssArticle || mockArticle || cachedArticle;
+  // Use cached article directly (no RSS loading needed)
+  const article = cachedArticle;
 
   // Track article view for logged-in users
   useEffect(() => {
@@ -99,8 +121,8 @@ const Article = () => {
     }
   }, [id, article?.category]);
 
-  // Show loading while fetching RSS (only if no cached article)
-  if (rssLoading && !mockArticle && !cachedArticle) {
+  // Show loading only briefly while checking cache
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
@@ -130,13 +152,13 @@ const Article = () => {
     );
   }
 
-  // Get article content
-  const content = rssArticle?.content || (mockArticle as any)?.content || article.excerpt || "";
-  const sourceUrl = rssArticle?.sourceUrl || (mockArticle as any)?.sourceUrl;
-  const source = rssArticle?.source || (mockArticle as any)?.source || "Informacje.pl";
+  // Get article content from cached article
+  const content = article?.content || article?.excerpt || "";
+  const sourceUrl = article?.sourceUrl;
+  const source = article?.source || "Informacje.pl";
 
-  // Get related articles (same category, exclude current)
-  const relatedArticles = [...rssArticles, ...allMockArticles]
+  // Get related articles (same category, exclude current) - only from mock for now
+  const relatedArticles = allMockArticles
     .filter(a => a.category === article.category && a.id !== id)
     .slice(0, 4);
 
