@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Menu, X, Search, User, Sun, Moon, Settings, LayoutDashboard, LogOut, MapPin, Loader2, Cloud, CloudRain, Wind, Droplets } from "lucide-react";
+import { Menu, X, Search, User, Sun, Moon, Settings, LayoutDashboard, LogOut, MapPin, Loader2, Cloud, CloudRain, CloudSnow, CloudSun, CloudMoon, Snowflake, Wind, Droplets } from "lucide-react";
 import { useWeather } from "@/hooks/use-weather";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -116,15 +116,46 @@ export function Header() {
     return hour >= 6 && hour < 20;
   };
 
-  // Get dynamic weather icon based on precipitation and time
-  const getMainWeatherIcon = (precipitation: string, className: string = "h-5 w-5") => {
+  // Get dynamic weather icon based on precipitation, temperature, humidity and time
+  const getMainWeatherIcon = (
+    precipitation: string, 
+    temperature: string, 
+    humidity: string,
+    className: string = "h-5 w-5"
+  ) => {
     const precip = parseFloat(precipitation);
+    const temp = parseFloat(temperature);
+    const humid = parseFloat(humidity);
+    const daytime = isDaytime();
     
+    // Snow conditions: precipitation + freezing temperature
+    if (precip > 0 && temp <= 0) {
+      if (precip > 3) {
+        return <Snowflake className={`${className} text-sky-300`} />;
+      }
+      return <CloudSnow className={`${className} text-sky-200`} />;
+    }
+    
+    // Rain conditions
     if (precip > 0) {
       return <CloudRain className={`${className} text-primary`} />;
     }
     
-    if (isDaytime()) {
+    // Cloudy conditions based on humidity (>80% = overcast, 60-80% = partly cloudy)
+    if (humid > 80) {
+      return <Cloud className={`${className} text-muted-foreground`} />;
+    }
+    
+    if (humid > 60) {
+      // Partly cloudy
+      if (daytime) {
+        return <CloudSun className={`${className} text-weather-sunny`} />;
+      }
+      return <CloudMoon className={`${className} text-muted-foreground`} />;
+    }
+    
+    // Clear weather
+    if (daytime) {
       return <Sun className={`${className} text-weather-sunny`} />;
     }
     
@@ -223,7 +254,7 @@ export function Header() {
                   {weatherLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : weatherData ? <>
                       <MapPin className="h-4 w-4 text-primary" />
                       <span className="font-medium">{weatherData.stacja}</span>
-                      {getMainWeatherIcon(weatherData.suma_opadu, "h-5 w-5")}
+                      {getMainWeatherIcon(weatherData.suma_opadu, weatherData.temperatura, weatherData.wilgotnosc_wzgledna, "h-5 w-5")}
                       <span className="font-semibold">{Math.round(parseFloat(weatherData.temperatura))}°C</span>
                     </> : <>
                       <MapPin className="h-4 w-4" />
@@ -242,7 +273,7 @@ export function Header() {
                       <span className="font-semibold">{weatherData?.stacja || "Warszawa"}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      {weatherData ? getMainWeatherIcon(weatherData.suma_opadu, "h-8 w-8") : <Cloud className="h-8 w-8 text-muted-foreground" />}
+                      {weatherData ? getMainWeatherIcon(weatherData.suma_opadu, weatherData.temperatura, weatherData.wilgotnosc_wzgledna, "h-8 w-8") : <Cloud className="h-8 w-8 text-muted-foreground" />}
                       <span className="text-2xl font-bold">
                         {weatherData ? Math.round(parseFloat(weatherData.temperatura)) : "--"}°C
                       </span>
