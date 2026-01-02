@@ -14,6 +14,7 @@ import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { UserPanel } from "@/components/panels/UserPanel";
 import { useAuth } from "@/hooks/use-auth";
 import { useDisplayMode } from "@/hooks/use-display-mode";
+import { DynamicHeaderBranding } from "@/components/layout/DynamicHeaderBranding";
 const categories = [{
   name: "Wiadomości",
   slug: "wiadomosci",
@@ -213,21 +214,11 @@ export function Header() {
                 </span>
               </div>
               {/* Mobile Partner - below logo */}
-              <div className="flex md:hidden items-center gap-1.5 pl-10">
-                <span className="text-[10px] text-nav-foreground/60">Partner:</span>
-                <div className="h-5 w-16 bg-nav-foreground/10 rounded flex items-center justify-center">
-                  <span className="text-[8px] text-nav-foreground/50">Logo</span>
-                </div>
-              </div>
+              <DynamicHeaderBranding variant="mobile" className="pl-10" />
             </Link>
 
-            {/* Desktop Partner Space */}
-            <div className="hidden md:flex items-center gap-3 px-4 py-2 border-l border-nav-foreground/20">
-              <span className="text-sm text-nav-foreground/60">Partner Serwisu:</span>
-              <div className="h-10 w-28 bg-nav-foreground/10 rounded-lg flex items-center justify-center">
-                <span className="text-sm text-nav-foreground/50">Logo partnera</span>
-              </div>
-            </div>
+            {/* Desktop Partner Space - Dynamic branding with rotation */}
+            <DynamicHeaderBranding variant="desktop" />
           </div>
 
           {/* Actions */}

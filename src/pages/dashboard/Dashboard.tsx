@@ -16,7 +16,8 @@ import {
   Shield,
   Users,
   LayoutGrid,
-  AlertTriangle
+  AlertTriangle,
+  Building2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
@@ -40,6 +41,8 @@ const adminLinks = [
   { name: "Zarządzanie kampaniami", href: "/dashboard/admin/campaigns", icon: Shield },
   { name: "Zarządzanie użytkownikami", href: "/dashboard/admin/users", icon: Users },
   { name: "Zarządzanie miejscami", href: "/dashboard/admin/placements", icon: LayoutGrid },
+  { name: "Partnerzy", href: "/dashboard/admin/partners", icon: Building2 },
+  { name: "Karuzele banerów", href: "/dashboard/admin/carousels", icon: LayoutGrid },
 ];
 
 export default function Dashboard() {

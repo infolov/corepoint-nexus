@@ -255,6 +255,85 @@ export type Database = {
           },
         ]
       }
+      carousel_banner_groups: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean | null
+          name: string
+          placement_position: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          placement_position?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          placement_position?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      carousel_banners: {
+        Row: {
+          campaign_id: string | null
+          created_at: string
+          display_order: number
+          group_id: string
+          id: string
+          local_campaign_id: string | null
+        }
+        Insert: {
+          campaign_id?: string | null
+          created_at?: string
+          display_order?: number
+          group_id: string
+          id?: string
+          local_campaign_id?: string | null
+        }
+        Update: {
+          campaign_id?: string | null
+          created_at?: string
+          display_order?: number
+          group_id?: string
+          id?: string
+          local_campaign_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "carousel_banners_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "ad_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "carousel_banners_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "carousel_banner_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "carousel_banners_local_campaign_id_fkey"
+            columns: ["local_campaign_id"]
+            isOneToOne: false
+            referencedRelation: "local_ad_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       credit_packages: {
         Row: {
           created_at: string
@@ -479,6 +558,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      partner_campaigns: {
+        Row: {
+          category_slug: string | null
+          created_at: string
+          end_date: string
+          id: string
+          is_active: boolean | null
+          logo_text: string | null
+          logo_url: string | null
+          name: string
+          partner_type: string
+          start_date: string
+          target_url: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category_slug?: string | null
+          created_at?: string
+          end_date: string
+          id?: string
+          is_active?: boolean | null
+          logo_text?: string | null
+          logo_url?: string | null
+          name: string
+          partner_type: string
+          start_date?: string
+          target_url?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category_slug?: string | null
+          created_at?: string
+          end_date?: string
+          id?: string
+          is_active?: boolean | null
+          logo_text?: string | null
+          logo_url?: string | null
+          name?: string
+          partner_type?: string
+          start_date?: string
+          target_url?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {

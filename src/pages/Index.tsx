@@ -4,10 +4,11 @@ import { Footer } from "@/components/layout/Footer";
 import { CategoryBar } from "@/components/navigation/CategoryBar";
 import { NewsCard } from "@/components/news/NewsCard";
 import { AuctionAdSlot } from "@/components/widgets/AuctionAdSlot";
-import { AdCarousel } from "@/components/widgets/AdCarousel";
+import { FeedBannerCarousel, formatBannersForCarousel } from "@/components/widgets/FeedBannerCarousel";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import { useDisplayMode } from "@/hooks/use-display-mode";
 import { useAuth } from "@/hooks/use-auth";
+import { useCarouselBanners } from "@/hooks/use-carousel-banners";
 import { Loader2 } from "lucide-react";
 import { useArticles, formatArticleForCard } from "@/hooks/use-articles";
 import { useRSSArticles, formatRSSArticleForCard } from "@/hooks/use-rss-articles";
@@ -62,6 +63,7 @@ const Index = () => {
   const {
     user
   } = useAuth();
+  const { getCarouselForPosition } = useCarouselBanners();
   const [userPreferences, setUserPreferences] = useState<string[]>([]);
   const [recentCategories, setRecentCategories] = useState<string[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -378,21 +380,32 @@ const Index = () => {
                 {gridArticles.map((article, articleIndex) => <NewsCard key={`${article.id}-${gridIndex}-${articleIndex}`} id={article.id} title={article.title} category={article.category} image={article.image} timestamp={article.timestamp} badge={article.badge} source={article.source} sourceUrl={article.sourceUrl} variant="default" />)}
               </div>
 
-              {/* Ad Banner after each grid - Using Auction Engine */}
+              {/* Carousel Banner after each grid of 12 items */}
               <div className="mt-6 sm:mt-8">
-                {gridIndex === 0 ? (
-                  <AuctionAdSlot 
-                    variant="horizontal" 
-                    className="w-full" 
-                    slotIndex={gridIndex + 1} 
-                  />
-                ) : (
-                  <AuctionAdSlot 
-                    variant="horizontal" 
-                    className="w-full" 
-                    slotIndex={gridIndex + 1}
-                  />
-                )}
+                {(() => {
+                  // Check if there's a carousel group for this position
+                  const carouselGroup = getCarouselForPosition(gridIndex + 1);
+                  
+                  if (carouselGroup && carouselGroup.banners.length > 0) {
+                    // Use the carousel with banners from the database
+                    const formattedBanners = formatBannersForCarousel(carouselGroup.banners);
+                    return (
+                      <FeedBannerCarousel
+                        banners={formattedBanners}
+                        className="w-full"
+                      />
+                    );
+                  }
+                  
+                  // Fallback to auction ad slot if no carousel configured
+                  return (
+                    <AuctionAdSlot 
+                      variant="horizontal" 
+                      className="w-full" 
+                      slotIndex={gridIndex + 1}
+                    />
+                  );
+                })()}
               </div>
             </div>)}
 
