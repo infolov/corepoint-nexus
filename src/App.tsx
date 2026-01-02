@@ -28,6 +28,9 @@ import DashboardAdminCampaigns from "./pages/dashboard/DashboardAdminCampaigns";
 import DashboardAdminUsers from "./pages/dashboard/DashboardAdminUsers";
 import DashboardAdminPlacements from "./pages/dashboard/DashboardAdminPlacements";
 import DashboardAdminStats from "./pages/dashboard/DashboardAdminStats";
+import DashboardAdminPartners from "./pages/dashboard/DashboardAdminPartners";
+import DashboardAdminCarousels from "./pages/dashboard/DashboardAdminCarousels";
+import DashboardPreview from "./pages/dashboard/DashboardPreview";
 
 const queryClient = new QueryClient();
 
@@ -57,10 +60,13 @@ const App = () => (
               <Route path="stats" element={<DashboardStats />} />
               <Route path="campaigns" element={<DashboardCampaigns />} />
               <Route path="settings" element={<DashboardSettings />} />
+              <Route path="preview" element={<DashboardPreview />} />
               <Route path="admin/campaigns" element={<DashboardAdminCampaigns />} />
               <Route path="admin/users" element={<DashboardAdminUsers />} />
               <Route path="admin/placements" element={<DashboardAdminPlacements />} />
               <Route path="admin/stats" element={<DashboardAdminStats />} />
+              <Route path="admin/partners" element={<DashboardAdminPartners />} />
+              <Route path="admin/carousels" element={<DashboardAdminCarousels />} />
             </Route>
             <Route path="/sport/:subcategory" element={<Category />} />
             <Route path="/:category" element={<Category />} />

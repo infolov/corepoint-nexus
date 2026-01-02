@@ -8,7 +8,7 @@ import { ArrowLeft, Clock, Share2, ExternalLink, Loader2, ThumbsUp, ThumbsDown, 
 import { useRecentlyViewed } from "@/hooks/use-recently-viewed";
 import { ArticleSummary } from "@/components/article/ArticleSummary";
 import { useRSSArticles } from "@/hooks/use-rss-articles";
-import { AdBanner } from "@/components/widgets/AdBanner";
+import { AuctionAdSlot } from "@/components/widgets/AuctionAdSlot";
 import { NewsCard } from "@/components/news/NewsCard";
 import { toast } from "sonner";
 import {
@@ -147,7 +147,7 @@ const Article = () => {
       <main className="container py-4 md:py-6">
         {/* Top Ad Banner */}
         <div className="mb-6">
-          <AdBanner variant="horizontal" className="w-full" />
+          <AuctionAdSlot variant="horizontal" className="w-full" slotIndex={0} />
         </div>
 
         {/* Navigation Breadcrumbs */}
@@ -228,9 +228,9 @@ const Article = () => {
               </Button>
             </div>
 
-            {/* Ad Banner above sources */}
+            {/* Middle Ad Banner */}
             <div className="mb-6">
-              <AdBanner variant="horizontal" className="w-full" />
+              <AuctionAdSlot variant="horizontal" className="w-full" slotIndex={1} />
             </div>
 
             {/* Source Link */}
@@ -281,6 +281,11 @@ const Article = () => {
               </Button>
             </div>
           </article>
+        </div>
+
+        {/* Bottom Ad Banner */}
+        <div className="mt-8 mb-6">
+          <AuctionAdSlot variant="horizontal" className="w-full" slotIndex={2} />
         </div>
 
         {/* Related Articles Section */}
