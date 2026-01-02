@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -6,8 +6,11 @@ import { NewsCard } from "@/components/news/NewsCard";
 import { WeatherWidget } from "@/components/widgets/WeatherWidget";
 import { TrendingWidget } from "@/components/widgets/TrendingWidget";
 import { AdBanner } from "@/components/widgets/AdBanner";
+import { AuctionAdSlot } from "@/components/widgets/AuctionAdSlot";
+import { FeedBannerCarousel, formatBannersForCarousel } from "@/components/widgets/FeedBannerCarousel";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import { useDisplayMode } from "@/hooks/use-display-mode";
+import { useCarouselBanners } from "@/hooks/use-carousel-banners";
 import { Loader2, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -127,6 +130,7 @@ export default function Category() {
   const { settings: displaySettings } = useDisplayMode();
   const isCompact = displaySettings.mode === "compact" || displaySettings.dataSaver;
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const { getCarouselForPosition } = useCarouselBanners();
   
   const allArticles = getAllArticles();
   
@@ -200,6 +204,11 @@ export default function Category() {
       </div>
       
       <main className="max-w-7xl mx-auto px-4 py-6">
+        {/* Top Ad Banner - National/Local */}
+        <div className="mb-6">
+          <AuctionAdSlot variant="horizontal" className="w-full" slotIndex={0} />
+        </div>
+
         {/* Page Title */}
         <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground mb-4 sm:mb-6 text-senior">
           Wszystkie Artykuły
