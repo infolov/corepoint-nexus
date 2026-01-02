@@ -48,9 +48,15 @@ export function useArticles(options: UseArticlesOptions = {}) {
         query = query.eq("category", category);
       }
 
-      // Filter by user's voivodeship - include articles for the region OR national articles (region is null)
+      // Filter by user's location:
+      // - If user has location set: show local articles (matching region) + national articles (region is null)
+      // - If user has NO location set: show ONLY national articles (region is null)
       if (settings.voivodeship) {
+        // User has location - show their region articles + national
         query = query.or(`region.eq.${settings.voivodeship},region.is.null`);
+      } else {
+        // User has no location - show only national articles
+        query = query.is("region", null);
       }
 
       const { data, error: fetchError } = await query;
