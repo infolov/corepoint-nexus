@@ -15,6 +15,13 @@ export interface RSSArticle {
   pubDateMs?: number; // For sorting by publication date
 }
 
+interface CacheMeta {
+  total: number;
+  fromCache: { rss: boolean; scraper: boolean };
+  elapsed: number;
+  cacheTTL: number;
+}
+
 const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
 export function useRSSArticles() {
@@ -22,6 +29,7 @@ export function useRSSArticles() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [cacheMeta, setCacheMeta] = useState<CacheMeta | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const articlesRef = useRef<RSSArticle[]>([]);
 
@@ -30,54 +38,42 @@ export function useRSSArticles() {
     setError(null);
 
     try {
-      console.log("Fetching articles from RSS and scraping...");
+      console.log("Fetching articles from cached news endpoint...");
+      const startTime = performance.now();
       
-      // Fetch from both RSS and scraping in parallel
-      const [rssResult, scrapeResult] = await Promise.allSettled([
-        supabase.functions.invoke("fetch-rss"),
-        supabase.functions.invoke("scrape-news")
-      ]);
+      // Use the new cached endpoint
+      const { data, error: fetchError } = await supabase.functions.invoke("get-cached-news");
 
-      let allArticles: RSSArticle[] = [];
-
-      // Process RSS results
-      if (rssResult.status === 'fulfilled' && !rssResult.value.error) {
-        console.log("RSS data received:", rssResult.value.data?.articles?.length || 0, "articles");
-        allArticles = [...allArticles, ...(rssResult.value.data?.articles || [])];
-      } else {
-        console.error("Error from RSS:", rssResult.status === 'rejected' ? rssResult.reason : rssResult.value.error);
+      if (fetchError) {
+        console.error("Error from get-cached-news:", fetchError);
+        throw fetchError;
       }
 
-      // Process scraping results
-      if (scrapeResult.status === 'fulfilled' && !scrapeResult.value.error) {
-        console.log("Scraping data received:", scrapeResult.value.data?.articles?.length || 0, "articles");
-        allArticles = [...allArticles, ...(scrapeResult.value.data?.articles || [])];
-      } else {
-        console.error("Error from scraping:", scrapeResult.status === 'rejected' ? scrapeResult.reason : scrapeResult.value.error);
+      const endTime = performance.now();
+      console.log(`Frontend fetch completed in ${Math.round(endTime - startTime)}ms`);
+
+      const fetchedArticles: RSSArticle[] = data?.articles || [];
+      const meta: CacheMeta | undefined = data?.meta;
+      
+      if (meta) {
+        console.log(`Cache meta: ${meta.total} articles, RSS from cache: ${meta.fromCache.rss}, Scraper from cache: ${meta.fromCache.scraper}, Backend elapsed: ${meta.elapsed}ms`);
+        setCacheMeta(meta);
       }
 
-      // Sort all articles by publication date (newest first)
-      allArticles.sort((a, b) => (b.pubDateMs || 0) - (a.pubDateMs || 0));
+      console.log("Total articles received:", fetchedArticles.length);
       
-      // Remove duplicates by ID
-      const seenIds = new Set<string>();
-      const uniqueArticles = allArticles.filter(article => {
-        if (seenIds.has(article.id)) return false;
-        seenIds.add(article.id);
-        return true;
-      });
-
-      console.log("Total unique articles:", uniqueArticles.length);
-      
-      // Merge new articles with existing ones
+      // Merge new articles with existing ones for smooth updates
       const existingIds = new Set(articlesRef.current.map(a => a.id));
-      const trulyNewArticles = uniqueArticles.filter((a: RSSArticle) => !existingIds.has(a.id));
+      const trulyNewArticles = fetchedArticles.filter((a: RSSArticle) => !existingIds.has(a.id));
       
       const mergedArticles = [...trulyNewArticles, ...articlesRef.current.filter((existing: RSSArticle) => 
-        uniqueArticles.some((newA: RSSArticle) => newA.id === existing.id)
+        fetchedArticles.some((newA: RSSArticle) => newA.id === existing.id)
       )];
       
-      const finalArticles = articlesRef.current.length === 0 ? uniqueArticles : mergedArticles;
+      // Sort merged articles by publication date
+      mergedArticles.sort((a, b) => (b.pubDateMs || 0) - (a.pubDateMs || 0));
+      
+      const finalArticles = articlesRef.current.length === 0 ? fetchedArticles : mergedArticles;
       
       articlesRef.current = finalArticles;
       setArticles(finalArticles);
@@ -85,6 +81,11 @@ export function useRSSArticles() {
     } catch (err) {
       console.error("Error fetching articles:", err);
       setError("Błąd podczas ładowania artykułów");
+      
+      // Keep existing articles on error
+      if (articlesRef.current.length > 0) {
+        console.log("Keeping existing articles due to error");
+      }
     } finally {
       setLoading(false);
     }
@@ -96,7 +97,7 @@ export function useRSSArticles() {
 
     // Set up auto-refresh every 5 minutes
     intervalRef.current = setInterval(() => {
-      console.log("Auto-refreshing RSS articles...");
+      console.log("Auto-refreshing articles...");
       fetchArticles(false); // Don't show loading spinner for auto-refresh
     }, REFRESH_INTERVAL);
 
@@ -111,7 +112,7 @@ export function useRSSArticles() {
     fetchArticles();
   };
 
-  return { articles, loading, error, refetch, lastUpdated };
+  return { articles, loading, error, refetch, lastUpdated, cacheMeta };
 }
 
 // Helper to format RSS article for NewsCard component
