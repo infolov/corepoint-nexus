@@ -7,8 +7,19 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Cache configuration - 30 minutes freshness
-const CACHE_TTL_MINUTES = 30;
+// Cache configuration - TTL per category
+const CACHE_TTL_CONFIG: Record<string, number> = {
+  'wiadomosci': 15,  // News category - fresher content needed
+  'default': 30      // Default TTL for other categories
+};
+
+// Get TTL for a specific category
+function getCacheTTL(category?: string | null): number {
+  if (category && CACHE_TTL_CONFIG[category.toLowerCase()]) {
+    return CACHE_TTL_CONFIG[category.toLowerCase()];
+  }
+  return CACHE_TTL_CONFIG['default'];
+}
 
 interface Article {
   id: string;
@@ -38,20 +49,21 @@ function getSupabaseClient() {
 }
 
 // Check if cache is fresh (within TTL)
-function isCacheFresh(lastFetchedAt: string): boolean {
+function isCacheFresh(lastFetchedAt: string, category?: string | null): boolean {
   const lastFetched = new Date(lastFetchedAt);
   const now = new Date();
   const diffMinutes = (now.getTime() - lastFetched.getTime()) / (1000 * 60);
-  return diffMinutes < CACHE_TTL_MINUTES;
+  const ttl = getCacheTTL(category);
+  return diffMinutes < ttl;
 }
 
 // Fetch articles from cache
-async function getFromCache(supabase: ReturnType<typeof getSupabaseClient>, sourceKey: string): Promise<{ articles: Article[], isFresh: boolean } | null> {
+async function getFromCache(supabase: ReturnType<typeof getSupabaseClient>, sourceKey: string, category?: string): Promise<{ articles: Article[], isFresh: boolean } | null> {
   console.log(`Checking cache for: ${sourceKey}`);
   
   const { data, error } = await supabase
     .from('news_cache')
-    .select('content, last_fetched_at')
+    .select('content, last_fetched_at, category')
     .eq('source_url', sourceKey)
     .single();
 
@@ -60,8 +72,9 @@ async function getFromCache(supabase: ReturnType<typeof getSupabaseClient>, sour
     return null;
   }
 
-  const isFresh = isCacheFresh(data.last_fetched_at);
-  console.log(`Cache found for ${sourceKey}, fresh: ${isFresh}, last fetched: ${data.last_fetched_at}`);
+  const isFresh = isCacheFresh(data.last_fetched_at, category || data.category);
+  const ttl = getCacheTTL(category || data.category);
+  console.log(`Cache found for ${sourceKey}, fresh: ${isFresh}, TTL: ${ttl}min, last fetched: ${data.last_fetched_at}`);
   
   return {
     articles: data.content as Article[],
@@ -250,7 +263,7 @@ serve(async (req) => {
         total: uniqueArticles.length,
         fromCache,
         elapsed,
-        cacheTTL: CACHE_TTL_MINUTES
+        cacheTTL: CACHE_TTL_CONFIG
       }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
