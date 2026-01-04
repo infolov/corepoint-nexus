@@ -559,6 +559,33 @@ export type Database = {
           },
         ]
       }
+      news_cache: {
+        Row: {
+          category: string | null
+          content: Json
+          created_at: string
+          id: string
+          last_fetched_at: string
+          source_url: string
+        }
+        Insert: {
+          category?: string | null
+          content?: Json
+          created_at?: string
+          id?: string
+          last_fetched_at?: string
+          source_url: string
+        }
+        Update: {
+          category?: string | null
+          content?: Json
+          created_at?: string
+          id?: string
+          last_fetched_at?: string
+          source_url?: string
+        }
+        Relationships: []
+      }
       partner_campaigns: {
         Row: {
           category_slug: string | null
