@@ -1,9 +1,21 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Create a hash from article title for cache lookup
+function createTitleHash(title: string): string {
+  let hash = 0;
+  for (let i = 0; i < title.length; i++) {
+    const char = title.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return Math.abs(hash).toString(36);
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -11,7 +23,7 @@ serve(async (req) => {
   }
 
   try {
-    const { title, content, category } = await req.json();
+    const { title, content, category, articleId } = await req.json();
     
     if (!title || !content) {
       return new Response(
@@ -19,6 +31,34 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Generate title hash for cache lookup
+    const titleHash = createTitleHash(title);
+    const effectiveArticleId = articleId || titleHash;
+
+    console.log(`Checking cache for article: ${effectiveArticleId}, titleHash: ${titleHash}`);
+
+    // Check if summary already exists in cache
+    const { data: cachedSummary, error: cacheError } = await supabase
+      .from('article_summaries')
+      .select('summary')
+      .eq('title_hash', titleHash)
+      .single();
+
+    if (cachedSummary && !cacheError) {
+      console.log(`Cache HIT for article: ${effectiveArticleId}`);
+      return new Response(
+        JSON.stringify({ summary: cachedSummary.summary, fromCache: true }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log(`Cache MISS for article: ${effectiveArticleId}, generating summary...`);
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -87,8 +127,26 @@ Pamiętaj: Zachowaj pełny kontekst i najważniejsze fakty. Podsumowanie musi by
     const data = await response.json();
     const summary = data.choices?.[0]?.message?.content || "Nie udało się wygenerować podsumowania.";
 
+    // Save summary to cache
+    const { error: insertError } = await supabase
+      .from('article_summaries')
+      .upsert({
+        article_id: effectiveArticleId,
+        title_hash: titleHash,
+        summary: summary,
+        created_at: new Date().toISOString()
+      }, {
+        onConflict: 'title_hash'
+      });
+
+    if (insertError) {
+      console.error("Failed to cache summary:", insertError);
+    } else {
+      console.log(`Summary cached for article: ${effectiveArticleId}`);
+    }
+
     return new Response(
-      JSON.stringify({ summary }),
+      JSON.stringify({ summary, fromCache: false }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
