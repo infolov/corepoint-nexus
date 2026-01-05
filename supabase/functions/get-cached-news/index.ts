@@ -155,11 +155,11 @@ async function generateSummariesInBackground(
 ): Promise<void> {
   console.log(`Starting background summary generation for ${articles.length} articles...`);
   
-  // Process articles in batches of 3 to avoid rate limiting
-  const batchSize = 3;
-  const delayBetweenBatches = 2000; // 2 seconds between batches
+  // Process articles in batches of 5 to speed up generation
+  const batchSize = 5;
+  const delayBetweenBatches = 1500; // 1.5 seconds between batches
   
-  for (let i = 0; i < Math.min(articles.length, 15); i += batchSize) {
+  for (let i = 0; i < Math.min(articles.length, 30); i += batchSize) {
     const batch = articles.slice(i, i + batchSize);
     
     // Process batch in parallel
