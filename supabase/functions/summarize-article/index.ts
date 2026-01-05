@@ -76,10 +76,9 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `Jesteś ekspertem od podsumowań wiadomości dla polskiego portalu informacyjnego. Tworzysz zwięzłe, obiektywne podsumowania artykułów w języku polskim.
+            content: `Jesteś ekspertem od streszczania wiadomości dla polskiego portalu informacyjnego. Tworzysz zwięzłe, obiektywne streszczenia artykułów w języku polskim.
 
 KRYTYCZNE ZASADY:
-- Podsumowanie musi mieć DOKŁADNIE 2-3 zdania (60-100 słów)
 - ZAWSZE zachowuj pełny kontekst i sens artykułu
 - Zacznij od NAJWAŻNIEJSZEJ informacji (kto, co, gdzie, kiedy)
 - Wyjaśnij DLACZEGO to jest istotne
@@ -96,13 +95,13 @@ KRYTYCZNE ZASADY:
 TYTUŁ: ${title}
 
 PEŁNA TREŚĆ ARTYKUŁU:
-${content.substring(0, 3000)}
+${content.substring(0, 25000)}
 
 Pamiętaj: Zachowaj pełny kontekst i najważniejsze fakty. Podsumowanie musi być samodzielne i zrozumiałe bez czytania całego artykułu.`
           }
         ],
-        max_tokens: 200,
-        temperature: 0.3,
+        max_tokens: 1500,
+        temperature: 0.25,
       }),
     });
 
