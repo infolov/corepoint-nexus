@@ -95,7 +95,7 @@ KRYTYCZNE ZASADY:
 TYTUŁ: ${title}
 
 PEŁNA TREŚĆ ARTYKUŁU:
-${content.substring(0, 25000)}
+${content}
 
 Pamiętaj: Zachowaj pełny kontekst i najważniejsze fakty. Podsumowanie musi być samodzielne i zrozumiałe bez czytania całego artykułu.`
           }
