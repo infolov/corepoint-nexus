@@ -2,11 +2,6 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// Declare EdgeRuntime for background tasks
-declare const EdgeRuntime: {
-  waitUntil(promise: Promise<unknown>): void;
-};
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -24,156 +19,6 @@ function getCacheTTL(category?: string | null): number {
     return CACHE_TTL_CONFIG[category.toLowerCase()];
   }
   return CACHE_TTL_CONFIG['default'];
-}
-
-// Create a hash from article title for cache lookup
-function createTitleHash(title: string): string {
-  let hash = 0;
-  for (let i = 0; i < title.length; i++) {
-    const char = title.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
-  }
-  return Math.abs(hash).toString(36);
-}
-
-// Generate AI summary for a single article (background job)
-async function generateSummaryForArticle(
-  supabase: ReturnType<typeof getSupabaseClient>,
-  article: Article
-): Promise<void> {
-  const titleHash = createTitleHash(article.title);
-  
-  // Check if summary already exists
-  const { data: existingSummary } = await supabase
-    .from('article_summaries')
-    .select('id')
-    .eq('title_hash', titleHash)
-    .single();
-  
-  if (existingSummary) {
-    console.log(`Summary already exists for: ${article.title.substring(0, 50)}...`);
-    return;
-  }
-  
-  console.log(`Generating summary for: ${article.title.substring(0, 50)}...`);
-  
-  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-  if (!LOVABLE_API_KEY) {
-    console.error("LOVABLE_API_KEY is not configured");
-    return;
-  }
-  
-  try {
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash-lite",
-        messages: [
-          {
-            role: "system",
-            content: `Jesteś ekspertem od streszczania wiadomości dla polskiego portalu informacyjnego. Tworzysz zwięzłe, obiektywne streszczenia artykułów w języku polskim.
-
-KRYTYCZNE ZASADY:
-- ZAWSZE zachowuj pełny kontekst i sens artykułu
-- Zacznij od NAJWAŻNIEJSZEJ informacji (kto, co, gdzie, kiedy)
-- Wyjaśnij DLACZEGO to jest istotne
-- NIE pomijaj kluczowych szczegółów jak nazwy, liczby, daty
-- Używaj prostego, zrozumiałego języka
-- NIE dodawaj własnych opinii ani komentarzy
-- NIE zaczynaj od "Artykuł opisuje..." ani podobnych fraz
-- Pisz w czasie teraźniejszym lub przeszłym dokonanym`
-          },
-          {
-            role: "user",
-            content: `Przygotuj podsumowanie tego artykułu z kategorii "${article.category}".
-
-TYTUŁ: ${article.title}
-
-PEŁNA TREŚĆ ARTYKUŁU:
-${(article.content || article.excerpt || '').substring(0, 25000)}
-
-Pamiętaj: Zachowaj pełny kontekst i najważniejsze fakty. Podsumowanie musi być samodzielne i zrozumiałe bez czytania całego artykułu.`
-          }
-        ],
-        max_tokens: 1500,
-        temperature: 0.25,
-      }),
-    });
-
-    if (!response.ok) {
-      if (response.status === 429) {
-        console.warn(`Rate limited while generating summary for: ${article.id}`);
-        return;
-      }
-      if (response.status === 402) {
-        console.warn(`No AI credits while generating summary for: ${article.id}`);
-        return;
-      }
-      console.error(`AI gateway error for ${article.id}:`, response.status);
-      return;
-    }
-
-    const data = await response.json();
-    const summary = data.choices?.[0]?.message?.content;
-
-    if (!summary) {
-      console.error(`No summary generated for: ${article.id}`);
-      return;
-    }
-
-    // Save summary to cache
-    const { error: insertError } = await supabase
-      .from('article_summaries')
-      .upsert({
-        article_id: article.id,
-        title_hash: titleHash,
-        summary: summary,
-        created_at: new Date().toISOString()
-      }, {
-        onConflict: 'title_hash'
-      });
-
-    if (insertError) {
-      console.error(`Failed to cache summary for ${article.id}:`, insertError);
-    } else {
-      console.log(`Summary generated and cached for: ${article.title.substring(0, 50)}...`);
-    }
-  } catch (error) {
-    console.error(`Error generating summary for ${article.id}:`, error);
-  }
-}
-
-// Background job to generate summaries for new articles
-async function generateSummariesInBackground(
-  supabase: ReturnType<typeof getSupabaseClient>,
-  articles: Article[]
-): Promise<void> {
-  console.log(`Starting background summary generation for ${articles.length} articles...`);
-  
-  // Process articles in batches of 5 to speed up generation
-  const batchSize = 5;
-  const delayBetweenBatches = 1500; // 1.5 seconds between batches
-  
-  for (let i = 0; i < Math.min(articles.length, 30); i += batchSize) {
-    const batch = articles.slice(i, i + batchSize);
-    
-    // Process batch in parallel
-    await Promise.allSettled(
-      batch.map(article => generateSummaryForArticle(supabase, article))
-    );
-    
-    // Wait between batches to avoid rate limiting
-    if (i + batchSize < articles.length) {
-      await new Promise(resolve => setTimeout(resolve, delayBetweenBatches));
-    }
-  }
-  
-  console.log('Background summary generation completed');
 }
 
 interface Article {
@@ -347,10 +192,7 @@ serve(async (req) => {
     let scraperArticles: Article[] = [];
     let fromCache = { rss: false, scraper: false };
 
-    // Track if we fetched fresh articles (for background summary generation)
-    let freshArticlesForSummary: Article[] = [];
-
-    // Handle RSS articles
+  // Handle RSS articles
     if (rssCache && rssCache.isFresh) {
       console.log('Using fresh RSS cache');
       rssArticles = rssCache.articles;
@@ -361,7 +203,6 @@ serve(async (req) => {
       
       // Update cache (don't await to speed up response)
       if (rssArticles.length > 0) {
-        freshArticlesForSummary = [...freshArticlesForSummary, ...rssArticles];
         updateCache(supabase, 'rss-aggregated', rssArticles, null).catch(err => 
           console.error('Background cache update failed for RSS:', err)
         );
@@ -384,7 +225,6 @@ serve(async (req) => {
       
       // Update cache (don't await to speed up response)
       if (scraperArticles.length > 0) {
-        freshArticlesForSummary = [...freshArticlesForSummary, ...scraperArticles];
         updateCache(supabase, 'scraper-aggregated', scraperArticles, null).catch(err => 
           console.error('Background cache update failed for scraper:', err)
         );
@@ -394,12 +234,6 @@ serve(async (req) => {
         scraperArticles = scraperCache.articles;
         fromCache.scraper = true;
       }
-    }
-
-    // Start background summary generation for fresh articles (using EdgeRuntime.waitUntil)
-    if (freshArticlesForSummary.length > 0) {
-      console.log(`Scheduling background summary generation for ${freshArticlesForSummary.length} fresh articles`);
-      EdgeRuntime.waitUntil(generateSummariesInBackground(supabase, freshArticlesForSummary));
     }
 
     // Merge and deduplicate articles
