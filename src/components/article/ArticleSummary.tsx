@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Sparkles, Loader2, AlertCircle, Volume2, VolumeX, Square, User } from "lucide-react";
+import { Sparkles, AlertCircle, Volume2, VolumeX, Square, User, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useQuery } from "@tanstack/react-query";
 
 interface ArticleSummaryProps {
   title: string;
@@ -18,13 +19,45 @@ interface ArticleSummaryProps {
 
 type VoiceGender = "female" | "male";
 
+// Generate a simple hash for the title to match database records
+const generateTitleHash = (title: string): string => {
+  let hash = 0;
+  for (let i = 0; i < title.length; i++) {
+    const char = title.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return Math.abs(hash).toString(16);
+};
+
 export const ArticleSummary = ({ title, content, category }: ArticleSummaryProps) => {
-  const [summary, setSummary] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [voiceGender, setVoiceGender] = useState<VoiceGender>("female");
   const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
+
+  const titleHash = generateTitleHash(title);
+
+  // Fetch summary directly from database
+  const { data: summaryData, isLoading, error } = useQuery({
+    queryKey: ['article-summary', titleHash],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('article_summaries')
+        .select('summary')
+        .eq('title_hash', titleHash)
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+    enabled: !!title,
+    staleTime: 1000 * 60 * 30, // Cache for 30 minutes
+  });
+
+  const summary = summaryData?.summary || null;
 
   // Load voices
   useEffect(() => {
@@ -42,38 +75,6 @@ export const ArticleSummary = ({ title, content, category }: ArticleSummaryProps
     };
   }, []);
 
-  useEffect(() => {
-    const fetchSummary = async () => {
-      setLoading(true);
-      setError(null);
-      
-      try {
-        const { data, error: fnError } = await supabase.functions.invoke("summarize-article", {
-          body: { title, content, category },
-        });
-
-        if (fnError) {
-          throw new Error(fnError.message);
-        }
-
-        if (data?.error) {
-          throw new Error(data.error);
-        }
-
-        setSummary(data?.summary || null);
-      } catch (err) {
-        console.error("Error fetching summary:", err);
-        setError(err instanceof Error ? err.message : "Błąd podczas generowania podsumowania");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (title && content) {
-      fetchSummary();
-    }
-  }, [title, content, category]);
-
   // Cleanup speech synthesis on unmount
   useEffect(() => {
     return () => {
@@ -84,20 +85,16 @@ export const ArticleSummary = ({ title, content, category }: ArticleSummaryProps
   const getVoiceByGender = (gender: VoiceGender): SpeechSynthesisVoice | undefined => {
     const voices = window.speechSynthesis.getVoices();
     
-    // Female voice names commonly used
     const femaleNames = ['Paulina', 'Zosia', 'Ewa', 'Anna', 'female', 'Female', 'kobieta'];
-    // Male voice names commonly used
     const maleNames = ['Adam', 'Krzysztof', 'Jacek', 'male', 'Male', 'mężczyzna'];
     
     const targetNames = gender === 'female' ? femaleNames : maleNames;
     
-    // Try to find a Polish voice matching the gender
     let voice = voices.find(v => 
       (v.lang === 'pl-PL' || v.lang.startsWith('pl')) && 
       targetNames.some(name => v.name.toLowerCase().includes(name.toLowerCase()))
     );
     
-    // If not found, try Google/Microsoft voices
     if (!voice) {
       const prefixes = gender === 'female' 
         ? ['Google', 'Microsoft Paulina', 'Microsoft Zosia']
@@ -109,7 +106,6 @@ export const ArticleSummary = ({ title, content, category }: ArticleSummaryProps
       );
     }
     
-    // Fallback to any Polish voice
     if (!voice) {
       voice = voices.find(v => v.lang === 'pl-PL') || voices.find(v => v.lang.startsWith('pl'));
     }
@@ -149,6 +145,35 @@ export const ArticleSummary = ({ title, content, category }: ArticleSummaryProps
     setIsPlaying(false);
   };
 
+  // Don't render anything if loading (quick DB fetch)
+  if (isLoading) {
+    return null;
+  }
+
+  // If no summary exists in database, show elegant empty state
+  if (!summary) {
+    return (
+      <div className="bg-muted/30 border border-border/50 rounded-xl p-5 mb-6">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Clock className="h-4 w-4" />
+          <span className="text-sm">Podsumowanie AI jest przygotowywane...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-5 mb-6">
+        <div className="flex items-center gap-2 text-destructive/80">
+          <AlertCircle className="h-4 w-4" />
+          <span className="text-sm">Nie udało się pobrać podsumowania</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 rounded-xl p-5 mb-6">
       <div className="flex items-center justify-between mb-3">
@@ -160,62 +185,48 @@ export const ArticleSummary = ({ title, content, category }: ArticleSummaryProps
         </div>
         
         {/* Audio Controls */}
-        {summary && !loading && !error && (
-          <div className="flex items-center gap-2">
-            <Select value={voiceGender} onValueChange={(v: VoiceGender) => setVoiceGender(v)}>
-              <SelectTrigger className="w-[120px] h-8 text-xs">
-                <User className="h-3 w-3 mr-1" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="female">Żeński</SelectItem>
-                <SelectItem value="male">Męski</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handlePlayAudio}
-              className="gap-2"
-            >
-              {isPlaying ? (
-                <>
-                  <VolumeX className="h-4 w-4" />
-                  Pauza
-                </>
-              ) : (
-                <>
-                  <Volume2 className="h-4 w-4" />
-                  Odsłuchaj
-                </>
-              )}
-            </Button>
-            {isPlaying && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={handleStopAudio}
-              >
-                <Square className="h-4 w-4" />
-              </Button>
+        <div className="flex items-center gap-2">
+          <Select value={voiceGender} onValueChange={(v: VoiceGender) => setVoiceGender(v)}>
+            <SelectTrigger className="w-[120px] h-8 text-xs">
+              <User className="h-3 w-3 mr-1" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="female">Żeński</SelectItem>
+              <SelectItem value="male">Męski</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handlePlayAudio}
+            className="gap-2"
+          >
+            {isPlaying ? (
+              <>
+                <VolumeX className="h-4 w-4" />
+                Pauza
+              </>
+            ) : (
+              <>
+                <Volume2 className="h-4 w-4" />
+                Odsłuchaj
+              </>
             )}
-          </div>
-        )}
+          </Button>
+          {isPlaying && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleStopAudio}
+            >
+              <Square className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </div>
 
-      {loading ? (
-        <div className="flex items-center gap-3 text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          <span className="text-sm">Generowanie podsumowania...</span>
-        </div>
-      ) : error ? (
-        <div className="flex items-center gap-2 text-destructive/80">
-          <AlertCircle className="h-4 w-4" />
-          <span className="text-sm">{error}</span>
-        </div>
-      ) : (
-        <p className="text-foreground/90 leading-relaxed">{summary}</p>
-      )}
+      <p className="text-foreground/90 leading-relaxed">{summary}</p>
     </div>
   );
 };
