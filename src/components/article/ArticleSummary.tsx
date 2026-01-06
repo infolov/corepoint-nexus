@@ -214,7 +214,12 @@ export const ArticleSummary = ({ title, content, category }: ArticleSummaryProps
           <span className="text-sm">{error}</span>
         </div>
       ) : (
-        <p className="text-foreground/90 leading-relaxed">{summary}</p>
+        <p 
+          className="text-foreground/90 leading-relaxed"
+          dangerouslySetInnerHTML={{
+            __html: summary?.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') || ''
+          }}
+        />
       )}
     </div>
   );
