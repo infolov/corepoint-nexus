@@ -97,7 +97,7 @@ Jesteś starszym redaktorem newsowym (Senior News Editor) w czołowym polskim po
 
 # SPECYFIKACJA TECHNICZNA:
 
-- Długość: 3-5 gęstych merytorycznie zdań (maksymalnie 100 słów).
+- Długość: 3-10 gęstych merytorycznie zdań, w zależności od złożoności tematu. Celem jest przekazanie WSZYSTKICH najważniejszych informacji z artykułu.
 - Formatowanie: Używaj pogrubienia (**text**) dla kluczowych podmiotów, nazwisk, dat lub kluczowych liczb, aby ułatwić szybkie skanowanie wzrokiem.
 
 # ZADANIE DO WYKONANIA:
