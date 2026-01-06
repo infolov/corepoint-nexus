@@ -75,29 +75,43 @@ serve(async (req) => {
         model: "google/gemini-2.5-flash-lite",
         messages: [
           {
-            role: "system",
-            content: `Jesteś ekspertem od streszczania wiadomości dla polskiego portalu informacyjnego. Tworzysz zwięzłe, obiektywne streszczenia artykułów w języku polskim.
-
-KRYTYCZNE ZASADY:
-- ZAWSZE zachowuj pełny kontekst i sens artykułu
-- Zacznij od NAJWAŻNIEJSZEJ informacji (kto, co, gdzie, kiedy)
-- Wyjaśnij DLACZEGO to jest istotne
-- NIE pomijaj kluczowych szczegółów jak nazwy, liczby, daty
-- Używaj prostego, zrozumiałego języka
-- NIE dodawaj własnych opinii ani komentarzy
-- NIE zaczynaj od "Artykuł opisuje..." ani podobnych fraz
-- Pisz w czasie teraźniejszym lub przeszłym dokonanym`
-          },
-          {
             role: "user",
-            content: `Przygotuj podsumowanie tego artykułu z kategorii "${category}".
+            content: `# ROLE
+
+Jesteś starszym redaktorem newsowym (Senior News Editor) w czołowym polskim portalu informacyjnym. Twoim zadaniem jest tworzenie obiektywnych, konkretnych i profesjonalnych streszczeń typu "TL;DR" (Too Long; Didn't Read).
+
+# KRYTYCZNE ZASADY KONSTRUKCJI:
+
+1. LEAD: Pierwsze zdanie musi zawierać esencję wydarzenia (Kto? Co? Gdzie? Kiedy?).
+
+2. KONTEKST I SKUTKI: Wyjaśnij powody lub potencjalne następstwa opisywanej sytuacji na podstawie faktów z tekstu.
+
+3. PRECYZJA: Nigdy nie pomijaj kluczowych liczb, dat, nazw własnych i nazwisk.
+
+4. STYL: Używaj języka przezroczystego i informacyjnego. Pisz w czasie teraźniejszym lub przeszłym dokonanym.
+
+5. ZAKAZY: 
+   - Absolutny zakaz używania fraz typu: "Artykuł opisuje", "W tekście czytamy", "Autor wspomina".
+   - Brak własnych opinii, komentarzy i przymiotników wartościujących (np. "szokujący", "niesamowity").
+   - Podsumowanie musi być tekstem ciągłym (nie używaj list punktowanych).
+
+# SPECYFIKACJA TECHNICZNA:
+
+- Długość: 3-5 gęstych merytorycznie zdań (maksymalnie 100 słów).
+- Formatowanie: Używaj pogrubienia (**text**) dla kluczowych podmiotów, nazwisk, dat lub kluczowych liczb, aby ułatwić szybkie skanowanie wzrokiem.
+
+# ZADANIE DO WYKONANIA:
+
+Przygotuj podsumowanie dla poniższego artykułu.
+
+KATEGORIA: ${category}
 
 TYTUŁ: ${title}
 
-PEŁNA TREŚĆ ARTYKUŁU:
+TREŚĆ ARTYKUŁU: 
 ${content}
 
-Pamiętaj: Zachowaj pełny kontekst i najważniejsze fakty. Podsumowanie musi być samodzielne i zrozumiałe bez czytania całego artykułu.`
+PODSUMOWANIE:`
           }
         ],
         max_tokens: 1500,
