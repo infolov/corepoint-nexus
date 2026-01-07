@@ -634,6 +634,48 @@ export type Database = {
         }
         Relationships: []
       }
+      processed_articles: {
+        Row: {
+          ai_summary: string | null
+          category: string | null
+          created_at: string
+          full_content: string | null
+          id: string
+          image_url: string | null
+          processed_at: string
+          pub_date: string | null
+          source: string | null
+          title: string
+          url: string
+        }
+        Insert: {
+          ai_summary?: string | null
+          category?: string | null
+          created_at?: string
+          full_content?: string | null
+          id?: string
+          image_url?: string | null
+          processed_at?: string
+          pub_date?: string | null
+          source?: string | null
+          title: string
+          url: string
+        }
+        Update: {
+          ai_summary?: string | null
+          category?: string | null
+          created_at?: string
+          full_content?: string | null
+          id?: string
+          image_url?: string | null
+          processed_at?: string
+          pub_date?: string | null
+          source?: string | null
+          title?: string
+          url?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
