@@ -1,0 +1,368 @@
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+// RSS Sources - same as fetch-rss function
+const RSS_SOURCES = [
+  { url: 'https://www.polsatnews.pl/rss/wszystkie.xml', source: 'Polsat News', category: 'Wiadomości' },
+  { url: 'https://tvn24.pl/najnowsze.xml', source: 'TVN24', category: 'Wiadomości' },
+  { url: 'https://wiadomosci.wp.pl/rss.xml', source: 'Wirtualna Polska', category: 'Wiadomości' },
+  { url: 'https://www.rmf24.pl/fakty/feed', source: 'RMF24', category: 'Wiadomości' },
+  { url: 'https://www.bankier.pl/rss/wiadomosci.xml', source: 'Bankier.pl', category: 'Biznes' },
+  { url: 'https://www.money.pl/rss/rss.xml', source: 'Money.pl', category: 'Biznes' },
+  { url: 'https://sportowefakty.wp.pl/rss.xml', source: 'Sportowe Fakty', category: 'Sport' },
+  { url: 'https://www.chip.pl/feed', source: 'Chip.pl', category: 'Technologia' },
+  { url: 'https://tech.wp.pl/rss.xml', source: 'WP Tech', category: 'Technologia' },
+  { url: 'https://www.focus.pl/rss.xml', source: 'Focus', category: 'Nauka' },
+];
+
+// Decode HTML entities
+function decodeHTMLEntities(text: string): string {
+  if (!text) return text;
+  
+  const entities: Record<string, string> = {
+    '&quot;': '"', '&#34;': '"', '&amp;': '&', '&#38;': '&',
+    '&lt;': '<', '&#60;': '<', '&gt;': '>', '&#62;': '>',
+    '&apos;': "'", '&#39;': "'", '&nbsp;': ' ', '&#160;': ' ',
+    '&ndash;': '\u2013', '&#8211;': '\u2013', '&mdash;': '\u2014',
+    '&#8212;': '\u2014', '&hellip;': '\u2026', '&#8230;': '\u2026',
+    '&oacute;': 'ó', '&Oacute;': 'Ó', '&aogon;': 'ą', '&Aogon;': 'Ą',
+    '&eogon;': 'ę', '&Eogon;': 'Ę', '&sacute;': 'ś', '&Sacute;': 'Ś',
+    '&cacute;': 'ć', '&Cacute;': 'Ć', '&nacute;': 'ń', '&Nacute;': 'Ń',
+    '&zacute;': 'ź', '&Zacute;': 'Ź', '&zdot;': 'ż', '&Zdot;': 'Ż',
+    '&lstrok;': 'ł', '&Lstrok;': 'Ł',
+  };
+  
+  let decoded = text;
+  for (const [entity, char] of Object.entries(entities)) {
+    decoded = decoded.split(entity).join(char);
+  }
+  decoded = decoded.replace(/&#(\d+);/g, (_, num) => String.fromCharCode(parseInt(num, 10)));
+  decoded = decoded.replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+  
+  return decoded;
+}
+
+// Parse RSS item
+interface RSSItem {
+  title: string;
+  url: string;
+  source: string;
+  category: string;
+  imageUrl: string;
+  pubDate: Date | null;
+}
+
+function parseRSSItem(item: string, source: string, category: string): RSSItem | null {
+  try {
+    const titleMatch = item.match(/<title>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/title>/s);
+    const linkMatch = item.match(/<link>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/link>/s);
+    const pubDateMatch = item.match(/<pubDate>(.*?)<\/pubDate>/);
+    
+    let image = '';
+    const enclosureMatch = item.match(/<enclosure[^>]*url=["']([^"']+)["'][^>]*type=["']image/);
+    const mediaMatch = item.match(/<media:content[^>]*url=["']([^"']+)["']/);
+    const mediaThumbMatch = item.match(/<media:thumbnail[^>]*url=["']([^"']+)["']/);
+    
+    if (enclosureMatch) image = enclosureMatch[1];
+    else if (mediaMatch) image = mediaMatch[1];
+    else if (mediaThumbMatch) image = mediaThumbMatch[1];
+    
+    const fallbackImages: Record<string, string> = {
+      'Wiadomości': 'https://images.unsplash.com/photo-1495020689067-958852a7765e?w=800&h=500&fit=crop',
+      'Biznes': 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800&h=500&fit=crop',
+      'Sport': 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=800&h=500&fit=crop',
+      'Technologia': 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&h=500&fit=crop',
+      'Nauka': 'https://images.unsplash.com/photo-1507413245164-6160d8298b31?w=800&h=500&fit=crop',
+    };
+    
+    if (!image) {
+      image = fallbackImages[category] || fallbackImages['Wiadomości'];
+    }
+
+    const title = decodeHTMLEntities(titleMatch?.[1]?.trim() || '');
+    const url = linkMatch?.[1]?.trim() || '';
+    
+    if (!title || !url) return null;
+    
+    let pubDate: Date | null = null;
+    if (pubDateMatch?.[1]) {
+      const date = new Date(pubDateMatch[1]);
+      if (!isNaN(date.getTime())) {
+        pubDate = date;
+      }
+    }
+
+    return { title, url, source, category, imageUrl: image, pubDate };
+  } catch (error) {
+    console.error('Error parsing RSS item:', error);
+    return null;
+  }
+}
+
+// Fetch RSS feed
+async function fetchRSSFeed(feedUrl: string, source: string, category: string): Promise<RSSItem[]> {
+  try {
+    console.log(`Fetching RSS from: ${feedUrl}`);
+    const response = await fetch(feedUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; NewsAggregator/1.0)',
+        'Accept': 'application/rss+xml, application/xml, text/xml',
+      },
+    });
+
+    if (!response.ok) {
+      console.error(`Failed to fetch ${feedUrl}: ${response.status}`);
+      return [];
+    }
+
+    const xml = await response.text();
+    const items = xml.match(/<item>([\s\S]*?)<\/item>/g) || [];
+    
+    const articles: RSSItem[] = [];
+    for (const item of items.slice(0, 5)) { // Limit to 5 per source
+      const article = parseRSSItem(item, source, category);
+      if (article) {
+        articles.push(article);
+      }
+    }
+
+    console.log(`Fetched ${articles.length} articles from ${source}`);
+    return articles;
+  } catch (error) {
+    console.error(`Error fetching ${feedUrl}:`, error);
+    return [];
+  }
+}
+
+// Scrape full content using Firecrawl
+async function scrapeWithFirecrawl(url: string): Promise<string | null> {
+  const firecrawlApiKey = Deno.env.get('Firecrawl');
+  if (!firecrawlApiKey) {
+    console.error('FIRECRAWL_API_KEY not configured');
+    return null;
+  }
+
+  try {
+    console.log(`Scraping URL with Firecrawl: ${url}`);
+    
+    const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${firecrawlApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        url,
+        formats: ['markdown'],
+        onlyMainContent: true,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error(`Firecrawl error for ${url}: ${response.status}`);
+      return null;
+    }
+
+    const data = await response.json();
+    const markdown = data.data?.markdown || data.markdown || null;
+    
+    if (markdown) {
+      console.log(`Successfully scraped ${url}, content length: ${markdown.length}`);
+    }
+    
+    return markdown;
+  } catch (error) {
+    console.error(`Error scraping ${url}:`, error);
+    return null;
+  }
+}
+
+// Generate AI summary using Gemini
+async function generateSummary(title: string, content: string): Promise<string | null> {
+  const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
+  if (!geminiApiKey) {
+    console.error('GEMINI_API_KEY not configured');
+    return null;
+  }
+
+  try {
+    const prompt = `Jesteś profesjonalnym dziennikarzem. Przygotuj zwięzłe streszczenie poniższego artykułu:
+
+TYTUŁ: ${title}
+
+TREŚĆ:
+${content.substring(0, 8000)}
+
+ZASADY:
+1. Zacznij od LEADU - odpowiedz na pytania: Kto? Co? Gdzie? Kiedy? Dlaczego?
+2. NIE PISZ wstępów typu "Artykuł omawia..." - od razu przejdź do faktów
+3. Użyj znaczników <b></b> do wyróżnienia najważniejszych faktów, nazwisk, dat i liczb
+4. Długość: 3-10 gęstych merytorycznie zdań, przekaż WSZYSTKIE najważniejsze informacje
+5. Pisz w języku polskim, profesjonalnie, obiektywnie
+6. Każde zdanie musi nieść konkretną informację
+
+STRESZCZENIE:`;
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.3,
+            maxOutputTokens: 500,
+          },
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      console.error('Gemini API error:', response.status);
+      return null;
+    }
+
+    const data = await response.json();
+    const summary = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    
+    if (summary) {
+      console.log(`Generated summary, length: ${summary.length}`);
+    }
+    
+    return summary || null;
+  } catch (error) {
+    console.error('Error generating summary:', error);
+    return null;
+  }
+}
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+  try {
+    console.log('Starting background news processing...');
+    
+    // 1. Fetch RSS from all sources
+    const fetchPromises = RSS_SOURCES.map(({ url, source, category }) =>
+      fetchRSSFeed(url, source, category)
+    );
+    const results = await Promise.allSettled(fetchPromises);
+    
+    let allArticles: RSSItem[] = [];
+    results.forEach((result) => {
+      if (result.status === 'fulfilled') {
+        allArticles = [...allArticles, ...result.value];
+      }
+    });
+    
+    console.log(`Total RSS articles fetched: ${allArticles.length}`);
+    
+    // 2. Get existing URLs to avoid duplicates
+    const { data: existingArticles } = await supabase
+      .from('processed_articles')
+      .select('url');
+    
+    const existingUrls = new Set(existingArticles?.map(a => a.url) || []);
+    console.log(`Existing articles in DB: ${existingUrls.size}`);
+    
+    // 3. Filter new articles
+    const newArticles = allArticles.filter(a => !existingUrls.has(a.url));
+    console.log(`New articles to process: ${newArticles.length}`);
+    
+    // 4. Process new articles (limit to 10 per run to avoid timeouts)
+    const articlesToProcess = newArticles.slice(0, 10);
+    let processedCount = 0;
+    let failedCount = 0;
+    
+    for (const article of articlesToProcess) {
+      try {
+        console.log(`Processing: ${article.title.substring(0, 50)}...`);
+        
+        // Scrape full content
+        const fullContent = await scrapeWithFirecrawl(article.url);
+        
+        if (!fullContent || fullContent.length < 100) {
+          console.log(`Skipping ${article.url} - content too short or empty`);
+          failedCount++;
+          continue;
+        }
+        
+        // Generate AI summary
+        const aiSummary = await generateSummary(article.title, fullContent);
+        
+        if (!aiSummary) {
+          console.log(`Skipping ${article.url} - failed to generate summary`);
+          failedCount++;
+          continue;
+        }
+        
+        // Save to database
+        const { error: insertError } = await supabase
+          .from('processed_articles')
+          .insert({
+            url: article.url,
+            title: article.title,
+            source: article.source,
+            category: article.category,
+            image_url: article.imageUrl,
+            full_content: fullContent.substring(0, 50000), // Limit content size
+            ai_summary: aiSummary,
+            pub_date: article.pubDate?.toISOString() || null,
+          });
+        
+        if (insertError) {
+          console.error(`Error inserting article: ${insertError.message}`);
+          failedCount++;
+        } else {
+          processedCount++;
+          console.log(`Successfully processed: ${article.title.substring(0, 50)}...`);
+        }
+        
+        // Small delay to avoid rate limits
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+      } catch (error) {
+        console.error(`Error processing article ${article.url}:`, error);
+        failedCount++;
+      }
+    }
+    
+    const result = {
+      success: true,
+      totalFetched: allArticles.length,
+      newArticles: newArticles.length,
+      processed: processedCount,
+      failed: failedCount,
+      timestamp: new Date().toISOString(),
+    };
+    
+    console.log('Processing complete:', result);
+    
+    return new Response(JSON.stringify(result), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+    
+  } catch (error) {
+    console.error('Error in process-news-background:', error);
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+});
