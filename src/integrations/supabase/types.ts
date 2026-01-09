@@ -168,12 +168,15 @@ export type Database = {
       }
       articles: {
         Row: {
+          ai_summary: string | null
+          ai_verification_status: string | null
           author_id: string | null
           badge: string | null
           category: string
           content: string | null
           created_at: string
           excerpt: string | null
+          generation_attempts: number | null
           id: string
           image: string
           is_featured: boolean
@@ -182,15 +185,19 @@ export type Database = {
           subcategory: string | null
           title: string
           updated_at: string
+          verification_feedback: Json | null
           view_count: number
         }
         Insert: {
+          ai_summary?: string | null
+          ai_verification_status?: string | null
           author_id?: string | null
           badge?: string | null
           category: string
           content?: string | null
           created_at?: string
           excerpt?: string | null
+          generation_attempts?: number | null
           id?: string
           image: string
           is_featured?: boolean
@@ -199,15 +206,19 @@ export type Database = {
           subcategory?: string | null
           title: string
           updated_at?: string
+          verification_feedback?: Json | null
           view_count?: number
         }
         Update: {
+          ai_summary?: string | null
+          ai_verification_status?: string | null
           author_id?: string | null
           badge?: string | null
           category?: string
           content?: string | null
           created_at?: string
           excerpt?: string | null
+          generation_attempts?: number | null
           id?: string
           image?: string
           is_featured?: boolean
@@ -216,6 +227,7 @@ export type Database = {
           subcategory?: string | null
           title?: string
           updated_at?: string
+          verification_feedback?: Json | null
           view_count?: number
         }
         Relationships: []
