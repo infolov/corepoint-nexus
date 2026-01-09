@@ -48,79 +48,70 @@ serve(async (req) => {
     console.log(`Verifying summary for: ${title?.substring(0, 50)}... (attempt ${attemptNumber})`);
 
     // Step 1: Fact-checking - verify all claims in summary against source
-    const verificationPrompt = `# ROLA: Moduł Kontroli Jakości Agregatora (Zero Fantazjowania)
+    const verificationPrompt = `# ROLA: Rygorystyczny Inspektor Danych
 
-Jesteś modułem kontroli jakości zintegrowanym z systemem agregatora. Twoim zadaniem jest RYGORYSTYCZNY AUDYT.
+Jesteś precyzyjnym inspektorem danych. Twoje jedyne zadanie to wykrycie KAŻDEJ różnicy między źródłem a podsumowaniem.
 
-# KONTEKST OPERACYJNY:
-Otrzymujesz obiekt zawierający current_summary oraz source_data. Twój jedyny cel to weryfikacja zgodności.
-
-# INSTRUKCJE RYGORU (ZERO FANTAZJOWANIA):
-
-## 1. WERYFIKACJA TOŻSAMOŚCI (CRITICAL):
-- Sprawdź, czy KAŻDA osoba wymieniona w current_summary jest IDENTYCZNIE nazwana w source_data
-- Jeśli w źródle jest "Jan Kowalski", a w podsumowaniu "Adam Kowalski" → CRITICAL_ERROR, ODRZUĆ
-- Każda literówka w nazwisku = CRITICAL_ERROR
-
-## 2. WERYFIKACJA LICZB (CRITICAL):
-- Wyodrębnij WSZYSTKIE: daty, kwoty, procenty, statystyki, wartości liczbowe
-- Porównaj ZNAK PO ZNAKU z source_data
-- Jeśli JAKAKOLWIEK liczba różni się od tej w source_data → CRITICAL_ERROR, ODRZUĆ
-- Przykład: źródło "15 mln zł" vs podsumowanie "15,5 mln zł" = CRITICAL_ERROR
-
-## 3. ZAKAZ WZBOGACANIA (CRITICAL):
-- NIE POZWALAJ na dodawanie kontekstu z wiedzy ogólnej AI
-- Jeśli w źródle NIE MA informacji, że firma jest "liderem rynku", a podsumowanie tak twierdzi → ODRZUĆ
-- Każda informacja BEZ bezpośredniego potwierdzenia w source_data = FABRYKACJA
-
-## 4. ZAKAZ INTERPRETACJI:
-- NIE POZWALAJ na wyciąganie wniosków, których autor NIE przedstawił
-- NIE POZWALAJ na spekulacje, przypuszczenia, domysły
-- NIE POZWALAJ na zmianę kontekstu lub tonu wypowiedzi
-
-# PROCEDURA AUDYTU:
-1. Dla KAŻDEGO zdania w current_summary:
-   a) Znajdź DOKŁADNE potwierdzenie w source_data
-   b) Jeśli brak potwierdzenia → mismatch_details += "FABRYKACJA: [treść]"
-2. Dla KAŻDEJ liczby/daty/nazwy:
-   a) Porównaj znak po znaku
-   b) Jeśli różnica → mismatch_details += "CRITICAL_ERROR: [oczekiwane] vs [znalezione]"
-
-# FORMAT ODPOWIEDZI (ŚCIŚLE JSON):
-{
-  "is_valid": true/false,
-  "status": "verified" lub "rejected",
-  "mismatch_details": [
-    {
-      "type": "CRITICAL_ERROR" | "FABRYKACJA" | "NADINTERPRETACJA" | "WZBOGACENIE",
-      "claim_in_summary": "dokładna treść z podsumowania",
-      "source_evidence": "dokładny cytat ze źródła lub null jeśli brak",
-      "explanation": "krótkie wyjaśnienie problemu"
-    }
-  ],
-  "claimsChecked": [liczba],
-  "claimsVerified": [liczba],
-  "claimsRejected": [liczba],
-  "fabricatedClaims": ["lista sfabrykowanych twierdzeń"],
-  "errors": ["lista błędów w formacie tekstowym"]
-}
-
----
-
-TYTUŁ ARTYKUŁU:
-${title}
-
-SOURCE_DATA (JEDYNE ŹRÓDŁO PRAWDY - SSOT):
+# ŹRÓDŁO PRAWDY (SSOT):
 ${originalContent.substring(0, 15000)}
 
----
-
-CURRENT_SUMMARY DO AUDYTU:
+# TEKST DO SPRAWDZENIA:
 ${aiSummary}
 
----
+# ZADANIE:
+Znajdź KAŻDĄ różnicę między źródłem a podsumowaniem.
 
-WYNIK AUDYTU (tylko JSON, żadnego dodatkowego tekstu):`;
+# DEFINICJA BŁĘDU - każde z poniższych to błąd krytyczny:
+
+1. ZMIANA CYFRY: Zmiana choćby jednej cyfry w dacie lub kwocie
+   - Źródło: "15 mln zł" → Podsumowanie: "15,5 mln zł" = BŁĄD
+   - Źródło: "2024" → Podsumowanie: "2025" = BŁĄD
+
+2. ZMIANA LITERY: Zmiana litery w nazwisku lub nazwie własnej
+   - Źródło: "Jan Kowalski" → Podsumowanie: "Jan Kowalsky" = BŁĄD
+   - Źródło: "Warszawa" → Podsumowanie: "Waszawa" = BŁĄD
+
+3. HALUCYNACJA: Dodanie informacji, której NIE MA w tekście źródłowym
+   - Jeśli podsumowanie twierdzi coś, czego nie można znaleźć w źródle = BŁĄD
+   - Przykład: Źródło nie wspomina o "liderze rynku", a podsumowanie tak twierdzi = BŁĄD
+
+4. POMINIĘCIE KONTEKSTU: Pominięcie kluczowego kontekstu, który zmienia znaczenie liczby
+   - Źródło: "spadek o 15% w porównaniu do zeszłego roku" → Podsumowanie: "spadek o 15%" (bez kontekstu) = BŁĄD
+
+# PROCEDURA INSPEKCJI:
+
+1. Wyodrębnij WSZYSTKIE liczby, daty, kwoty z podsumowania
+2. Dla KAŻDEJ znajdź odpowiednik w źródle i porównaj ZNAK PO ZNAKU
+3. Wyodrębnij WSZYSTKIE nazwiska i nazwy własne z podsumowania
+4. Dla KAŻDEGO znajdź odpowiednik w źródle i porównaj LITERA PO LITERZE
+5. Dla KAŻDEGO twierdzenia w podsumowaniu znajdź potwierdzenie w źródle
+6. Jeśli brak potwierdzenia = HALUCYNACJA
+
+# FORMAT WYJŚCIA (ŚCIŚLE JSON):
+
+Jeśli tekst jest idealny (zero różnic):
+{"is_valid": true, "errors": [], "claimsChecked": X, "claimsVerified": X, "claimsRejected": 0, "fabricatedClaims": []}
+
+Jeśli są błędy:
+{
+  "is_valid": false,
+  "errors": [
+    "ZMIANA CYFRY: W źródle '15 mln zł', w podsumowaniu '15,5 mln zł'",
+    "HALUCYNACJA: Twierdzenie 'lider rynku' nie występuje w źródle",
+    "ZMIANA LITERY: W źródle 'Kowalski', w podsumowaniu 'Kowalsky'"
+  ],
+  "claimsChecked": X,
+  "claimsVerified": Y,
+  "claimsRejected": Z,
+  "fabricatedClaims": ["lista halucynacji"]
+}
+
+# TYTUŁ ARTYKUŁU (dla kontekstu):
+${title}
+
+# PRÓBA WERYFIKACJI: ${attemptNumber}
+
+WYNIK INSPEKCJI (TYLKO JSON, żadnego tekstu przed ani po):`;
 
     const verificationResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
