@@ -1,93 +1,10 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-// Local news sources by voivodeship
-const LOCAL_SOURCES: Record<string, Array<{ url: string; source: string }>> = {
-  'mazowieckie': [
-    { url: 'https://warszawa.wyborcza.pl/rss/wyborcza_warszawa.xml', source: 'Wyborcza Warszawa' },
-    { url: 'https://tvnwarszawa.tvn24.pl/najnowsze.xml', source: 'TVN Warszawa' },
-    { url: 'https://warszawa.naszemiasto.pl/rss/artykuly/1,2,warszawa.xml', source: 'Nasze Miasto Warszawa' },
-  ],
-  'pomorskie': [
-    { url: 'https://gdansk.wyborcza.pl/rss/wyborcza_gdansk.xml', source: 'Wyborcza Gdańsk' },
-    { url: 'https://dziennikbaltycki.pl/rss.xml', source: 'Dziennik Bałtycki' },
-    { url: 'https://trojmiasto.pl/rss/wiadomosci.xml', source: 'Trojmiasto.pl' },
-  ],
-  'malopolskie': [
-    { url: 'https://krakow.wyborcza.pl/rss/wyborcza_krakow.xml', source: 'Wyborcza Kraków' },
-    { url: 'https://www.dziennikpolski24.pl/rss.xml', source: 'Dziennik Polski' },
-    { url: 'https://lovekrakow.pl/feed/', source: 'Love Kraków' },
-  ],
-  'slaskie': [
-    { url: 'https://katowice.wyborcza.pl/rss/wyborcza_katowice.xml', source: 'Wyborcza Katowice' },
-    { url: 'https://dziennikzachodni.pl/rss.xml', source: 'Dziennik Zachodni' },
-    { url: 'https://katowice.naszemiasto.pl/rss/artykuly/1,2,katowice.xml', source: 'Nasze Miasto Katowice' },
-  ],
-  'wielkopolskie': [
-    { url: 'https://poznan.wyborcza.pl/rss/wyborcza_poznan.xml', source: 'Wyborcza Poznań' },
-    { url: 'https://gloswielkopolski.pl/rss.xml', source: 'Głos Wielkopolski' },
-    { url: 'https://poznan.naszemiasto.pl/rss/artykuly/1,2,poznan.xml', source: 'Nasze Miasto Poznań' },
-  ],
-  'dolnoslaskie': [
-    { url: 'https://wroclaw.wyborcza.pl/rss/wyborcza_wroclaw.xml', source: 'Wyborcza Wrocław' },
-    { url: 'https://gazetawroclawska.pl/rss.xml', source: 'Gazeta Wrocławska' },
-    { url: 'https://wroclaw.naszemiasto.pl/rss/artykuly/1,2,wroclaw.xml', source: 'Nasze Miasto Wrocław' },
-  ],
-  'lodzkie': [
-    { url: 'https://lodz.wyborcza.pl/rss/wyborcza_lodz.xml', source: 'Wyborcza Łódź' },
-    { url: 'https://expressilustrowany.pl/rss.xml', source: 'Express Ilustrowany' },
-    { url: 'https://lodz.naszemiasto.pl/rss/artykuly/1,2,lodz.xml', source: 'Nasze Miasto Łódź' },
-  ],
-  'zachodniopomorskie': [
-    { url: 'https://szczecin.wyborcza.pl/rss/wyborcza_szczecin.xml', source: 'Wyborcza Szczecin' },
-    { url: 'https://gs24.pl/rss.xml', source: 'Głos Szczeciński' },
-    { url: 'https://szczecin.naszemiasto.pl/rss/artykuly/1,2,szczecin.xml', source: 'Nasze Miasto Szczecin' },
-  ],
-  'kujawsko-pomorskie': [
-    { url: 'https://bydgoszcz.wyborcza.pl/rss/wyborcza_bydgoszcz.xml', source: 'Wyborcza Bydgoszcz' },
-    { url: 'https://expressbydgoski.pl/rss.xml', source: 'Express Bydgoski' },
-    { url: 'https://nowosci.com.pl/rss.xml', source: 'Nowości Toruńskie' },
-  ],
-  'lubelskie': [
-    { url: 'https://lublin.wyborcza.pl/rss/wyborcza_lublin.xml', source: 'Wyborcza Lublin' },
-    { url: 'https://kurierlubelski.pl/rss.xml', source: 'Kurier Lubelski' },
-    { url: 'https://lublin.naszemiasto.pl/rss/artykuly/1,2,lublin.xml', source: 'Nasze Miasto Lublin' },
-  ],
-  'podkarpackie': [
-    { url: 'https://rzeszow.wyborcza.pl/rss/wyborcza_rzeszow.xml', source: 'Wyborcza Rzeszów' },
-    { url: 'https://nowiny24.pl/rss.xml', source: 'Nowiny24' },
-    { url: 'https://rzeszow.naszemiasto.pl/rss/artykuly/1,2,rzeszow.xml', source: 'Nasze Miasto Rzeszów' },
-  ],
-  'podlaskie': [
-    { url: 'https://bialystok.wyborcza.pl/rss/wyborcza_bialystok.xml', source: 'Wyborcza Białystok' },
-    { url: 'https://poranny.pl/rss.xml', source: 'Poranny' },
-    { url: 'https://bialystok.naszemiasto.pl/rss/artykuly/1,2,bialystok.xml', source: 'Nasze Miasto Białystok' },
-  ],
-  'warminsko-mazurskie': [
-    { url: 'https://olsztyn.wyborcza.pl/rss/wyborcza_olsztyn.xml', source: 'Wyborcza Olsztyn' },
-    { url: 'https://gazetaolsztynska.pl/rss.xml', source: 'Gazeta Olsztyńska' },
-    { url: 'https://olsztyn.naszemiasto.pl/rss/artykuly/1,2,olsztyn.xml', source: 'Nasze Miasto Olsztyn' },
-  ],
-  'lubuskie': [
-    { url: 'https://zielonagora.wyborcza.pl/rss/wyborcza_zielonagora.xml', source: 'Wyborcza Zielona Góra' },
-    { url: 'https://gazetalubuska.pl/rss.xml', source: 'Gazeta Lubuska' },
-    { url: 'https://zielonagora.naszemiasto.pl/rss/artykuly/1,2,zielona-gora.xml', source: 'Nasze Miasto Zielona Góra' },
-  ],
-  'swietokrzyskie': [
-    { url: 'https://kielce.wyborcza.pl/rss/wyborcza_kielce.xml', source: 'Wyborcza Kielce' },
-    { url: 'https://echodnia.eu/rss.xml', source: 'Echo Dnia' },
-    { url: 'https://kielce.naszemiasto.pl/rss/artykuly/1,2,kielce.xml', source: 'Nasze Miasto Kielce' },
-  ],
-  'opolskie': [
-    { url: 'https://opole.wyborcza.pl/rss/wyborcza_opole.xml', source: 'Wyborcza Opole' },
-    { url: 'https://nto.pl/rss.xml', source: 'Nowa Trybuna Opolska' },
-    { url: 'https://opole.naszemiasto.pl/rss/artykuly/1,2,opole.xml', source: 'Nasze Miasto Opole' },
-  ],
 };
 
 // Map for voivodeship name normalization
@@ -167,6 +84,15 @@ interface LocalArticle {
   timestamp: string;
   content: string;
   pubDateMs: number;
+}
+
+interface SourceFromDB {
+  id: string;
+  url: string;
+  source_name: string;
+  voivodeship: string;
+  source_type: string;
+  is_active: boolean;
 }
 
 function parseRSSItem(item: string, source: string, voivodeship: string): LocalArticle | null {
@@ -317,13 +243,65 @@ async function getLocationFromIP(ip: string): Promise<string | null> {
   }
 }
 
+// Fetch sources from database
+async function fetchSourcesFromDB(
+  supabaseUrl: string, 
+  supabaseKey: string, 
+  voivodeship: string,
+  userId?: string
+): Promise<Array<{ url: string; source: string }>> {
+  try {
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    // Base query for all active sources in the voivodeship
+    const { data: sources, error } = await supabase
+      .from('local_news_sources')
+      .select('id, url, source_name')
+      .eq('voivodeship', voivodeship)
+      .eq('is_active', true);
+
+    if (error) {
+      console.error('Error fetching sources from DB:', error);
+      return [];
+    }
+
+    if (!sources || sources.length === 0) {
+      console.log(`No sources found in DB for ${voivodeship}`);
+      return [];
+    }
+
+    // If user is provided, filter by their preferences
+    if (userId) {
+      const { data: userPrefs } = await supabase
+        .from('user_local_sources')
+        .select('source_id, is_enabled')
+        .eq('user_id', userId);
+
+      if (userPrefs && userPrefs.length > 0) {
+        const disabledSourceIds = new Set(
+          userPrefs.filter(p => !p.is_enabled).map(p => p.source_id)
+        );
+        
+        return sources
+          .filter(s => !disabledSourceIds.has(s.id))
+          .map(s => ({ url: s.url, source: s.source_name }));
+      }
+    }
+
+    return sources.map(s => ({ url: s.url, source: s.source_name }));
+  } catch (e) {
+    console.error('Error in fetchSourcesFromDB:', e);
+    return [];
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { voivodeship, clientIP } = await req.json().catch(() => ({}));
+    const { voivodeship, clientIP, userId } = await req.json().catch(() => ({}));
     
     let targetVoivodeship = voivodeship;
     
@@ -352,9 +330,17 @@ serve(async (req) => {
       });
     }
     
-    const sources = LOCAL_SOURCES[targetVoivodeship];
+    // Get Supabase credentials
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
     
-    if (!sources || sources.length === 0) {
+    // Fetch sources from database
+    let sources = await fetchSourcesFromDB(supabaseUrl, supabaseKey, targetVoivodeship, userId);
+    
+    // Log the result
+    console.log(`Found ${sources.length} sources in DB for ${targetVoivodeship}`);
+    
+    if (sources.length === 0) {
       return new Response(JSON.stringify({ 
         articles: [], 
         voivodeship: targetVoivodeship,
@@ -364,7 +350,7 @@ serve(async (req) => {
       });
     }
     
-    console.log(`Fetching local news for: ${targetVoivodeship}`);
+    console.log(`Fetching local news for: ${targetVoivodeship} from ${sources.length} sources`);
     
     const fetchPromises = sources.map(({ url, source }) =>
       fetchRSSFeed(url, source, targetVoivodeship)
@@ -390,7 +376,8 @@ serve(async (req) => {
     return new Response(JSON.stringify({ 
       articles: allArticles, 
       voivodeship: targetVoivodeship,
-      count: allArticles.length 
+      count: allArticles.length,
+      sourcesCount: sources.length
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
