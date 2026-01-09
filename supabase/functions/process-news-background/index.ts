@@ -187,15 +187,15 @@ function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// Generate AI summary using Gemini with retry logic
+// Generate AI summary using Lovable AI (no rate limits, no API key needed)
 async function generateSummaryWithRetry(
   title: string, 
   content: string, 
   maxRetries: number = 3
 ): Promise<string | null> {
-  const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
-  if (!geminiApiKey) {
-    console.error('GEMINI_API_KEY not configured');
+  const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+  if (!lovableApiKey) {
+    console.error('LOVABLE_API_KEY not configured');
     return null;
   }
 
@@ -218,27 +218,27 @@ STRESZCZENIE:`;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      console.log(`Gemini API attempt ${attempt}/${maxRetries} for: ${title.substring(0, 40)}...`);
+      console.log(`Lovable AI attempt ${attempt}/${maxRetries} for: ${title.substring(0, 40)}...`);
       
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: {
-              temperature: 0.3,
-              maxOutputTokens: 500,
-            },
-          }),
-        }
-      );
+      const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${lovableApiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-flash',
+          messages: [
+            { role: 'user', content: prompt }
+          ],
+          max_tokens: 500,
+          temperature: 0.3,
+        }),
+      });
 
-      // Handle rate limit (429)
+      // Handle rate limit (429) - less likely with Lovable AI
       if (response.status === 429) {
-        const retryAfter = response.headers.get('Retry-After');
-        const waitTime = retryAfter ? parseInt(retryAfter) * 1000 : Math.pow(2, attempt) * 5000; // Exponential backoff: 5s, 10s, 20s
+        const waitTime = Math.pow(2, attempt) * 3000; // 3s, 6s, 12s
         console.log(`Rate limited (429). Waiting ${waitTime / 1000}s before retry...`);
         await delay(waitTime);
         continue;
@@ -246,10 +246,10 @@ STRESZCZENIE:`;
 
       // Handle other errors
       if (!response.ok) {
-        console.error(`Gemini API error: ${response.status}`);
+        const errorText = await response.text();
+        console.error(`Lovable AI error: ${response.status} - ${errorText}`);
         if (attempt < maxRetries) {
-          const waitTime = Math.pow(2, attempt) * 2000; // 2s, 4s, 8s
-          console.log(`Waiting ${waitTime / 1000}s before retry...`);
+          const waitTime = Math.pow(2, attempt) * 1000;
           await delay(waitTime);
           continue;
         }
@@ -257,7 +257,7 @@ STRESZCZENIE:`;
       }
 
       const data = await response.json();
-      const summary = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      const summary = data.choices?.[0]?.message?.content;
       
       if (summary) {
         console.log(`Generated summary on attempt ${attempt}, length: ${summary.length}`);
@@ -268,8 +268,7 @@ STRESZCZENIE:`;
     } catch (error) {
       console.error(`Error on attempt ${attempt}:`, error);
       if (attempt < maxRetries) {
-        const waitTime = Math.pow(2, attempt) * 2000;
-        console.log(`Waiting ${waitTime / 1000}s before retry...`);
+        const waitTime = Math.pow(2, attempt) * 1000;
         await delay(waitTime);
         continue;
       }
@@ -340,10 +339,9 @@ serve(async (req) => {
           continue;
         }
         
-        // Add delay before Gemini API call to respect rate limits
-        // Delay increases with each request: 2s base + 1s per article processed
-        const preApiDelay = 2000 + (i * 1000);
-        console.log(`Waiting ${preApiDelay / 1000}s before Gemini API call...`);
+        // Small delay between requests (Lovable AI has better rate limits)
+        const preApiDelay = 500 + (i * 200);
+        console.log(`Waiting ${preApiDelay}ms before AI call...`);
         await delay(preApiDelay);
         
         // Generate AI summary with retry logic
