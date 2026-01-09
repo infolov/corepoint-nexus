@@ -43,14 +43,24 @@ export const ArticleSummary = ({ title, content, category }: ArticleSummaryProps
   }, []);
 
   useEffect(() => {
+    // If no content, stop loading immediately
+    if (!title || !content) {
+      setLoading(false);
+      setError("Brak treści do podsumowania");
+      return;
+    }
+
     const fetchSummary = async () => {
       setLoading(true);
       setError(null);
       
       try {
+        console.log("Fetching summary for:", title.substring(0, 50));
         const { data, error: fnError } = await supabase.functions.invoke("summarize-article", {
           body: { title, content, category },
         });
+
+        console.log("Summary response:", data, fnError);
 
         if (fnError) {
           throw new Error(fnError.message);
@@ -69,9 +79,7 @@ export const ArticleSummary = ({ title, content, category }: ArticleSummaryProps
       }
     };
 
-    if (title && content) {
-      fetchSummary();
-    }
+    fetchSummary();
   }, [title, content, category]);
 
   // Cleanup speech synthesis on unmount
