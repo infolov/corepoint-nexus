@@ -129,10 +129,9 @@ const Article = () => {
       </div>
     );
   }
-
-  // Get article content
-  const content = article?.content || article?.excerpt || "";
-  const sourceUrl = article?.sourceUrl;
+  // Get article content - try multiple fields for RSS articles
+  const content = article?.content || article?.fullContent || article?.description || article?.excerpt || article?.title || "";
+  const sourceUrl = article?.sourceUrl || article?.url || article?.link;
   const source = article?.source || "Informacje.pl";
 
   // Get related articles (same category, exclude current)
