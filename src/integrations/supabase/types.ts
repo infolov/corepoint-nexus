@@ -559,6 +559,45 @@ export type Database = {
           },
         ]
       }
+      local_news_sources: {
+        Row: {
+          added_by: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          is_system: boolean
+          source_name: string
+          source_type: string
+          updated_at: string
+          url: string
+          voivodeship: string
+        }
+        Insert: {
+          added_by?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          source_name: string
+          source_type?: string
+          updated_at?: string
+          url: string
+          voivodeship: string
+        }
+        Update: {
+          added_by?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          source_name?: string
+          source_type?: string
+          updated_at?: string
+          url?: string
+          voivodeship?: string
+        }
+        Relationships: []
+      }
       news_cache: {
         Row: {
           category: string | null
@@ -808,6 +847,38 @@ export type Database = {
         }
         Relationships: []
       }
+      user_local_sources: {
+        Row: {
+          created_at: string
+          id: string
+          is_enabled: boolean
+          source_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          source_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          source_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_local_sources_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "local_news_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_notification_preferences: {
         Row: {
           categories: string[] | null
@@ -965,6 +1036,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      auto_add_local_sources_for_user: {
+        Args: { p_user_id: string; p_voivodeship: string }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
