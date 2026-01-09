@@ -105,7 +105,7 @@ WYNIK WERYFIKACJI (tylko JSON):`;
         model: 'google/gemini-2.5-flash',
         messages: [{ role: 'user', content: verificationPrompt }],
         max_tokens: 1000,
-        temperature: 0.1, // Low temperature for consistent fact-checking
+        temperature: 0,
       }),
     });
 
@@ -205,7 +205,7 @@ POPRAWIONE PODSUMOWANIE:`;
           model: 'google/gemini-2.5-flash',
           messages: [{ role: 'user', content: correctionPrompt }],
           max_tokens: 600,
-          temperature: 0.2,
+          temperature: 0,
         }),
       });
 

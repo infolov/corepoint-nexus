@@ -115,7 +115,7 @@ PODSUMOWANIE:`
           }
         ],
         max_tokens: 1500,
-        temperature: 0.25,
+        temperature: 0,
       }),
     });
 
