@@ -1,6 +1,22 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+export type VerificationStatus = 'pending' | 'verified' | 'rejected';
+
+export interface VerificationLog {
+  attempt: number;
+  timestamp: string;
+  status: VerificationStatus;
+  isValid: boolean;
+  errors: string[];
+  details: {
+    claimsChecked: number;
+    claimsVerified: number;
+    claimsRejected: number;
+    fabricatedClaims: string[];
+  };
+}
+
 export interface ProcessedArticle {
   id: string;
   url: string;
@@ -13,6 +29,8 @@ export interface ProcessedArticle {
   pub_date: string | null;
   processed_at: string;
   created_at: string;
+  ai_verification_status: VerificationStatus;
+  verification_logs: VerificationLog[];
 }
 
 export function useProcessedArticles(limit = 50) {
@@ -36,7 +54,16 @@ export function useProcessedArticles(limit = 50) {
         throw queryError;
       }
 
-      setArticles(data || []);
+      // Map data to correct types
+      const mappedArticles: ProcessedArticle[] = (data || []).map(item => ({
+        ...item,
+        ai_verification_status: (item.ai_verification_status as VerificationStatus) || 'pending',
+        verification_logs: (Array.isArray(item.verification_logs) 
+          ? item.verification_logs 
+          : []) as unknown as VerificationLog[],
+      }));
+
+      setArticles(mappedArticles);
       
       // Get last update time
       if (data && data.length > 0) {

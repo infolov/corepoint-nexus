@@ -676,6 +676,7 @@ export type Database = {
       processed_articles: {
         Row: {
           ai_summary: string | null
+          ai_verification_status: string
           category: string | null
           created_at: string
           full_content: string | null
@@ -686,9 +687,11 @@ export type Database = {
           source: string | null
           title: string
           url: string
+          verification_logs: Json | null
         }
         Insert: {
           ai_summary?: string | null
+          ai_verification_status?: string
           category?: string | null
           created_at?: string
           full_content?: string | null
@@ -699,9 +702,11 @@ export type Database = {
           source?: string | null
           title: string
           url: string
+          verification_logs?: Json | null
         }
         Update: {
           ai_summary?: string | null
+          ai_verification_status?: string
           category?: string | null
           created_at?: string
           full_content?: string | null
@@ -712,6 +717,7 @@ export type Database = {
           source?: string | null
           title?: string
           url?: string
+          verification_logs?: Json | null
         }
         Relationships: []
       }
