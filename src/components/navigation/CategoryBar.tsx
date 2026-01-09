@@ -27,6 +27,29 @@ const categoriesWithSubs: Category[] = [
     subcategories: []
   },
   { 
+    name: "Lokalne", 
+    slug: "lokalne",
+    subcategories: [
+      { name: "Wszystkie lokalne", slug: "wszystkie" },
+      { name: "Mazowieckie", slug: "mazowieckie" },
+      { name: "Pomorskie", slug: "pomorskie" },
+      { name: "Małopolskie", slug: "malopolskie" },
+      { name: "Śląskie", slug: "slaskie" },
+      { name: "Wielkopolskie", slug: "wielkopolskie" },
+      { name: "Dolnośląskie", slug: "dolnoslaskie" },
+      { name: "Łódzkie", slug: "lodzkie" },
+      { name: "Zachodniopomorskie", slug: "zachodniopomorskie" },
+      { name: "Kujawsko-Pomorskie", slug: "kujawsko-pomorskie" },
+      { name: "Lubelskie", slug: "lubelskie" },
+      { name: "Podkarpackie", slug: "podkarpackie" },
+      { name: "Podlaskie", slug: "podlaskie" },
+      { name: "Warmińsko-Mazurskie", slug: "warminsko-mazurskie" },
+      { name: "Lubuskie", slug: "lubuskie" },
+      { name: "Świętokrzyskie", slug: "swietokrzyskie" },
+      { name: "Opolskie", slug: "opolskie" },
+    ]
+  },
+  { 
     name: "Wiadomości", 
     slug: "wiadomosci",
     subcategories: [
