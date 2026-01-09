@@ -4,11 +4,14 @@ import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { RefreshCw, Clock, ExternalLink, Newspaper, Loader2 } from 'lucide-react';
+import { RefreshCw, Clock, ExternalLink, Newspaper, Loader2, CheckCircle, XCircle, AlertCircle, ChevronDown } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { VerificationStatus, VerificationLog } from '@/hooks/use-processed-articles';
 
 function ArticleCard({ article }: { article: ProcessedArticle }) {
   const formattedDate = article.pub_date 
@@ -24,6 +27,39 @@ function ArticleCard({ article }: { article: ProcessedArticle }) {
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
   };
 
+  const getVerificationIcon = (status: VerificationStatus) => {
+    switch (status) {
+      case 'verified':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'rejected':
+        return <XCircle className="h-4 w-4 text-red-500" />;
+      default:
+        return <AlertCircle className="h-4 w-4 text-yellow-500" />;
+    }
+  };
+
+  const getVerificationLabel = (status: VerificationStatus) => {
+    switch (status) {
+      case 'verified':
+        return 'Zweryfikowane';
+      case 'rejected':
+        return 'Odrzucone';
+      default:
+        return 'Oczekuje';
+    }
+  };
+
+  const getVerificationBadgeVariant = (status: VerificationStatus) => {
+    switch (status) {
+      case 'verified':
+        return 'default' as const;
+      case 'rejected':
+        return 'destructive' as const;
+      default:
+        return 'secondary' as const;
+    }
+  };
+
   return (
     <Card className="h-full flex flex-col overflow-hidden hover:shadow-lg transition-shadow duration-300">
       {article.image_url && (
@@ -34,11 +70,43 @@ function ArticleCard({ article }: { article: ProcessedArticle }) {
             className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
             loading="lazy"
           />
-          {article.category && (
-            <Badge className="absolute top-3 left-3 bg-primary/90 hover:bg-primary">
-              {article.category}
-            </Badge>
-          )}
+          <div className="absolute top-3 left-3 flex gap-2">
+            {article.category && (
+              <Badge className="bg-primary/90 hover:bg-primary">
+                {article.category}
+              </Badge>
+            )}
+          </div>
+          {/* Verification Status Badge */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="absolute top-3 right-3">
+                  <Badge 
+                    variant={getVerificationBadgeVariant(article.ai_verification_status)}
+                    className="flex items-center gap-1 cursor-help"
+                  >
+                    {getVerificationIcon(article.ai_verification_status)}
+                    <span className="text-xs">{getVerificationLabel(article.ai_verification_status)}</span>
+                  </Badge>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="left" className="max-w-xs">
+                <div className="text-sm">
+                  <p className="font-semibold mb-1">Status weryfikacji faktów</p>
+                  {article.ai_verification_status === 'verified' && (
+                    <p>Podsumowanie zostało zweryfikowane - wszystkie fakty są zgodne z oryginalnym źródłem.</p>
+                  )}
+                  {article.ai_verification_status === 'rejected' && (
+                    <p>Podsumowanie zawiera informacje niezgodne z oryginalnym źródłem.</p>
+                  )}
+                  {article.ai_verification_status === 'pending' && (
+                    <p>Weryfikacja w toku lub wystąpił błąd podczas sprawdzania.</p>
+                  )}
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       )}
       
@@ -106,6 +174,14 @@ export default function AutoNews() {
   const { articles, loading, error, lastUpdate, refetch, triggerBackgroundProcess } = useProcessedArticles(100);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // Calculate verification stats
+  const verificationStats = {
+    total: articles.length,
+    verified: articles.filter(a => a.ai_verification_status === 'verified').length,
+    rejected: articles.filter(a => a.ai_verification_status === 'rejected').length,
+    pending: articles.filter(a => a.ai_verification_status === 'pending').length,
+  };
+
   const handleManualProcess = async () => {
     setIsProcessing(true);
     try {
@@ -172,15 +248,63 @@ export default function AutoNews() {
           </div>
         )}
 
-        {/* Stats */}
+        {/* Stats with Verification Info */}
         {!loading && articles.length > 0 && (
-          <div className="bg-muted/30 rounded-lg p-4 mb-6 flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">
-              Wyświetlanie <span className="font-semibold text-foreground">{articles.length}</span> automatycznie przetworzonych artykułów
-            </span>
-            <Badge variant="secondary">
-              Aktualizacja co 30 min
-            </Badge>
+          <div className="bg-muted/30 rounded-lg p-4 mb-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <span className="text-sm text-muted-foreground">
+                Wyświetlanie <span className="font-semibold text-foreground">{articles.length}</span> automatycznie przetworzonych artykułów
+              </span>
+              
+              {/* Verification Stats */}
+              <div className="flex items-center gap-3">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center gap-1.5 px-2 py-1 bg-green-500/10 rounded-md cursor-help">
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        <span className="text-sm font-medium text-green-600 dark:text-green-400">
+                          {verificationStats.verified}
+                        </span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>Zweryfikowane artykuły</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center gap-1.5 px-2 py-1 bg-red-500/10 rounded-md cursor-help">
+                        <XCircle className="h-4 w-4 text-red-500" />
+                        <span className="text-sm font-medium text-red-600 dark:text-red-400">
+                          {verificationStats.rejected}
+                        </span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>Odrzucone artykuły</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center gap-1.5 px-2 py-1 bg-yellow-500/10 rounded-md cursor-help">
+                        <AlertCircle className="h-4 w-4 text-yellow-500" />
+                        <span className="text-sm font-medium text-yellow-600 dark:text-yellow-400">
+                          {verificationStats.pending}
+                        </span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>Oczekujące na weryfikację</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                
+                <Badge variant="secondary">
+                  Aktualizacja co 30 min
+                </Badge>
+              </div>
+            </div>
           </div>
         )}
 

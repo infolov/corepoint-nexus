@@ -187,6 +187,79 @@ function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+// Verification result interface
+interface VerificationResult {
+  isValid: boolean;
+  status: 'verified' | 'rejected' | 'pending';
+  errors: string[];
+  correctedSummary?: string;
+  verificationDetails: {
+    claimsChecked: number;
+    claimsVerified: number;
+    claimsRejected: number;
+    fabricatedClaims: string[];
+  };
+}
+
+// Verify summary against original content (SSOT - Single Source of Truth)
+async function verifySummary(
+  title: string,
+  originalContent: string,
+  aiSummary: string,
+  attemptNumber: number = 1
+): Promise<VerificationResult> {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+  
+  try {
+    console.log(`Calling verify-summary for: ${title.substring(0, 40)}... (attempt ${attemptNumber})`);
+    
+    const response = await fetch(`${supabaseUrl}/functions/v1/verify-summary`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabaseAnonKey}`,
+      },
+      body: JSON.stringify({
+        title,
+        originalContent,
+        aiSummary,
+        attemptNumber,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error(`Verification request failed: ${response.status}`);
+      return {
+        isValid: false,
+        status: 'pending',
+        errors: [`Verification service error: ${response.status}`],
+        verificationDetails: {
+          claimsChecked: 0,
+          claimsVerified: 0,
+          claimsRejected: 0,
+          fabricatedClaims: [],
+        },
+      };
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Verification error:', error);
+    return {
+      isValid: false,
+      status: 'pending',
+      errors: [error instanceof Error ? error.message : 'Unknown verification error'],
+      verificationDetails: {
+        claimsChecked: 0,
+        claimsVerified: 0,
+        claimsRejected: 0,
+        fabricatedClaims: [],
+      },
+    };
+  }
+}
+
 // Generate AI summary using Lovable AI (no rate limits, no API key needed)
 async function generateSummaryWithRetry(
   title: string, 
@@ -339,13 +412,13 @@ serve(async (req) => {
           continue;
         }
         
-        // Small delay between requests (Lovable AI has better rate limits)
+        // Small delay between requests
         const preApiDelay = 500 + (i * 200);
         console.log(`Waiting ${preApiDelay}ms before AI call...`);
         await delay(preApiDelay);
         
-        // Generate AI summary with retry logic
-        const aiSummary = await generateSummaryWithRetry(article.title, fullContent);
+        // Generate initial AI summary
+        let aiSummary = await generateSummaryWithRetry(article.title, fullContent);
         
         if (!aiSummary) {
           console.log(`Skipping ${article.url} - failed to generate summary after retries`);
@@ -353,8 +426,65 @@ serve(async (req) => {
           rateLimitedCount++;
           continue;
         }
-        
-        // Save to database
+
+        // === FACT-CHECKING SYSTEM ===
+        const verificationLogs: any[] = [];
+        let verificationStatus: 'pending' | 'verified' | 'rejected' = 'pending';
+        let finalSummary = aiSummary;
+        const maxVerificationAttempts = 3;
+
+        for (let attempt = 1; attempt <= maxVerificationAttempts; attempt++) {
+          console.log(`Verification attempt ${attempt}/${maxVerificationAttempts} for: ${article.title.substring(0, 40)}...`);
+          
+          await delay(300); // Small delay before verification
+          
+          const verificationResult = await verifySummary(
+            article.title,
+            fullContent,
+            finalSummary,
+            attempt
+          );
+
+          // Log verification attempt
+          verificationLogs.push({
+            attempt,
+            timestamp: new Date().toISOString(),
+            status: verificationResult.status,
+            isValid: verificationResult.isValid,
+            errors: verificationResult.errors,
+            details: verificationResult.verificationDetails,
+          });
+
+          if (verificationResult.isValid && verificationResult.status === 'verified') {
+            // Summary passed verification
+            verificationStatus = 'verified';
+            console.log(`✅ Summary VERIFIED on attempt ${attempt}`);
+            break;
+          }
+
+          if (verificationResult.status === 'rejected') {
+            console.log(`❌ Summary REJECTED on attempt ${attempt}. Errors: ${verificationResult.errors.join(', ')}`);
+            
+            // If we have a corrected summary, use it for next verification
+            if (verificationResult.correctedSummary && attempt < maxVerificationAttempts) {
+              console.log(`Using corrected summary for next attempt...`);
+              finalSummary = verificationResult.correctedSummary;
+              await delay(500); // Delay before next attempt
+            } else if (attempt === maxVerificationAttempts) {
+              // Max attempts reached, mark as rejected
+              verificationStatus = 'rejected';
+              console.log(`🚫 Max verification attempts reached. Status: REJECTED`);
+            }
+          } else {
+            // Status is 'pending' (verification service error)
+            console.log(`⚠️ Verification pending (service issue) on attempt ${attempt}`);
+            if (attempt === maxVerificationAttempts) {
+              verificationStatus = 'pending';
+            }
+          }
+        }
+
+        // Save to database with verification status
         const { error: insertError } = await supabase
           .from('processed_articles')
           .insert({
@@ -363,9 +493,11 @@ serve(async (req) => {
             source: article.source,
             category: article.category,
             image_url: article.imageUrl,
-            full_content: fullContent.substring(0, 50000), // Limit content size
-            ai_summary: aiSummary,
+            full_content: fullContent.substring(0, 50000), // Original content as SSOT
+            ai_summary: finalSummary,
             pub_date: article.pubDate?.toISOString() || null,
+            ai_verification_status: verificationStatus,
+            verification_logs: verificationLogs,
           });
         
         if (insertError) {
@@ -373,7 +505,7 @@ serve(async (req) => {
           failedCount++;
         } else {
           processedCount++;
-          console.log(`Successfully processed: ${article.title.substring(0, 50)}...`);
+          console.log(`✅ Saved: ${article.title.substring(0, 50)}... [${verificationStatus.toUpperCase()}]`);
         }
         
       } catch (error) {
