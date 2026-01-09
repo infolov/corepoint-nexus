@@ -190,6 +190,11 @@ const Article = () => {
               />
             </div>
 
+            {/* Ad Banner between image and AI Summary */}
+            <div className="mb-6">
+              <AuctionAdSlot variant="horizontal" className="w-full" slotIndex={2} />
+            </div>
+
             {/* AI Summary */}
             <ArticleSummary 
               title={article.title}
@@ -283,10 +288,6 @@ const Article = () => {
           </article>
         </div>
 
-        {/* Bottom Ad Banner */}
-        <div className="mt-8 mb-6">
-          <AuctionAdSlot variant="horizontal" className="w-full" slotIndex={2} />
-        </div>
 
         {/* Related Articles Section */}
         {relatedArticles.length > 0 && (
