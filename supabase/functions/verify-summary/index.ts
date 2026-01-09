@@ -48,34 +48,61 @@ serve(async (req) => {
     console.log(`Verifying summary for: ${title?.substring(0, 50)}... (attempt ${attemptNumber})`);
 
     // Step 1: Fact-checking - verify all claims in summary against source
-    const verificationPrompt = `# ROLA: Fact-Checker / Weryfikator faktów
+    const verificationPrompt = `# ROLA: Moduł Kontroli Jakości Agregatora (Zero Fantazjowania)
 
-Jesteś profesjonalnym fact-checkerem pracującym dla renomowanej agencji prasowej. Twoim zadaniem jest RYGORYSTYCZNA weryfikacja podsumowania artykułu.
+Jesteś modułem kontroli jakości zintegrowanym z systemem agregatora. Twoim zadaniem jest RYGORYSTYCZNY AUDYT.
 
-# ZASADA NADRZĘDNA - Single Source of Truth (SSOT):
-ORYGINALNA TREŚĆ ARTYKUŁU jest JEDYNYM źródłem prawdy. Każda informacja w podsumowaniu MUSI mieć bezpośrednie potwierdzenie w oryginalnym tekście.
+# KONTEKST OPERACYJNY:
+Otrzymujesz obiekt zawierający current_summary oraz source_data. Twój jedyny cel to weryfikacja zgodności.
 
-# KRYTERIA ODRZUCENIA (każde z poniższych skutkuje statusem REJECTED):
-1. FABRYKACJA: Informacja w podsumowaniu nie występuje w oryginalnym tekście
-2. PRZEKŁAMANIE: Liczby, daty, nazwiska, nazwy miejsc różnią się od oryginału
-3. NADINTERPRETACJA: Wyciąganie wniosków, których autor artykułu nie przedstawił
-4. SPEKULACJA: Dodawanie przypuszczeń niewystępujących w źródle
-5. ZMIANA KONTEKSTU: Przedstawienie informacji w innym kontekście niż w oryginale
+# INSTRUKCJE RYGORU (ZERO FANTAZJOWANIA):
 
-# INSTRUKCJA ANALIZY:
-1. Zidentyfikuj KAŻDE stwierdzenie faktyczne w podsumowaniu
-2. Znajdź DOKŁADNE potwierdzenie w oryginalnym tekście
-3. Jeśli nie można znaleźć potwierdzenia - oznacz jako FABRYKACJA
+## 1. WERYFIKACJA TOŻSAMOŚCI (CRITICAL):
+- Sprawdź, czy KAŻDA osoba wymieniona w current_summary jest IDENTYCZNIE nazwana w source_data
+- Jeśli w źródle jest "Jan Kowalski", a w podsumowaniu "Adam Kowalski" → CRITICAL_ERROR, ODRZUĆ
+- Każda literówka w nazwisku = CRITICAL_ERROR
+
+## 2. WERYFIKACJA LICZB (CRITICAL):
+- Wyodrębnij WSZYSTKIE: daty, kwoty, procenty, statystyki, wartości liczbowe
+- Porównaj ZNAK PO ZNAKU z source_data
+- Jeśli JAKAKOLWIEK liczba różni się od tej w source_data → CRITICAL_ERROR, ODRZUĆ
+- Przykład: źródło "15 mln zł" vs podsumowanie "15,5 mln zł" = CRITICAL_ERROR
+
+## 3. ZAKAZ WZBOGACANIA (CRITICAL):
+- NIE POZWALAJ na dodawanie kontekstu z wiedzy ogólnej AI
+- Jeśli w źródle NIE MA informacji, że firma jest "liderem rynku", a podsumowanie tak twierdzi → ODRZUĆ
+- Każda informacja BEZ bezpośredniego potwierdzenia w source_data = FABRYKACJA
+
+## 4. ZAKAZ INTERPRETACJI:
+- NIE POZWALAJ na wyciąganie wniosków, których autor NIE przedstawił
+- NIE POZWALAJ na spekulacje, przypuszczenia, domysły
+- NIE POZWALAJ na zmianę kontekstu lub tonu wypowiedzi
+
+# PROCEDURA AUDYTU:
+1. Dla KAŻDEGO zdania w current_summary:
+   a) Znajdź DOKŁADNE potwierdzenie w source_data
+   b) Jeśli brak potwierdzenia → mismatch_details += "FABRYKACJA: [treść]"
+2. Dla KAŻDEJ liczby/daty/nazwy:
+   a) Porównaj znak po znaku
+   b) Jeśli różnica → mismatch_details += "CRITICAL_ERROR: [oczekiwane] vs [znalezione]"
 
 # FORMAT ODPOWIEDZI (ŚCIŚLE JSON):
 {
-  "isValid": true/false,
+  "is_valid": true/false,
   "status": "verified" lub "rejected",
-  "claimsChecked": [liczba sprawdzonych twierdzeń],
-  "claimsVerified": [liczba zweryfikowanych pozytywnie],
-  "claimsRejected": [liczba odrzuconych],
-  "fabricatedClaims": ["lista sfabrykowanych/nieprawdziwych twierdzeń"],
-  "errors": ["lista wszystkich błędów znalezionych w podsumowaniu"]
+  "mismatch_details": [
+    {
+      "type": "CRITICAL_ERROR" | "FABRYKACJA" | "NADINTERPRETACJA" | "WZBOGACENIE",
+      "claim_in_summary": "dokładna treść z podsumowania",
+      "source_evidence": "dokładny cytat ze źródła lub null jeśli brak",
+      "explanation": "krótkie wyjaśnienie problemu"
+    }
+  ],
+  "claimsChecked": [liczba],
+  "claimsVerified": [liczba],
+  "claimsRejected": [liczba],
+  "fabricatedClaims": ["lista sfabrykowanych twierdzeń"],
+  "errors": ["lista błędów w formacie tekstowym"]
 }
 
 ---
@@ -83,17 +110,17 @@ ORYGINALNA TREŚĆ ARTYKUŁU jest JEDYNYM źródłem prawdy. Każda informacja w
 TYTUŁ ARTYKUŁU:
 ${title}
 
-ORYGINALNA TREŚĆ (SSOT - Single Source of Truth):
+SOURCE_DATA (JEDYNE ŹRÓDŁO PRAWDY - SSOT):
 ${originalContent.substring(0, 15000)}
 
 ---
 
-PODSUMOWANIE DO WERYFIKACJI:
+CURRENT_SUMMARY DO AUDYTU:
 ${aiSummary}
 
 ---
 
-WYNIK WERYFIKACJI (tylko JSON):`;
+WYNIK AUDYTU (tylko JSON, żadnego dodatkowego tekstu):`;
 
     const verificationResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -154,15 +181,25 @@ WYNIK WERYFIKACJI (tylko JSON):`;
       );
     }
 
+    // Handle both is_valid and isValid for compatibility
+    const isValid = verificationResult.is_valid === true || verificationResult.isValid === true;
+    const statusValue = verificationResult.status === 'verified' ? 'verified' : 'rejected';
+
     const result: VerificationResult = {
-      isValid: verificationResult.isValid === true && verificationResult.status === 'verified',
-      status: verificationResult.status === 'verified' ? 'verified' : 'rejected',
-      errors: verificationResult.errors || [],
+      isValid: isValid && statusValue === 'verified',
+      status: statusValue,
+      errors: verificationResult.errors || 
+        (verificationResult.mismatch_details || []).map((d: any) => 
+          `[${d.type}] ${d.claim_in_summary} - ${d.explanation}`
+        ),
       verificationDetails: {
         claimsChecked: verificationResult.claimsChecked || 0,
         claimsVerified: verificationResult.claimsVerified || 0,
         claimsRejected: verificationResult.claimsRejected || 0,
-        fabricatedClaims: verificationResult.fabricatedClaims || [],
+        fabricatedClaims: verificationResult.fabricatedClaims || 
+          (verificationResult.mismatch_details || [])
+            .filter((d: any) => d.type === 'FABRYKACJA' || d.type === 'WZBOGACENIE')
+            .map((d: any) => d.claim_in_summary),
       },
     };
 
