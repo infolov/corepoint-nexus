@@ -7,7 +7,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// RSS Sources - same as fetch-rss function
+// RSS Sources - removed Focus.pl (404 error)
 const RSS_SOURCES = [
   { url: 'https://www.polsatnews.pl/rss/wszystkie.xml', source: 'Polsat News', category: 'Wiadomości' },
   { url: 'https://tvn24.pl/najnowsze.xml', source: 'TVN24', category: 'Wiadomości' },
@@ -18,7 +18,6 @@ const RSS_SOURCES = [
   { url: 'https://sportowefakty.wp.pl/rss.xml', source: 'Sportowe Fakty', category: 'Sport' },
   { url: 'https://www.chip.pl/feed', source: 'Chip.pl', category: 'Technologia' },
   { url: 'https://tech.wp.pl/rss.xml', source: 'WP Tech', category: 'Technologia' },
-  { url: 'https://www.focus.pl/rss.xml', source: 'Focus', category: 'Nauka' },
 ];
 
 // Decode HTML entities
@@ -183,16 +182,24 @@ async function scrapeWithFirecrawl(url: string): Promise<string | null> {
   }
 }
 
-// Generate AI summary using Gemini
-async function generateSummary(title: string, content: string): Promise<string | null> {
+// Helper function for delay
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Generate AI summary using Gemini with retry logic
+async function generateSummaryWithRetry(
+  title: string, 
+  content: string, 
+  maxRetries: number = 3
+): Promise<string | null> {
   const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
   if (!geminiApiKey) {
     console.error('GEMINI_API_KEY not configured');
     return null;
   }
 
-  try {
-    const prompt = `Jesteś profesjonalnym dziennikarzem. Przygotuj zwięzłe streszczenie poniższego artykułu:
+  const prompt = `Jesteś profesjonalnym dziennikarzem. Przygotuj zwięzłe streszczenie poniższego artykułu:
 
 TYTUŁ: ${title}
 
@@ -209,38 +216,68 @@ ZASADY:
 
 STRESZCZENIE:`;
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.3,
-            maxOutputTokens: 500,
-          },
-        }),
-      }
-    );
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`Gemini API attempt ${attempt}/${maxRetries} for: ${title.substring(0, 40)}...`);
+      
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              temperature: 0.3,
+              maxOutputTokens: 500,
+            },
+          }),
+        }
+      );
 
-    if (!response.ok) {
-      console.error('Gemini API error:', response.status);
+      // Handle rate limit (429)
+      if (response.status === 429) {
+        const retryAfter = response.headers.get('Retry-After');
+        const waitTime = retryAfter ? parseInt(retryAfter) * 1000 : Math.pow(2, attempt) * 5000; // Exponential backoff: 5s, 10s, 20s
+        console.log(`Rate limited (429). Waiting ${waitTime / 1000}s before retry...`);
+        await delay(waitTime);
+        continue;
+      }
+
+      // Handle other errors
+      if (!response.ok) {
+        console.error(`Gemini API error: ${response.status}`);
+        if (attempt < maxRetries) {
+          const waitTime = Math.pow(2, attempt) * 2000; // 2s, 4s, 8s
+          console.log(`Waiting ${waitTime / 1000}s before retry...`);
+          await delay(waitTime);
+          continue;
+        }
+        return null;
+      }
+
+      const data = await response.json();
+      const summary = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      
+      if (summary) {
+        console.log(`Generated summary on attempt ${attempt}, length: ${summary.length}`);
+        return summary;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error(`Error on attempt ${attempt}:`, error);
+      if (attempt < maxRetries) {
+        const waitTime = Math.pow(2, attempt) * 2000;
+        console.log(`Waiting ${waitTime / 1000}s before retry...`);
+        await delay(waitTime);
+        continue;
+      }
       return null;
     }
-
-    const data = await response.json();
-    const summary = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    
-    if (summary) {
-      console.log(`Generated summary, length: ${summary.length}`);
-    }
-    
-    return summary || null;
-  } catch (error) {
-    console.error('Error generating summary:', error);
-    return null;
   }
+  
+  return null;
 }
 
 serve(async (req) => {
@@ -286,10 +323,13 @@ serve(async (req) => {
     const articlesToProcess = newArticles.slice(0, 10);
     let processedCount = 0;
     let failedCount = 0;
+    let rateLimitedCount = 0;
     
-    for (const article of articlesToProcess) {
+    for (let i = 0; i < articlesToProcess.length; i++) {
+      const article = articlesToProcess[i];
+      
       try {
-        console.log(`Processing: ${article.title.substring(0, 50)}...`);
+        console.log(`Processing [${i + 1}/${articlesToProcess.length}]: ${article.title.substring(0, 50)}...`);
         
         // Scrape full content
         const fullContent = await scrapeWithFirecrawl(article.url);
@@ -300,12 +340,19 @@ serve(async (req) => {
           continue;
         }
         
-        // Generate AI summary
-        const aiSummary = await generateSummary(article.title, fullContent);
+        // Add delay before Gemini API call to respect rate limits
+        // Delay increases with each request: 2s base + 1s per article processed
+        const preApiDelay = 2000 + (i * 1000);
+        console.log(`Waiting ${preApiDelay / 1000}s before Gemini API call...`);
+        await delay(preApiDelay);
+        
+        // Generate AI summary with retry logic
+        const aiSummary = await generateSummaryWithRetry(article.title, fullContent);
         
         if (!aiSummary) {
-          console.log(`Skipping ${article.url} - failed to generate summary`);
+          console.log(`Skipping ${article.url} - failed to generate summary after retries`);
           failedCount++;
+          rateLimitedCount++;
           continue;
         }
         
@@ -331,9 +378,6 @@ serve(async (req) => {
           console.log(`Successfully processed: ${article.title.substring(0, 50)}...`);
         }
         
-        // Small delay to avoid rate limits
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
       } catch (error) {
         console.error(`Error processing article ${article.url}:`, error);
         failedCount++;
@@ -346,6 +390,7 @@ serve(async (req) => {
       newArticles: newArticles.length,
       processed: processedCount,
       failed: failedCount,
+      rateLimited: rateLimitedCount,
       timestamp: new Date().toISOString(),
     };
     
