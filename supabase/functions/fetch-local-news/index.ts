@@ -214,118 +214,356 @@ async function fetchRSSFeed(feedUrl: string, source: string, voivodeship: string
 }
 
 // Map English region names to Polish voivodeships (from IP geolocation services)
+// Includes variations from ip-api.com, ipapi.co, and other services
 const regionToVoivodeship: Record<string, string> = {
+  // Mazowieckie
   'masovia': 'mazowieckie',
   'masovian': 'mazowieckie',
   'mazovia': 'mazowieckie',
   'mazowieckie': 'mazowieckie',
+  'masovian voivodeship': 'mazowieckie',
+  'mazowieckie voivodeship': 'mazowieckie',
+  'województwo mazowieckie': 'mazowieckie',
+  '14': 'mazowieckie', // region code
+  
+  // Małopolskie
   'lesser poland': 'malopolskie',
   'małopolskie': 'malopolskie',
   'malopolskie': 'malopolskie',
+  'lesser poland voivodeship': 'malopolskie',
+  'małopolskie voivodeship': 'malopolskie',
+  'województwo małopolskie': 'malopolskie',
+  '12': 'malopolskie',
+  
+  // Pomorskie
   'pomerania': 'pomorskie',
   'pomeranian': 'pomorskie',
   'pomorskie': 'pomorskie',
+  'pomeranian voivodeship': 'pomorskie',
+  'pomorskie voivodeship': 'pomorskie',
+  'województwo pomorskie': 'pomorskie',
+  '22': 'pomorskie',
+  
+  // Śląskie
   'silesia': 'slaskie',
   'silesian': 'slaskie',
   'śląskie': 'slaskie',
   'slaskie': 'slaskie',
+  'silesian voivodeship': 'slaskie',
+  'śląskie voivodeship': 'slaskie',
+  'województwo śląskie': 'slaskie',
+  '24': 'slaskie',
+  
+  // Wielkopolskie
   'greater poland': 'wielkopolskie',
   'wielkopolskie': 'wielkopolskie',
+  'greater poland voivodeship': 'wielkopolskie',
+  'wielkopolskie voivodeship': 'wielkopolskie',
+  'województwo wielkopolskie': 'wielkopolskie',
+  '30': 'wielkopolskie',
+  
+  // Dolnośląskie
   'lower silesia': 'dolnoslaskie',
   'lower silesian': 'dolnoslaskie',
   'dolnośląskie': 'dolnoslaskie',
   'dolnoslaskie': 'dolnoslaskie',
+  'lower silesian voivodeship': 'dolnoslaskie',
+  'dolnośląskie voivodeship': 'dolnoslaskie',
+  'województwo dolnośląskie': 'dolnoslaskie',
+  '02': 'dolnoslaskie',
+  
+  // Łódzkie
   'łódzkie': 'lodzkie',
   'lodzkie': 'lodzkie',
   'lodz': 'lodzkie',
+  'łódź voivodeship': 'lodzkie',
+  'łódzkie voivodeship': 'lodzkie',
+  'województwo łódzkie': 'lodzkie',
+  '10': 'lodzkie',
+  
+  // Zachodniopomorskie
   'west pomerania': 'zachodniopomorskie',
   'west pomeranian': 'zachodniopomorskie',
   'zachodniopomorskie': 'zachodniopomorskie',
+  'west pomeranian voivodeship': 'zachodniopomorskie',
+  'zachodniopomorskie voivodeship': 'zachodniopomorskie',
+  'województwo zachodniopomorskie': 'zachodniopomorskie',
+  '32': 'zachodniopomorskie',
+  
+  // Kujawsko-pomorskie
   'kuyavia-pomerania': 'kujawsko-pomorskie',
   'kuyavian-pomeranian': 'kujawsko-pomorskie',
   'kujawsko-pomorskie': 'kujawsko-pomorskie',
+  'kuyavian-pomeranian voivodeship': 'kujawsko-pomorskie',
+  'kujawsko-pomorskie voivodeship': 'kujawsko-pomorskie',
+  'województwo kujawsko-pomorskie': 'kujawsko-pomorskie',
+  '04': 'kujawsko-pomorskie',
+  
+  // Lubelskie
   'lublin': 'lubelskie',
   'lubelskie': 'lubelskie',
+  'lublin voivodeship': 'lubelskie',
+  'lubelskie voivodeship': 'lubelskie',
+  'województwo lubelskie': 'lubelskie',
+  '06': 'lubelskie',
+  
+  // Podkarpackie
   'subcarpathia': 'podkarpackie',
   'subcarpathian': 'podkarpackie',
   'podkarpackie': 'podkarpackie',
+  'subcarpathian voivodeship': 'podkarpackie',
+  'podkarpackie voivodeship': 'podkarpackie',
+  'województwo podkarpackie': 'podkarpackie',
+  '18': 'podkarpackie',
+  
+  // Podlaskie
   'podlaskie': 'podlaskie',
   'podlasie': 'podlaskie',
+  'podlaskie voivodeship': 'podlaskie',
+  'województwo podlaskie': 'podlaskie',
+  '20': 'podlaskie',
+  
+  // Warmińsko-mazurskie
   'warmia-masuria': 'warminsko-mazurskie',
   'warmian-masurian': 'warminsko-mazurskie',
   'warmińsko-mazurskie': 'warminsko-mazurskie',
   'warminsko-mazurskie': 'warminsko-mazurskie',
+  'warmian-masurian voivodeship': 'warminsko-mazurskie',
+  'warmińsko-mazurskie voivodeship': 'warminsko-mazurskie',
+  'województwo warmińsko-mazurskie': 'warminsko-mazurskie',
+  '28': 'warminsko-mazurskie',
+  
+  // Lubuskie
   'lubusz': 'lubuskie',
   'lubuskie': 'lubuskie',
+  'lubusz voivodeship': 'lubuskie',
+  'lubuskie voivodeship': 'lubuskie',
+  'województwo lubuskie': 'lubuskie',
+  '08': 'lubuskie',
+  
+  // Świętokrzyskie
   'holy cross': 'swietokrzyskie',
   'świętokrzyskie': 'swietokrzyskie',
   'swietokrzyskie': 'swietokrzyskie',
+  'holy cross voivodeship': 'swietokrzyskie',
+  'świętokrzyskie voivodeship': 'swietokrzyskie',
+  'województwo świętokrzyskie': 'swietokrzyskie',
+  '26': 'swietokrzyskie',
+  
+  // Opolskie
   'opole': 'opolskie',
   'opolskie': 'opolskie',
+  'opole voivodeship': 'opolskie',
+  'opolskie voivodeship': 'opolskie',
+  'województwo opolskie': 'opolskie',
+  '16': 'opolskie',
 };
 
-// IP to location using free service
+// City to voivodeship mapping for major Polish cities
+const cityToVoivodeship: Record<string, string> = {
+  // Mazowieckie
+  'warsaw': 'mazowieckie', 'warszawa': 'mazowieckie', 'radom': 'mazowieckie', 
+  'płock': 'mazowieckie', 'plock': 'mazowieckie', 'siedlce': 'mazowieckie',
+  'pruszków': 'mazowieckie', 'pruszkow': 'mazowieckie', 'legionowo': 'mazowieckie',
+  'ostrołęka': 'mazowieckie', 'ostroleka': 'mazowieckie',
+  
+  // Małopolskie
+  'krakow': 'malopolskie', 'kraków': 'malopolskie', 'cracow': 'malopolskie',
+  'tarnów': 'malopolskie', 'tarnow': 'malopolskie', 'nowy sącz': 'malopolskie',
+  'nowy sacz': 'malopolskie', 'oświęcim': 'malopolskie', 'oswiecim': 'malopolskie',
+  
+  // Pomorskie
+  'gdansk': 'pomorskie', 'gdańsk': 'pomorskie', 'gdynia': 'pomorskie', 
+  'sopot': 'pomorskie', 'słupsk': 'pomorskie', 'slupsk': 'pomorskie',
+  'tczew': 'pomorskie', 'wejherowo': 'pomorskie',
+  
+  // Śląskie
+  'katowice': 'slaskie', 'gliwice': 'slaskie', 'sosnowiec': 'slaskie',
+  'zabrze': 'slaskie', 'bytom': 'slaskie', 'ruda śląska': 'slaskie',
+  'ruda slaska': 'slaskie', 'tychy': 'slaskie', 'dąbrowa górnicza': 'slaskie',
+  'dabrowa gornicza': 'slaskie', 'chorzów': 'slaskie', 'chorzow': 'slaskie',
+  'bielsko-biała': 'slaskie', 'bielsko-biala': 'slaskie', 'częstochowa': 'slaskie',
+  'czestochowa': 'slaskie',
+  
+  // Wielkopolskie
+  'poznan': 'wielkopolskie', 'poznań': 'wielkopolskie', 'kalisz': 'wielkopolskie',
+  'konin': 'wielkopolskie', 'piła': 'wielkopolskie', 'pila': 'wielkopolskie',
+  'leszno': 'wielkopolskie', 'gniezno': 'wielkopolskie',
+  
+  // Dolnośląskie
+  'wroclaw': 'dolnoslaskie', 'wrocław': 'dolnoslaskie', 'legnica': 'dolnoslaskie',
+  'wałbrzych': 'dolnoslaskie', 'walbrzych': 'dolnoslaskie', 'jelenia góra': 'dolnoslaskie',
+  'jelenia gora': 'dolnoslaskie',
+  
+  // Łódzkie
+  'lodz': 'lodzkie', 'łódź': 'lodzkie', 'piotrków trybunalski': 'lodzkie',
+  'piotrkow trybunalski': 'lodzkie', 'pabianice': 'lodzkie', 'tomaszów mazowiecki': 'lodzkie',
+  'tomaszow mazowiecki': 'lodzkie', 'zgierz': 'lodzkie',
+  
+  // Zachodniopomorskie
+  'szczecin': 'zachodniopomorskie', 'koszalin': 'zachodniopomorskie',
+  'stargard': 'zachodniopomorskie', 'świnoujście': 'zachodniopomorskie',
+  'swinoujscie': 'zachodniopomorskie',
+  
+  // Kujawsko-pomorskie
+  'bydgoszcz': 'kujawsko-pomorskie', 'torun': 'kujawsko-pomorskie', 'toruń': 'kujawsko-pomorskie',
+  'włocławek': 'kujawsko-pomorskie', 'wloclawek': 'kujawsko-pomorskie',
+  'grudziądz': 'kujawsko-pomorskie', 'grudziadz': 'kujawsko-pomorskie',
+  'inowrocław': 'kujawsko-pomorskie', 'inowroclaw': 'kujawsko-pomorskie',
+  
+  // Lubelskie
+  'lublin': 'lubelskie', 'zamość': 'lubelskie', 'zamosc': 'lubelskie',
+  'chełm': 'lubelskie', 'chelm': 'lubelskie', 'biała podlaska': 'lubelskie',
+  'biala podlaska': 'lubelskie', 'puławy': 'lubelskie', 'pulawy': 'lubelskie',
+  
+  // Podkarpackie
+  'rzeszow': 'podkarpackie', 'rzeszów': 'podkarpackie', 'przemyśl': 'podkarpackie',
+  'przemysl': 'podkarpackie', 'stalowa wola': 'podkarpackie', 'mielec': 'podkarpackie',
+  'tarnobrzeg': 'podkarpackie', 'krosno': 'podkarpackie',
+  
+  // Podlaskie
+  'bialystok': 'podlaskie', 'białystok': 'podlaskie', 'suwałki': 'podlaskie',
+  'suwalki': 'podlaskie', 'łomża': 'podlaskie', 'lomza': 'podlaskie',
+  
+  // Warmińsko-mazurskie
+  'olsztyn': 'warminsko-mazurskie', 'elbląg': 'warminsko-mazurskie', 'elblag': 'warminsko-mazurskie',
+  'ełk': 'warminsko-mazurskie', 'elk': 'warminsko-mazurskie', 'ostróda': 'warminsko-mazurskie',
+  'ostroda': 'warminsko-mazurskie',
+  
+  // Lubuskie
+  'zielona gora': 'lubuskie', 'zielona góra': 'lubuskie', 'gorzow': 'lubuskie',
+  'gorzów wielkopolski': 'lubuskie', 'gorzow wielkopolski': 'lubuskie',
+  'nowa sól': 'lubuskie', 'nowa sol': 'lubuskie',
+  
+  // Świętokrzyskie
+  'kielce': 'swietokrzyskie', 'ostrowiec świętokrzyski': 'swietokrzyskie',
+  'ostrowiec swietokrzyski': 'swietokrzyskie', 'starachowice': 'swietokrzyskie',
+  'skarżysko-kamienna': 'swietokrzyskie', 'skarzysko-kamienna': 'swietokrzyskie',
+  
+  // Opolskie
+  'opole': 'opolskie', 'nysa': 'opolskie', 'kędzierzyn-koźle': 'opolskie',
+  'kedzierzyn-kozle': 'opolskie', 'brzeg': 'opolskie',
+};
+
+// IP to location using multiple fallback services
 async function getLocationFromIP(ip: string): Promise<string | null> {
   try {
     // Skip private/local IPs
-    if (ip.startsWith('127.') || ip.startsWith('10.') || ip.startsWith('192.168.') || ip === '::1') {
+    if (ip.startsWith('127.') || ip.startsWith('10.') || ip.startsWith('192.168.') || 
+        ip.startsWith('172.16.') || ip.startsWith('172.17.') || ip.startsWith('172.18.') ||
+        ip.startsWith('172.19.') || ip.startsWith('172.2') || ip.startsWith('172.30.') ||
+        ip.startsWith('172.31.') || ip === '::1' || ip === 'localhost') {
+      console.log(`Skipping private/local IP: ${ip}`);
       return null;
     }
     
-    const response = await fetch(`https://ipapi.co/${ip}/json/`);
-    if (!response.ok) {
-      console.error(`IP geolocation failed: ${response.status}`);
-      return null;
-    }
+    // Try ip-api.com first (45 req/min, returns full region names)
+    console.log(`Attempting geolocation for IP: ${ip}`);
     
-    const data = await response.json();
-    console.log(`IP geolocation response for ${ip}:`, JSON.stringify(data));
-    
-    // First try exact region match
-    const regionName = data.region?.toLowerCase().trim() || '';
-    const regionCode = data.region_code?.toLowerCase() || '';
-    const city = data.city?.toLowerCase() || '';
-    
-    // Try direct mapping from region name
-    if (regionToVoivodeship[regionName]) {
-      console.log(`Matched region "${regionName}" to ${regionToVoivodeship[regionName]}`);
-      return regionToVoivodeship[regionName];
-    }
-    
-    // Try partial matching for compound names
-    for (const [key, value] of Object.entries(regionToVoivodeship)) {
-      if (regionName.includes(key) || key.includes(regionName)) {
-        console.log(`Partial match region "${regionName}" to ${value} via "${key}"`);
-        return value;
+    try {
+      const response = await fetch(`http://ip-api.com/json/${ip}?fields=status,message,country,regionName,city`);
+      if (response.ok) {
+        const data = await response.json();
+        console.log(`ip-api.com response for ${ip}:`, JSON.stringify(data));
+        
+        if (data.status === 'success' && data.country === 'Poland') {
+          const regionName = data.regionName?.toLowerCase().trim() || '';
+          const city = data.city?.toLowerCase().trim() || '';
+          
+          // Try region name mapping
+          if (regionToVoivodeship[regionName]) {
+            console.log(`ip-api.com: Matched region "${regionName}" to ${regionToVoivodeship[regionName]}`);
+            return regionToVoivodeship[regionName];
+          }
+          
+          // Try partial region matching
+          for (const [key, value] of Object.entries(regionToVoivodeship)) {
+            if (regionName.includes(key) || key.includes(regionName)) {
+              console.log(`ip-api.com: Partial match "${regionName}" to ${value} via "${key}"`);
+              return value;
+            }
+          }
+          
+          // Try city fallback
+          if (cityToVoivodeship[city]) {
+            console.log(`ip-api.com: Matched city "${city}" to ${cityToVoivodeship[city]}`);
+            return cityToVoivodeship[city];
+          }
+          
+          console.log(`ip-api.com: Could not match region="${regionName}", city="${city}"`);
+        }
       }
+    } catch (e) {
+      console.warn('ip-api.com failed, trying fallback:', e);
     }
     
-    // Try city-based fallback for major cities
-    const cityToVoivodeship: Record<string, string> = {
-      'warsaw': 'mazowieckie', 'warszawa': 'mazowieckie',
-      'krakow': 'malopolskie', 'kraków': 'malopolskie', 'cracow': 'malopolskie',
-      'gdansk': 'pomorskie', 'gdańsk': 'pomorskie', 'gdynia': 'pomorskie', 'sopot': 'pomorskie',
-      'wroclaw': 'dolnoslaskie', 'wrocław': 'dolnoslaskie',
-      'poznan': 'wielkopolskie', 'poznań': 'wielkopolskie',
-      'lodz': 'lodzkie', 'łódź': 'lodzkie',
-      'katowice': 'slaskie', 'gliwice': 'slaskie', 'sosnowiec': 'slaskie',
-      'szczecin': 'zachodniopomorskie',
-      'lublin': 'lubelskie',
-      'bialystok': 'podlaskie', 'białystok': 'podlaskie',
-      'rzeszow': 'podkarpackie', 'rzeszów': 'podkarpackie',
-      'olsztyn': 'warminsko-mazurskie',
-      'bydgoszcz': 'kujawsko-pomorskie', 'torun': 'kujawsko-pomorskie', 'toruń': 'kujawsko-pomorskie',
-      'zielona gora': 'lubuskie', 'zielona góra': 'lubuskie', 'gorzow': 'lubuskie',
-      'kielce': 'swietokrzyskie',
-      'opole': 'opolskie',
-    };
-    
-    if (cityToVoivodeship[city]) {
-      console.log(`Matched city "${city}" to ${cityToVoivodeship[city]}`);
-      return cityToVoivodeship[city];
+    // Fallback to ipwho.is (free, no rate limit advertised)
+    try {
+      const response = await fetch(`https://ipwho.is/${ip}`);
+      if (response.ok) {
+        const data = await response.json();
+        console.log(`ipwho.is response for ${ip}:`, JSON.stringify(data));
+        
+        if (data.success && data.country === 'Poland') {
+          const regionName = data.region?.toLowerCase().trim() || '';
+          const city = data.city?.toLowerCase().trim() || '';
+          
+          if (regionToVoivodeship[regionName]) {
+            console.log(`ipwho.is: Matched region "${regionName}" to ${regionToVoivodeship[regionName]}`);
+            return regionToVoivodeship[regionName];
+          }
+          
+          for (const [key, value] of Object.entries(regionToVoivodeship)) {
+            if (regionName.includes(key) || key.includes(regionName)) {
+              console.log(`ipwho.is: Partial match "${regionName}" to ${value} via "${key}"`);
+              return value;
+            }
+          }
+          
+          if (cityToVoivodeship[city]) {
+            console.log(`ipwho.is: Matched city "${city}" to ${cityToVoivodeship[city]}`);
+            return cityToVoivodeship[city];
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('ipwho.is failed:', e);
     }
     
-    console.log(`Could not match location: region="${regionName}", city="${city}"`);
+    // Final fallback to ipapi.co (limited to 1000/day)
+    try {
+      const response = await fetch(`https://ipapi.co/${ip}/json/`);
+      if (response.ok) {
+        const data = await response.json();
+        console.log(`ipapi.co response for ${ip}:`, JSON.stringify(data));
+        
+        if (data.country_name === 'Poland' || data.country === 'PL') {
+          const regionName = data.region?.toLowerCase().trim() || '';
+          const city = data.city?.toLowerCase().trim() || '';
+          
+          if (regionToVoivodeship[regionName]) {
+            console.log(`ipapi.co: Matched region "${regionName}" to ${regionToVoivodeship[regionName]}`);
+            return regionToVoivodeship[regionName];
+          }
+          
+          for (const [key, value] of Object.entries(regionToVoivodeship)) {
+            if (regionName.includes(key) || key.includes(regionName)) {
+              console.log(`ipapi.co: Partial match "${regionName}" to ${value} via "${key}"`);
+              return value;
+            }
+          }
+          
+          if (cityToVoivodeship[city]) {
+            console.log(`ipapi.co: Matched city "${city}" to ${cityToVoivodeship[city]}`);
+            return cityToVoivodeship[city];
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('ipapi.co failed:', e);
+    }
+    
+    console.log(`All geolocation services failed for IP: ${ip}`);
     return null;
   } catch (e) {
     console.error('IP geolocation error:', e);
