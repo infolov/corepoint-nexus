@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserSettings } from "@/hooks/use-user-settings";
+import { useAuth } from "@/hooks/use-auth";
 
 export interface LocalArticle {
   id: string;
@@ -24,6 +25,7 @@ interface UseLocalNewsOptions {
 export function useLocalNews(options: UseLocalNewsOptions = {}) {
   const { limit = 50, autoFetch = true } = options;
   const { settings, loading: settingsLoading } = useUserSettings();
+  const { user } = useAuth();
   const [articles, setArticles] = useState<LocalArticle[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -54,7 +56,8 @@ export function useLocalNews(options: UseLocalNewsOptions = {}) {
       const { data, error: fetchError } = await supabase.functions.invoke('fetch-local-news', {
         body: { 
           voivodeship, 
-          clientIP 
+          clientIP,
+          userId: user?.id // Pass user ID to filter by preferences
         },
       });
 
@@ -73,7 +76,7 @@ export function useLocalNews(options: UseLocalNewsOptions = {}) {
     } finally {
       setLoading(false);
     }
-  }, [settings.voivodeship, settingsLoading, limit]);
+  }, [settings.voivodeship, settingsLoading, limit, user?.id]);
 
   useEffect(() => {
     if (autoFetch && !settingsLoading) {
