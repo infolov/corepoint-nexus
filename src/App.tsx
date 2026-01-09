@@ -32,6 +32,7 @@ import DashboardAdminPlacements from "./pages/dashboard/DashboardAdminPlacements
 import DashboardAdminStats from "./pages/dashboard/DashboardAdminStats";
 import DashboardAdminPartners from "./pages/dashboard/DashboardAdminPartners";
 import DashboardAdminCarousels from "./pages/dashboard/DashboardAdminCarousels";
+import DashboardAdminFactCheck from "./pages/dashboard/DashboardAdminFactCheck";
 import DashboardPreview from "./pages/dashboard/DashboardPreview";
 
 const queryClient = new QueryClient();
@@ -71,6 +72,7 @@ const App = () => (
               <Route path="admin/stats" element={<DashboardAdminStats />} />
               <Route path="admin/partners" element={<DashboardAdminPartners />} />
               <Route path="admin/carousels" element={<DashboardAdminCarousels />} />
+              <Route path="admin/factcheck" element={<DashboardAdminFactCheck />} />
             </Route>
             <Route path="/sport/:subcategory" element={<Category />} />
             <Route path="/:category" element={<Category />} />
