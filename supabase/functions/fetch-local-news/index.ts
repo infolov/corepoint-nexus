@@ -213,6 +213,57 @@ async function fetchRSSFeed(feedUrl: string, source: string, voivodeship: string
   }
 }
 
+// Map English region names to Polish voivodeships (from IP geolocation services)
+const regionToVoivodeship: Record<string, string> = {
+  'masovia': 'mazowieckie',
+  'masovian': 'mazowieckie',
+  'mazovia': 'mazowieckie',
+  'mazowieckie': 'mazowieckie',
+  'lesser poland': 'malopolskie',
+  'małopolskie': 'malopolskie',
+  'malopolskie': 'malopolskie',
+  'pomerania': 'pomorskie',
+  'pomeranian': 'pomorskie',
+  'pomorskie': 'pomorskie',
+  'silesia': 'slaskie',
+  'silesian': 'slaskie',
+  'śląskie': 'slaskie',
+  'slaskie': 'slaskie',
+  'greater poland': 'wielkopolskie',
+  'wielkopolskie': 'wielkopolskie',
+  'lower silesia': 'dolnoslaskie',
+  'lower silesian': 'dolnoslaskie',
+  'dolnośląskie': 'dolnoslaskie',
+  'dolnoslaskie': 'dolnoslaskie',
+  'łódzkie': 'lodzkie',
+  'lodzkie': 'lodzkie',
+  'lodz': 'lodzkie',
+  'west pomerania': 'zachodniopomorskie',
+  'west pomeranian': 'zachodniopomorskie',
+  'zachodniopomorskie': 'zachodniopomorskie',
+  'kuyavia-pomerania': 'kujawsko-pomorskie',
+  'kuyavian-pomeranian': 'kujawsko-pomorskie',
+  'kujawsko-pomorskie': 'kujawsko-pomorskie',
+  'lublin': 'lubelskie',
+  'lubelskie': 'lubelskie',
+  'subcarpathia': 'podkarpackie',
+  'subcarpathian': 'podkarpackie',
+  'podkarpackie': 'podkarpackie',
+  'podlaskie': 'podlaskie',
+  'podlasie': 'podlaskie',
+  'warmia-masuria': 'warminsko-mazurskie',
+  'warmian-masurian': 'warminsko-mazurskie',
+  'warmińsko-mazurskie': 'warminsko-mazurskie',
+  'warminsko-mazurskie': 'warminsko-mazurskie',
+  'lubusz': 'lubuskie',
+  'lubuskie': 'lubuskie',
+  'holy cross': 'swietokrzyskie',
+  'świętokrzyskie': 'swietokrzyskie',
+  'swietokrzyskie': 'swietokrzyskie',
+  'opole': 'opolskie',
+  'opolskie': 'opolskie',
+};
+
 // IP to location using free service
 async function getLocationFromIP(ip: string): Promise<string | null> {
   try {
@@ -222,20 +273,59 @@ async function getLocationFromIP(ip: string): Promise<string | null> {
     }
     
     const response = await fetch(`https://ipapi.co/${ip}/json/`);
-    if (!response.ok) return null;
+    if (!response.ok) {
+      console.error(`IP geolocation failed: ${response.status}`);
+      return null;
+    }
     
     const data = await response.json();
+    console.log(`IP geolocation response for ${ip}:`, JSON.stringify(data));
     
-    // Map Polish regions from IP data
-    const regionName = data.region?.toLowerCase() || '';
+    // First try exact region match
+    const regionName = data.region?.toLowerCase().trim() || '';
+    const regionCode = data.region_code?.toLowerCase() || '';
+    const city = data.city?.toLowerCase() || '';
     
-    // Try to match to voivodeship
-    for (const [key, value] of Object.entries(voivodeshipNormalize)) {
-      if (regionName.includes(key.replace('skie', '').replace('ie', ''))) {
+    // Try direct mapping from region name
+    if (regionToVoivodeship[regionName]) {
+      console.log(`Matched region "${regionName}" to ${regionToVoivodeship[regionName]}`);
+      return regionToVoivodeship[regionName];
+    }
+    
+    // Try partial matching for compound names
+    for (const [key, value] of Object.entries(regionToVoivodeship)) {
+      if (regionName.includes(key) || key.includes(regionName)) {
+        console.log(`Partial match region "${regionName}" to ${value} via "${key}"`);
         return value;
       }
     }
     
+    // Try city-based fallback for major cities
+    const cityToVoivodeship: Record<string, string> = {
+      'warsaw': 'mazowieckie', 'warszawa': 'mazowieckie',
+      'krakow': 'malopolskie', 'kraków': 'malopolskie', 'cracow': 'malopolskie',
+      'gdansk': 'pomorskie', 'gdańsk': 'pomorskie', 'gdynia': 'pomorskie', 'sopot': 'pomorskie',
+      'wroclaw': 'dolnoslaskie', 'wrocław': 'dolnoslaskie',
+      'poznan': 'wielkopolskie', 'poznań': 'wielkopolskie',
+      'lodz': 'lodzkie', 'łódź': 'lodzkie',
+      'katowice': 'slaskie', 'gliwice': 'slaskie', 'sosnowiec': 'slaskie',
+      'szczecin': 'zachodniopomorskie',
+      'lublin': 'lubelskie',
+      'bialystok': 'podlaskie', 'białystok': 'podlaskie',
+      'rzeszow': 'podkarpackie', 'rzeszów': 'podkarpackie',
+      'olsztyn': 'warminsko-mazurskie',
+      'bydgoszcz': 'kujawsko-pomorskie', 'torun': 'kujawsko-pomorskie', 'toruń': 'kujawsko-pomorskie',
+      'zielona gora': 'lubuskie', 'zielona góra': 'lubuskie', 'gorzow': 'lubuskie',
+      'kielce': 'swietokrzyskie',
+      'opole': 'opolskie',
+    };
+    
+    if (cityToVoivodeship[city]) {
+      console.log(`Matched city "${city}" to ${cityToVoivodeship[city]}`);
+      return cityToVoivodeship[city];
+    }
+    
+    console.log(`Could not match location: region="${regionName}", city="${city}"`);
     return null;
   } catch (e) {
     console.error('IP geolocation error:', e);
