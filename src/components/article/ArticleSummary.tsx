@@ -43,8 +43,9 @@ export const ArticleSummary = ({ title, content, category }: ArticleSummaryProps
   }, []);
 
   useEffect(() => {
-    // If no content, stop loading immediately
-    if (!title || !content) {
+    // If no content at all (not even title), stop loading
+    // Allow generating summary from title alone if content is missing
+    if (!title && !content) {
       setLoading(false);
       setError("Brak treści do podsumowania");
       return;
