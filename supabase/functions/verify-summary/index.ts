@@ -7,7 +7,7 @@ const corsHeaders = {
 
 interface VerificationRequest {
   title: string;
-  originalContent: string;  // Single Source of Truth
+  originalContent: string;
   aiSummary: string;
   attemptNumber?: number;
 }
@@ -48,70 +48,58 @@ serve(async (req) => {
     console.log(`Verifying summary for: ${title?.substring(0, 50)}... (attempt ${attemptNumber})`);
 
     // Step 1: Fact-checking - verify all claims in summary against source
-    const verificationPrompt = `# ROLA: Rygorystyczny Inspektor Danych
+    const verificationPrompt = `# ROLA: Redaktor Weryfikacyjny
 
-Jesteś precyzyjnym inspektorem danych. Twoje jedyne zadanie to wykrycie KAŻDEJ różnicy między źródłem a podsumowaniem.
+Jesteś redaktorem weryfikującym podsumowania artykułów. Twoje zadanie to znalezienie PRAWDZIWYCH błędów merytorycznych.
 
-# ŹRÓDŁO PRAWDY (SSOT):
+# ORYGINALNA TREŚĆ ARTYKUŁU:
 ${originalContent.substring(0, 15000)}
 
-# TEKST DO SPRAWDZENIA:
+# PODSUMOWANIE DO WERYFIKACJI:
 ${aiSummary}
 
+# TYTUŁ: ${title}
+
 # ZADANIE:
-Znajdź KAŻDĄ różnicę między źródłem a podsumowaniem.
+Sprawdź czy podsumowanie zawiera **RZECZYWISTE BŁĘDY MERYTORYCZNE**:
 
-# DEFINICJA BŁĘDU - każde z poniższych to błąd krytyczny:
+## CO JEST BŁĘDEM:
+1. **Zmiana liczby/kwoty/daty** - np. źródło mówi "15 mln", podsumowanie "20 mln"
+2. **Błąd w nazwisku/nazwie** - np. źródło "Kowalski", podsumowanie "Kowalsky" 
+3. **Halucynacja** - informacja CAŁKOWICIE WYMYŚLONA, której NIE MA w źródle
+4. **Zmiana znaczenia** - przekręcenie sensu wypowiedzi
 
-1. ZMIANA CYFRY: Zmiana choćby jednej cyfry w dacie lub kwocie
-   - Źródło: "15 mln zł" → Podsumowanie: "15,5 mln zł" = BŁĄD
-   - Źródło: "2024" → Podsumowanie: "2025" = BŁĄD
+## CO NIE JEST BŁĘDEM (nie zgłaszaj!):
+- Forma gramatyczna tego samego słowa ("Hurkacz" vs "Hurkacza", "Zieliński" vs "Zielińskiego")
+- Skróty lub rozwinięcia ("mln zł" vs "milionów złotych")
+- Parafraza zachowująca sens
+- Pominięcie mniej istotnych szczegółów
+- Zamiana kolejności informacji
+- Dodanie słów takich jak "także", "również", "ponadto"
+- Różnice w szyku zdania
 
-2. ZMIANA LITERY: Zmiana litery w nazwisku lub nazwie własnej
-   - Źródło: "Jan Kowalski" → Podsumowanie: "Jan Kowalsky" = BŁĄD
-   - Źródło: "Warszawa" → Podsumowanie: "Waszawa" = BŁĄD
+# PROCEDURA:
+1. Przeczytaj całe źródło uważnie
+2. Dla każdego faktu w podsumowaniu znajdź odpowiednik w źródle
+3. Sprawdź czy SENS i LICZBY się zgadzają (ignoruj formę gramatyczną)
+4. Zgłoś TYLKO poważne rozbieżności merytoryczne
 
-3. HALUCYNACJA: Dodanie informacji, której NIE MA w tekście źródłowym
-   - Jeśli podsumowanie twierdzi coś, czego nie można znaleźć w źródle = BŁĄD
-   - Przykład: Źródło nie wspomina o "liderze rynku", a podsumowanie tak twierdzi = BŁĄD
+# ODPOWIEDŹ W FORMACIE JSON:
 
-4. POMINIĘCIE KONTEKSTU: Pominięcie kluczowego kontekstu, który zmienia znaczenie liczby
-   - Źródło: "spadek o 15% w porównaniu do zeszłego roku" → Podsumowanie: "spadek o 15%" (bez kontekstu) = BŁĄD
-
-# PROCEDURA INSPEKCJI:
-
-1. Wyodrębnij WSZYSTKIE liczby, daty, kwoty z podsumowania
-2. Dla KAŻDEJ znajdź odpowiednik w źródle i porównaj ZNAK PO ZNAKU
-3. Wyodrębnij WSZYSTKIE nazwiska i nazwy własne z podsumowania
-4. Dla KAŻDEGO znajdź odpowiednik w źródle i porównaj LITERA PO LITERZE
-5. Dla KAŻDEGO twierdzenia w podsumowaniu znajdź potwierdzenie w źródle
-6. Jeśli brak potwierdzenia = HALUCYNACJA
-
-# FORMAT WYJŚCIA (ŚCIŚLE JSON):
-
-Jeśli tekst jest idealny (zero różnic):
+Jeśli podsumowanie jest POPRAWNE merytorycznie:
 {"is_valid": true, "errors": [], "claimsChecked": X, "claimsVerified": X, "claimsRejected": 0, "fabricatedClaims": []}
 
-Jeśli są błędy:
+Jeśli są PRAWDZIWE błędy merytoryczne:
 {
   "is_valid": false,
-  "errors": [
-    "ZMIANA CYFRY: W źródle '15 mln zł', w podsumowaniu '15,5 mln zł'",
-    "HALUCYNACJA: Twierdzenie 'lider rynku' nie występuje w źródle",
-    "ZMIANA LITERY: W źródle 'Kowalski', w podsumowaniu 'Kowalsky'"
-  ],
+  "errors": ["Opis błędu 1", "Opis błędu 2"],
   "claimsChecked": X,
   "claimsVerified": Y,
   "claimsRejected": Z,
-  "fabricatedClaims": ["lista halucynacji"]
+  "fabricatedClaims": ["wymyślone twierdzenie"]
 }
 
-# TYTUŁ ARTYKUŁU (dla kontekstu):
-${title}
-
-# PRÓBA WERYFIKACJI: ${attemptNumber}
-
-WYNIK INSPEKCJI (TYLKO JSON, żadnego tekstu przed ani po):`;
+ODPOWIEDZ TYLKO CZYSTYM JSONEM:`;
 
     const verificationResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -122,8 +110,8 @@ WYNIK INSPEKCJI (TYLKO JSON, żadnego tekstu przed ani po):`;
       body: JSON.stringify({
         model: 'google/gemini-2.5-flash',
         messages: [{ role: 'user', content: verificationPrompt }],
-        max_tokens: 1000,
-        temperature: 0,
+        max_tokens: 800,
+        temperature: 0.1,
       }),
     });
 
@@ -140,12 +128,11 @@ WYNIK INSPEKCJI (TYLKO JSON, żadnego tekstu przed ani po):`;
     const verificationData = await verificationResponse.json();
     const verificationText = verificationData.choices?.[0]?.message?.content || '';
     
-    console.log(`Verification response: ${verificationText.substring(0, 500)}...`);
+    console.log(`Verification response: ${verificationText.substring(0, 300)}...`);
 
     // Parse JSON from response
     let verificationResult: any;
     try {
-      // Extract JSON from response (might be wrapped in markdown)
       const jsonMatch = verificationText.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         verificationResult = JSON.parse(jsonMatch[0]);
@@ -154,7 +141,6 @@ WYNIK INSPEKCJI (TYLKO JSON, żadnego tekstu przed ani po):`;
       }
     } catch (parseError) {
       console.error('Failed to parse verification result:', parseError);
-      // Default to pending if can't parse
       return new Response(
         JSON.stringify({
           isValid: false,
@@ -172,54 +158,54 @@ WYNIK INSPEKCJI (TYLKO JSON, żadnego tekstu przed ani po):`;
       );
     }
 
-    // Handle both is_valid and isValid for compatibility
+    // Check is_valid flag from AI response
     const isValid = verificationResult.is_valid === true || verificationResult.isValid === true;
-    const statusValue = verificationResult.status === 'verified' ? 'verified' : 'rejected';
+    const errors = verificationResult.errors || [];
+    
+    // Filter out false positive errors (grammar differences, etc.)
+    const realErrors = errors.filter((error: string) => {
+      const lowerError = error.toLowerCase();
+      // Ignore grammar-related false positives
+      if (lowerError.includes('forma gramatyczna') || 
+          lowerError.includes('odmiana') ||
+          lowerError.includes('identyczne') ||
+          lowerError.includes('takie samo')) {
+        return false;
+      }
+      return true;
+    });
 
     const result: VerificationResult = {
-      isValid: isValid && statusValue === 'verified',
-      status: statusValue,
-      errors: verificationResult.errors || 
-        (verificationResult.mismatch_details || []).map((d: any) => 
-          `[${d.type}] ${d.claim_in_summary} - ${d.explanation}`
-        ),
+      isValid: isValid || realErrors.length === 0,
+      status: (isValid || realErrors.length === 0) ? 'verified' : 'rejected',
+      errors: realErrors,
       verificationDetails: {
         claimsChecked: verificationResult.claimsChecked || 0,
         claimsVerified: verificationResult.claimsVerified || 0,
-        claimsRejected: verificationResult.claimsRejected || 0,
-        fabricatedClaims: verificationResult.fabricatedClaims || 
-          (verificationResult.mismatch_details || [])
-            .filter((d: any) => d.type === 'FABRYKACJA' || d.type === 'WZBOGACENIE')
-            .map((d: any) => d.claim_in_summary),
+        claimsRejected: realErrors.length,
+        fabricatedClaims: verificationResult.fabricatedClaims || [],
       },
     };
 
     // If rejected and we haven't exceeded retry limit, generate corrected summary
-    if (!result.isValid && attemptNumber < 3) {
-      console.log(`Summary rejected. Generating correction (attempt ${attemptNumber + 1})...`);
+    if (!result.isValid && attemptNumber < 3 && realErrors.length > 0) {
+      console.log(`Summary rejected with ${realErrors.length} real errors. Generating correction...`);
       
-      const correctionPrompt = `# ROLA: Profesjonalny redaktor
+      const correctionPrompt = `# ZADANIE: Napisz poprawione podsumowanie artykułu
 
-Poprzednie podsumowanie artykułu zostało ODRZUCONE przez system fact-checking z powodu następujących błędów:
+Poprzednie podsumowanie zawierało błędy:
+${realErrors.map((e: string, i: number) => `${i + 1}. ${e}`).join('\n')}
 
-BŁĘDY WYKRYTE:
-${result.errors.map((e, i) => `${i + 1}. ${e}`).join('\n')}
-
-SFABRYKOWANE TWIERDZENIA (informacje NIE występujące w oryginalnym tekście):
-${result.verificationDetails.fabricatedClaims.map((c, i) => `${i + 1}. ${c}`).join('\n') || 'Brak'}
-
-# ZADANIE:
-Napisz NOWE, POPRAWIONE podsumowanie, które:
-1. Zawiera WYŁĄCZNIE informacje z oryginalnego tekstu
-2. NIE zawiera żadnych sfabrykowanych informacji
-3. Koryguje wszystkie wykryte błędy
-4. Zachowuje format: 3-10 zdań, **pogrubienia** dla kluczowych informacji
-
-# ORYGINALNA TREŚĆ (JEDYNE ŹRÓDŁO PRAWDY):
+# ORYGINALNA TREŚĆ:
 ${originalContent.substring(0, 12000)}
 
-# TYTUŁ:
-${title}
+# TYTUŁ: ${title}
+
+# WYMAGANIA:
+- 3-8 zdań podsumowania
+- TYLKO fakty z oryginalnego tekstu
+- **Pogrubienie** dla kluczowych informacji (nazwisk, liczb, dat)
+- Nie dodawaj żadnych informacji spoza źródła
 
 POPRAWIONE PODSUMOWANIE:`;
 
@@ -232,8 +218,8 @@ POPRAWIONE PODSUMOWANIE:`;
         body: JSON.stringify({
           model: 'google/gemini-2.5-flash',
           messages: [{ role: 'user', content: correctionPrompt }],
-          max_tokens: 600,
-          temperature: 0,
+          max_tokens: 500,
+          temperature: 0.2,
         }),
       });
 
@@ -244,7 +230,7 @@ POPRAWIONE PODSUMOWANIE:`;
       }
     }
 
-    console.log(`Verification complete. Status: ${result.status}, Valid: ${result.isValid}`);
+    console.log(`Verification complete. Status: ${result.status}, Valid: ${result.isValid}, Errors: ${realErrors.length}`);
 
     return new Response(
       JSON.stringify(result),
