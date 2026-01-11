@@ -1,19 +1,25 @@
 import { useMemo } from "react";
 import { AuctionAdSlot } from "@/components/widgets/AuctionAdSlot";
 import { cn } from "@/lib/utils";
+import { type AdVariant, type AdPlacement } from "@/hooks/use-window-size";
 
 interface FeedAdInjectorProps {
   items: React.ReactNode[];
   adEveryN?: number;  // Insert ad every N items
-  placementVariant?: "horizontal" | "square" | "vertical";
+  placementVariant?: AdVariant;
   className?: string;
   adClassName?: string;
   showDevOverlay?: boolean;
+  /** Placement context for responsive sizing */
+  placement?: AdPlacement;
+  /** When true, automatically selects the best ad size for the current viewport */
+  auto?: boolean;
 }
 
 /**
  * Component that injects auction-based ads into a feed of items
  * Ads are inserted every N items using the hybrid auction engine
+ * Now with responsive sizing support to prevent CLS and optimize for mobile
  */
 export function FeedAdInjector({
   items,
@@ -22,6 +28,8 @@ export function FeedAdInjector({
   className,
   adClassName,
   showDevOverlay = true,
+  placement = "feed",
+  auto = false,
 }: FeedAdInjectorProps) {
   // Build the feed with ads injected
   const feedWithAds = useMemo(() => {
@@ -39,10 +47,12 @@ export function FeedAdInjector({
         result.push(
           <div key={`ad-slot-${adSlotIndex}`} className={cn("py-2", adClassName)}>
             <AuctionAdSlot
-              variant={placementVariant}
+              variant={auto ? "auto" : placementVariant}
               slotIndex={adSlotIndex}
               showDevOverlay={showDevOverlay}
               className="w-full"
+              placement={placement}
+              auto={auto}
             />
           </div>
         );
@@ -50,7 +60,7 @@ export function FeedAdInjector({
     });
 
     return result;
-  }, [items, adEveryN, placementVariant, adClassName, showDevOverlay]);
+  }, [items, adEveryN, placementVariant, adClassName, showDevOverlay, placement, auto]);
 
   return <div className={className}>{feedWithAds}</div>;
 }
