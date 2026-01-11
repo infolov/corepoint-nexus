@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
-import { Loader2, User, Sun, Moon, Monitor, Bell, MapPin, Check, Cloud } from "lucide-react";
+import { Loader2, User, Sun, Moon, Monitor, Bell, MapPin, Check, Cloud, Camera, X, ImageIcon } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -58,6 +58,11 @@ interface NotificationSettings {
 
 type SaveStatus = "idle" | "saving" | "saved";
 
+// Avatar constraints
+const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+const MAX_DIMENSIONS = 512; // 512x512 max
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
 export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPanelProps) {
   const { user } = useAuth();
   const { settings: displaySettings, setFontSize } = useDisplayMode();
@@ -70,6 +75,9 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
     daily: false,
     personalized: true,
   });
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const initialLoadRef = useRef(true);
@@ -96,7 +104,6 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
   }, [user, selectedRegion, theme, notifications, displaySettings.fontSize]);
 
   const saveSettings = async () => {
-    // Save to localStorage
     localStorage.setItem("userSettings", JSON.stringify({
       voivodeship: selectedRegion,
     }));
@@ -104,7 +111,6 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
 
     if (user) {
       try {
-        // Save site settings (region)
         const { data: existingSite } = await supabase
           .from("user_site_settings")
           .select("id")
@@ -122,7 +128,6 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
             .insert({ user_id: user.id, voivodeship: selectedRegion });
         }
 
-        // Save notification preferences
         const { data: existingNotif } = await supabase
           .from("user_notification_preferences")
           .select("id")
@@ -153,8 +158,6 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
 
         setSaveStatus("saved");
         onSettingsSaved?.();
-        
-        // Reset to idle after showing "saved" status
         setTimeout(() => setSaveStatus("idle"), 2000);
       } catch (error) {
         console.error("Error saving settings:", error);
@@ -167,7 +170,6 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
     }
   };
 
-  // Trigger autosave when settings change (but not on initial load)
   useEffect(() => {
     if (initialLoadRef.current) return;
     debouncedSave();
@@ -203,6 +205,17 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
     if (user) {
       setIsLoading(true);
       try {
+        // Load profile (avatar)
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("avatar_url")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (profile?.avatar_url) {
+          setAvatarUrl(profile.avatar_url);
+        }
+
         const { data: siteSettings } = await supabase
           .from("user_site_settings")
           .select("*")
@@ -237,7 +250,6 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
         console.error("Error loading settings:", error);
       } finally {
         setIsLoading(false);
-        // Allow autosave after initial load completes
         setTimeout(() => {
           initialLoadRef.current = false;
         }, 100);
@@ -269,6 +281,128 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
     setFontSize(size);
   };
 
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const validateImage = (file: File): Promise<boolean> => {
+    return new Promise((resolve) => {
+      // Check file type
+      if (!ALLOWED_TYPES.includes(file.type)) {
+        toast.error("Dozwolone formaty: JPG, PNG, WebP");
+        resolve(false);
+        return;
+      }
+
+      // Check file size
+      if (file.size > MAX_FILE_SIZE) {
+        toast.error("Maksymalny rozmiar pliku: 2MB");
+        resolve(false);
+        return;
+      }
+
+      // Check dimensions
+      const img = new Image();
+      img.onload = () => {
+        URL.revokeObjectURL(img.src);
+        if (img.width > MAX_DIMENSIONS || img.height > MAX_DIMENSIONS) {
+          toast.error(`Maksymalne wymiary: ${MAX_DIMENSIONS}x${MAX_DIMENSIONS}px`);
+          resolve(false);
+        } else {
+          resolve(true);
+        }
+      };
+      img.onerror = () => {
+        toast.error("Nie udało się wczytać obrazu");
+        resolve(false);
+      };
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    const isValid = await validateImage(file);
+    if (!isValid) {
+      e.target.value = "";
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+
+    try {
+      // Generate unique filename
+      const fileExt = file.name.split(".").pop();
+      const fileName = `avatar.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
+
+      // Delete old avatar if exists
+      await supabase.storage.from("avatars").remove([filePath]);
+
+      // Upload new avatar
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(filePath);
+
+      const newAvatarUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+
+      // Update profile
+      await supabase
+        .from("profiles")
+        .update({ avatar_url: newAvatarUrl })
+        .eq("user_id", user.id);
+
+      setAvatarUrl(newAvatarUrl);
+      toast.success("Avatar zaktualizowany");
+    } catch (error) {
+      console.error("Error uploading avatar:", error);
+      toast.error("Błąd podczas uploadu avatara");
+    } finally {
+      setIsUploadingAvatar(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    if (!user) return;
+
+    setIsUploadingAvatar(true);
+    try {
+      // Remove from storage
+      const { data: files } = await supabase.storage
+        .from("avatars")
+        .list(user.id);
+
+      if (files && files.length > 0) {
+        const filesToRemove = files.map(f => `${user.id}/${f.name}`);
+        await supabase.storage.from("avatars").remove(filesToRemove);
+      }
+
+      // Update profile
+      await supabase
+        .from("profiles")
+        .update({ avatar_url: null })
+        .eq("user_id", user.id);
+
+      setAvatarUrl(null);
+      toast.success("Avatar usunięty");
+    } catch (error) {
+      console.error("Error removing avatar:", error);
+      toast.error("Błąd podczas usuwania avatara");
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <SheetContent side="right" className="w-full sm:max-w-[480px] overflow-y-auto p-0">
@@ -278,7 +412,6 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
               <SheetTitle className="text-2xl font-semibold tracking-tight">
                 Ustawienia
               </SheetTitle>
-              {/* Save status indicator */}
               <SaveStatusIndicator status={saveStatus} />
             </div>
           </SheetHeader>
@@ -289,19 +422,73 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
             </div>
           ) : (
             <div className="space-y-8">
-              {/* Profile Section */}
+              {/* Profile Section with Avatar */}
               {user && (
                 <section className="p-5 rounded-2xl bg-muted/40">
                   <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-sm">
-                      <User className="h-7 w-7 text-primary-foreground" strokeWidth={1.5} />
+                    {/* Avatar with upload */}
+                    <div className="relative group">
+                      <button
+                        onClick={handleAvatarClick}
+                        disabled={isUploadingAvatar}
+                        className={cn(
+                          "w-16 h-16 rounded-full overflow-hidden flex items-center justify-center",
+                          "bg-gradient-to-br from-primary to-primary/70 shadow-sm",
+                          "transition-all duration-200 hover:ring-2 hover:ring-primary/50 hover:ring-offset-2",
+                          "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
+                          isUploadingAvatar && "opacity-50"
+                        )}
+                      >
+                        {isUploadingAvatar ? (
+                          <Loader2 className="h-6 w-6 text-primary-foreground animate-spin" strokeWidth={1.5} />
+                        ) : avatarUrl ? (
+                          <img
+                            src={avatarUrl}
+                            alt="Avatar"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <User className="h-8 w-8 text-primary-foreground" strokeWidth={1.5} />
+                        )}
+                      </button>
+                      
+                      {/* Camera overlay */}
+                      <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                        <Camera className="h-5 w-5 text-white" strokeWidth={1.5} />
+                      </div>
+
+                      {/* Remove button */}
+                      {avatarUrl && !isUploadingAvatar && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveAvatar();
+                          }}
+                          className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/90"
+                        >
+                          <X className="h-3 w-3" strokeWidth={2} />
+                        </button>
+                      )}
+
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        onChange={handleFileChange}
+                        className="hidden"
+                      />
                     </div>
+
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-foreground truncate">
                         {user.user_metadata?.full_name || "Użytkownik"}
                       </p>
                       <p className="text-sm text-muted-foreground truncate">
                         {user.email}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                        <ImageIcon className="h-3 w-3" strokeWidth={1.5} />
+                        Maks. 512×512px, 2MB
                       </p>
                     </div>
                   </div>
