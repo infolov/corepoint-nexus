@@ -13,9 +13,9 @@ const footerLinks = {
     { name: "Cookies", href: "/cookies" },
     { name: "RODO", href: "/gdpr" },
   ],
-  advertisers: [
-    { name: "Reklama", href: "/advertise" },
-    { name: "Panel klienta", href: "/dashboard" },
+  partners: [
+    { name: "Współpraca", href: "/advertise" },
+    { name: "Panel Partnera", href: "/dashboard" },
     { name: "Kontakt B2B", href: "/b2b" },
   ],
 };
@@ -24,7 +24,7 @@ export function Footer() {
   const allLinks = [
     ...footerLinks.portal,
     ...footerLinks.legal,
-    ...footerLinks.advertisers,
+    ...footerLinks.partners,
   ];
 
   return (

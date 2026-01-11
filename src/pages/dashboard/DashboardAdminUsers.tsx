@@ -59,7 +59,7 @@ interface UserProfile {
 
 const roleConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon: React.ComponentType<{ className?: string }> }> = {
   user: { label: "Użytkownik", variant: "secondary", icon: User },
-  advertiser: { label: "Reklamodawca", variant: "default", icon: UserCog },
+  advertiser: { label: "Partner", variant: "default", icon: UserCog },
   admin: { label: "Administrator", variant: "destructive", icon: Shield },
 };
 
@@ -427,7 +427,7 @@ export default function DashboardAdminUsers() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="user">Użytkownik</SelectItem>
-                <SelectItem value="advertiser">Reklamodawca</SelectItem>
+                <SelectItem value="advertiser">Partner</SelectItem>
                 <SelectItem value="admin">Administrator</SelectItem>
               </SelectContent>
             </Select>

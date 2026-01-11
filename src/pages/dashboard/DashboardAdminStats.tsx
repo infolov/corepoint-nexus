@@ -282,7 +282,7 @@ export default function DashboardAdminStats() {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Reklamodawcy</CardTitle>
+                <CardTitle className="text-sm font-medium">Partnerzy</CardTitle>
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -296,7 +296,7 @@ export default function DashboardAdminStats() {
             <TabsList>
               <TabsTrigger value="overview">Przegląd</TabsTrigger>
               <TabsTrigger value="campaigns">Kampanie</TabsTrigger>
-              <TabsTrigger value="advertisers">Reklamodawcy</TabsTrigger>
+              <TabsTrigger value="advertisers">Partnerzy</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="space-y-4">
@@ -445,7 +445,7 @@ export default function DashboardAdminStats() {
             <TabsContent value="advertisers" className="space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">Top reklamodawcy</CardTitle>
+                  <CardTitle className="text-base">Top Partnerzy</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {topAdvertisers.length > 0 ? (
@@ -472,7 +472,7 @@ export default function DashboardAdminStats() {
                     </div>
                   ) : (
                     <div className="text-center py-8 text-muted-foreground">
-                      Brak reklamodawców
+                      Brak Partnerów
                     </div>
                   )}
                 </CardContent>

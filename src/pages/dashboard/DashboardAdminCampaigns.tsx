@@ -356,7 +356,7 @@ export default function DashboardAdminCampaigns() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Reklamodawca</TableHead>
+                      <TableHead>Partner</TableHead>
                       <TableHead>Nazwa kampanii</TableHead>
                       <TableHead>Placement</TableHead>
                       <TableHead>Typ</TableHead>
@@ -501,7 +501,7 @@ export default function DashboardAdminCampaigns() {
           <DialogHeader>
             <DialogTitle>Podgląd kampanii: {previewCampaign?.name}</DialogTitle>
             <DialogDescription>
-              Reklamodawca: {previewCampaign?.user_name} ({previewCampaign?.user_email})
+              Partner: {previewCampaign?.user_name} ({previewCampaign?.user_email})
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">

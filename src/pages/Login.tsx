@@ -219,7 +219,7 @@ export default function Login() {
                   <h1 className="mt-4 text-2xl font-bold">
                     {mode === "login" && "Zaloguj się"}
                     {mode === "register" && "Utwórz konto"}
-                    {mode === "advertiser" && "Konto reklamodawcy"}
+                    {mode === "advertiser" && "Konto Partnera"}
                   </h1>
                   <p className="text-muted-foreground text-sm mt-2">
                     {mode === "login" && "Witaj ponownie! Zaloguj się do swojego konta."}
@@ -357,7 +357,7 @@ export default function Login() {
                   <>
                     {mode === "login" && "Zaloguj się"}
                     {mode === "register" && "Utwórz konto"}
-                    {mode === "advertiser" && "Załóż konto reklamodawcy"}
+                    {mode === "advertiser" && "Załóż konto Partnera"}
                   </>
                 )}
               </Button>
@@ -421,7 +421,7 @@ export default function Login() {
               onClick={handleDemoLogin}
             >
               <Play className="h-4 w-4 mr-2" />
-              Konto demo reklamodawcy
+              Konto demo Partnera
             </Button>
               </>
             )}

@@ -133,7 +133,7 @@ export function UserPanel({ onSignOut, onSettingsClick, className }: UserPanelPr
       <div className="p-3 rounded-lg bg-primary/5 border border-primary/10">
         <p className="text-xs text-muted-foreground leading-relaxed">
           <strong className="text-foreground">Korzyści z konta:</strong> Personalizowane wiadomości, 
-          powiadomienia, panel reklamodawcy, historia przeglądania.
+          powiadomienia, panel Partnera, historia przeglądania.
         </p>
       </div>
     </div>
