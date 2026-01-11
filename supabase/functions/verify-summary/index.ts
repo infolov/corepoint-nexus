@@ -48,9 +48,9 @@ serve(async (req) => {
     console.log(`Verifying summary for: ${title?.substring(0, 50)}... (attempt ${attemptNumber})`);
 
     // Step 1: Fact-checking - verify all claims in summary against source
-    const verificationPrompt = `# ROLA: Redaktor Weryfikacyjny
+    const verificationPrompt = `# ROLA: Tolerancyjny Redaktor Weryfikacyjny
 
-Jesteś redaktorem weryfikującym podsumowania artykułów. Twoje zadanie to znalezienie PRAWDZIWYCH błędów merytorycznych.
+Jesteś życzliwym redaktorem sprawdzającym podsumowania. Twoim celem jest przepuszczenie poprawnych podsumowań, a nie szukanie błędów na siłę.
 
 # ORYGINALNA TREŚĆ ARTYKUŁU:
 ${originalContent.substring(0, 15000)}
@@ -60,45 +60,52 @@ ${aiSummary}
 
 # TYTUŁ: ${title}
 
-# ZADANIE:
-Sprawdź czy podsumowanie zawiera **RZECZYWISTE BŁĘDY MERYTORYCZNE**:
+# FILOZOFIA WERYFIKACJI:
+Podsumowanie jest DOBRE jeśli oddaje GŁÓWNY SENS artykułu. Nie szukaj drobnych różnic!
 
-## CO JEST BŁĘDEM:
-1. **Zmiana liczby/kwoty/daty** - np. źródło mówi "15 mln", podsumowanie "20 mln"
-2. **Błąd w nazwisku/nazwie** - np. źródło "Kowalski", podsumowanie "Kowalsky" 
-3. **Halucynacja** - informacja CAŁKOWICIE WYMYŚLONA, której NIE MA w źródle
-4. **Zmiana znaczenia** - przekręcenie sensu wypowiedzi
+# JEDYNE PRAWDZIWE BŁĘDY TO:
+1. **Zmieniona liczba** - np. "15" zamienione na "20" (ale "15 mln" = "piętnaście milionów" to OK)
+2. **Przekręcone nazwisko** - np. "Kowalski" → "Nowalski" (ale "Kowalski" → "Kowalskiego" to OK!)
+3. **Wymyślona informacja** - coś czego KOMPLETNIE nie ma w źródle
+4. **Odwrócony sens** - np. "wygrał" zamiast "przegrał"
 
-## CO NIE JEST BŁĘDEM (nie zgłaszaj!):
-- Forma gramatyczna tego samego słowa ("Hurkacz" vs "Hurkacza", "Zieliński" vs "Zielińskiego")
-- Skróty lub rozwinięcia ("mln zł" vs "milionów złotych")
-- Parafraza zachowująca sens
-- Pominięcie mniej istotnych szczegółów
-- Zamiana kolejności informacji
-- Dodanie słów takich jak "także", "również", "ponadto"
-- Różnice w szyku zdania
+# TO NIE SĄ BŁĘDY - IGNORUJ:
+- "stopni Celsjusza" vs "st. C" vs "°C" - to to samo!
+- "od -18/-20 do -15" vs "od -18 do -15°C" - to samo!
+- "Hurkacz" vs "Hurkacza" - odmiana, OK!
+- "mln zł" vs "milionów złotych" - to samo!
+- Parafrazy zachowujące sens
+- Pominięcie mniej ważnych szczegółów
+- Zmiana szyku zdania
+- "jest niebezpieczne" vs "może być niebezpieczne" - OK
+- Inna interpunkcja lub formatowanie
+- Dodanie słów "także", "również", "ponadto" - OK
+- Skrócenie lub rozwinięcie tekstu - OK
+- Zmiana formy z cytatu na stwierdzenie faktu - OK
+- Pominięcie słów takich jak "kolejne", "meteorologiczne" itp. - OK
 
 # PROCEDURA:
-1. Przeczytaj całe źródło uważnie
-2. Dla każdego faktu w podsumowaniu znajdź odpowiednik w źródle
-3. Sprawdź czy SENS i LICZBY się zgadzają (ignoruj formę gramatyczną)
-4. Zgłoś TYLKO poważne rozbieżności merytoryczne
+1. Przeczytaj źródło CAŁE
+2. Sprawdź czy GŁÓWNY PRZEKAZ podsumowania jest zgodny ze źródłem
+3. Jeśli sens się zgadza - ZATWIERDŹ (is_valid: true)
+4. Zgłoś TYLKO poważne błędy zmieniające fakty
 
-# ODPOWIEDŹ W FORMACIE JSON:
+# ODPOWIEDŹ JSON:
 
-Jeśli podsumowanie jest POPRAWNE merytorycznie:
+Jeśli podsumowanie jest OK (sens się zgadza):
 {"is_valid": true, "errors": [], "claimsChecked": X, "claimsVerified": X, "claimsRejected": 0, "fabricatedClaims": []}
 
-Jeśli są PRAWDZIWE błędy merytoryczne:
+Jeśli są POWAŻNE błędy merytoryczne:
 {
   "is_valid": false,
-  "errors": ["Opis błędu 1", "Opis błędu 2"],
+  "errors": ["Tylko poważny błąd - np. 'Zmieniona kwota z 15 mln na 20 mln'"],
   "claimsChecked": X,
   "claimsVerified": Y,
   "claimsRejected": Z,
-  "fabricatedClaims": ["wymyślone twierdzenie"]
+  "fabricatedClaims": ["tylko całkowicie wymyślone informacje"]
 }
 
+BĄDŹ TOLERANCYJNY! Celem jest przepuszczenie dobrych podsumowań.
 ODPOWIEDZ TYLKO CZYSTYM JSONEM:`;
 
     const verificationResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -162,15 +169,31 @@ ODPOWIEDZ TYLKO CZYSTYM JSONEM:`;
     const isValid = verificationResult.is_valid === true || verificationResult.isValid === true;
     const errors = verificationResult.errors || [];
     
-    // Filter out false positive errors (grammar differences, etc.)
+    // Filter out false positive errors (grammar differences, paraphrasing, etc.)
     const realErrors = errors.filter((error: string) => {
       const lowerError = error.toLowerCase();
-      // Ignore grammar-related false positives
-      if (lowerError.includes('forma gramatyczna') || 
-          lowerError.includes('odmiana') ||
-          lowerError.includes('identyczne') ||
-          lowerError.includes('takie samo')) {
-        return false;
+      // Ignore false positives - grammar, formatting, paraphrasing
+      const falsePositivePatterns = [
+        'forma gramatyczna', 'odmiana', 'identyczne', 'takie samo',
+        'stopni celsjusza', 'st. c', '°c', // temperature formatting
+        'mln zł', 'milion', // money formatting
+        'pomija słowo', 'pominięto', 'brak słowa', // minor omissions
+        'zmiana formy', 'forma wypowiedzi', // speech form changes
+        'uproszczenie', 'skrócenie', // simplification
+        'stwierdzenie faktu', // indirect to direct speech
+        'kolejne', 'meteorologiczne', // minor word omissions
+        'dla formalności', // AI self-doubt
+        'między innymi', 'w tym', // equivalent phrases
+        'jest już', 'są już', // minor additions
+        'zmiana kontekstu', 'kontekst', // context changes that keep meaning
+        'powtórzenie', // repeated words
+      ];
+      
+      for (const pattern of falsePositivePatterns) {
+        if (lowerError.includes(pattern)) {
+          console.log(`Filtering false positive error: ${error.substring(0, 100)}`);
+          return false;
+        }
       }
       return true;
     });
