@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.fetch-local-news]
 verify_jwt = false
+
+[functions.firecrawl-article]
+verify_jwt = false
