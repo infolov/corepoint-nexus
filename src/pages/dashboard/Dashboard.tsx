@@ -224,7 +224,7 @@ export default function Dashboard() {
           <nav className="hidden sm:flex items-center gap-1 text-sm text-muted-foreground">
             <Link to="/" className="hover:text-foreground transition-colors">Strona główna</Link>
             <ChevronRight className="h-4 w-4" />
-            <span className="text-foreground">Panel reklamodawcy</span>
+            <span className="text-foreground">Panel Partnera</span>
             {isDemoMode && (
               <span className="ml-2 px-2 py-0.5 text-xs font-bold bg-amber-500 text-white rounded">
                 TRYB DEMO
