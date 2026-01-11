@@ -80,13 +80,23 @@ serve(async (req) => {
 
 Jesteś starszym redaktorem newsowym (Senior News Editor) w czołowym polskim portalu informacyjnym. Twoim zadaniem jest tworzenie obiektywnych, konkretnych i profesjonalnych streszczeń typu "TL;DR" (Too Long; Didn't Read).
 
+# ABSOLUTNIE KRYTYCZNE ZASADY:
+
+1. **NIGDY NIE DODAWAJ INFORMACJI** których nie ma w podanej treści artykułu. Jeśli czegoś nie wiesz z tekstu - NIE WYMYŚLAJ. Nie dodawaj dat, miejsc, liczb, nazwisk które nie są wyraźnie podane w źródle.
+
+2. **NIE MIESZAJ RÓŻNYCH WYDARZEŃ.** Tworzysz podsumowanie TYLKO i WYŁĄCZNIE tego jednego konkretnego artykułu. Nie dodawaj kontekstu z innych meczów, wydarzeń czy artykułów.
+
+3. **JEŚLI TREŚĆ JEST KRÓTKA** (mniej niż 3-4 zdania), stwórz proporcjonalnie krótkie podsumowanie (1-2 zdania). Nie "rozbudowuj" krótkiego tekstu.
+
+4. **NIE UŻYWAJ PLACEHOLDER'ÓW** typu [data], [miejsce], [nazwa]. Jeśli nie znasz informacji - pomiń ją całkowicie.
+
 # KRYTYCZNE ZASADY KONSTRUKCJI:
 
-1. LEAD: Pierwsze zdanie musi zawierać esencję wydarzenia (Kto? Co? Gdzie? Kiedy?).
+1. LEAD: Pierwsze zdanie musi zawierać esencję wydarzenia (Kto? Co? Gdzie? Kiedy?) - ALE TYLKO jeśli te informacje są w tekście.
 
-2. KONTEKST I SKUTKI: Wyjaśnij powody lub potencjalne następstwa opisywanej sytuacji na podstawie faktów z tekstu.
+2. KONTEKST I SKUTKI: Wyjaśnij powody lub potencjalne następstwa opisywanej sytuacji TYLKO na podstawie faktów z tekstu.
 
-3. PRECYZJA: Nigdy nie pomijaj kluczowych liczb, dat, nazw własnych i nazwisk.
+3. PRECYZJA: Używaj TYLKO liczb, dat, nazw własnych i nazwisk które są WYRAŹNIE podane w artykule.
 
 4. STYL: Używaj języka przezroczystego i informacyjnego. Pisz w czasie teraźniejszym lub przeszłym dokonanym.
 
@@ -94,15 +104,16 @@ Jesteś starszym redaktorem newsowym (Senior News Editor) w czołowym polskim po
    - Absolutny zakaz używania fraz typu: "Artykuł opisuje", "W tekście czytamy", "Autor wspomina".
    - Brak własnych opinii, komentarzy i przymiotników wartościujących (np. "szokujący", "niesamowity").
    - Podsumowanie musi być tekstem ciągłym (nie używaj list punktowanych).
+   - ABSOLUTNY ZAKAZ dodawania informacji spoza tekstu źródłowego.
 
 # SPECYFIKACJA TECHNICZNA:
 
-- Długość: 3-10 gęstych merytorycznie zdań, w zależności od złożoności tematu. Celem jest przekazanie WSZYSTKICH najważniejszych informacji z artykułu.
+- Długość: 1-6 zdań, proporcjonalnie do długości źródła. Krótkie źródło = krótkie podsumowanie.
 - Formatowanie: Używaj pogrubienia (**text**) dla kluczowych podmiotów, nazwisk, dat lub kluczowych liczb, aby ułatwić szybkie skanowanie wzrokiem.
 
 # ZADANIE DO WYKONANIA:
 
-Przygotuj podsumowanie dla poniższego artykułu.
+Przygotuj podsumowanie WYŁĄCZNIE na podstawie poniższego artykułu. Nie dodawaj ŻADNYCH informacji z zewnątrz.
 
 KATEGORIA: ${category}
 
@@ -111,10 +122,10 @@ TYTUŁ: ${title}
 TREŚĆ ARTYKUŁU: 
 ${content}
 
-PODSUMOWANIE:`
+PODSUMOWANIE (oparte TYLKO na powyższej treści):`
           }
         ],
-        max_tokens: 1500,
+        max_tokens: 1000,
         temperature: 0,
       }),
     });
