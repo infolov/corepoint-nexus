@@ -15,12 +15,14 @@ interface ArticleSummaryProps {
   content: string;
   category: string;
   sourceUrl?: string;
+  onTitleGenerated?: (newTitle: string) => void;
 }
 
 type VoiceGender = "female" | "male";
 
-export const ArticleSummary = ({ title, content, category, sourceUrl }: ArticleSummaryProps) => {
+export const ArticleSummary = ({ title, content, category, sourceUrl, onTitleGenerated }: ArticleSummaryProps) => {
   const [summary, setSummary] = useState<string | null>(null);
+  const [generatedTitle, setGeneratedTitle] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -83,6 +85,14 @@ export const ArticleSummary = ({ title, content, category, sourceUrl }: ArticleS
         }
 
         setSummary(data?.summary || null);
+        
+        // If AI generated a new title, notify parent
+        if (data?.title && data.title !== title) {
+          setGeneratedTitle(data.title);
+          if (onTitleGenerated) {
+            onTitleGenerated(data.title);
+          }
+        }
       } catch (err) {
         console.error("Error fetching summary:", err);
         setError(err instanceof Error ? err.message : "Błąd podczas generowania podsumowania");
