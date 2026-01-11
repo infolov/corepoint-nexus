@@ -32,8 +32,8 @@ export function NewsSection({
   enableInfiniteScroll = true
 }: NewsSectionProps) {
   const [visibleCount, setVisibleCount] = useState(initialCount);
-  // Always use standard layout now (data saver mode removed)
-  const isCompact = false;
+  const { settings: displaySettings } = useDisplayMode();
+  const isCompact = displaySettings.mode === "compact" || displaySettings.dataSaver;
   
   const hasMore = enableInfiniteScroll && visibleCount < articles.length;
   

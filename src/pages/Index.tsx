@@ -1,46 +1,80 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { HeroSlider } from "@/components/news/HeroSlider";
-import { MSNSlotGrid } from "@/components/news/MSNSlotGrid";
-import { NewsSection } from "@/components/sections/NewsSection";
-import { ArticlePreviewModal } from "@/components/article/ArticlePreviewModal";
+import { CategoryBar } from "@/components/navigation/CategoryBar";
+import { NewsCard } from "@/components/news/NewsCard";
+import { AuctionAdSlot } from "@/components/widgets/AuctionAdSlot";
+import { FeedBannerCarousel, formatBannersForCarousel } from "@/components/widgets/FeedBannerCarousel";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
+import { useDisplayMode } from "@/hooks/use-display-mode";
 import { useAuth } from "@/hooks/use-auth";
+import { useCarouselBanners } from "@/hooks/use-carousel-banners";
 import { Loader2 } from "lucide-react";
+import { useArticles, formatArticleForCard } from "@/hooks/use-articles";
 import { useRSSArticles, formatRSSArticleForCard } from "@/hooks/use-rss-articles";
+
+
 import { supabase } from "@/integrations/supabase/client";
 import { newsArticles, businessArticles, sportArticles, techArticles, lifestyleArticles } from "@/data/mockNews";
 
 // Combine all mock articles as fallback
 const allMockArticles = [...newsArticles, ...businessArticles, ...sportArticles, ...techArticles, ...lifestyleArticles];
 
-// Sort articles by date
-const sortByDate = <T extends { pubDateMs?: number; createdAt?: string }>(array: T[]): T[] => {
+// Sort articles by popularity (view_count) and publication date
+const sortByPopularityAndDate = <T extends { pubDateMs?: number; createdAt?: string; viewCount?: number }>(array: T[]): T[] => {
   return [...array].sort((a, b) => {
+    // First sort by view count (popularity) - higher views first
+    const viewsA = a.viewCount || 0;
+    const viewsB = b.viewCount || 0;
+    if (viewsB !== viewsA) {
+      return viewsB - viewsA;
+    }
+    
+    // Then sort by date - newer articles first
+    // Use pubDateMs for RSS articles, createdAt for DB articles
     const dateA = a.pubDateMs || (a.createdAt ? new Date(a.createdAt).getTime() : 0);
     const dateB = b.pubDateMs || (b.createdAt ? new Date(b.createdAt).getTime() : 0);
     return dateB - dateA;
   });
 };
-
-const ARTICLES_PER_PAGE = 12;
-
+const ARTICLES_PER_GRID = 12; // 4x3 grid
+const INITIAL_GRIDS = 2;
+const GRIDS_PER_LOAD = 1;
 const Index = () => {
-  const [visibleCount, setVisibleCount] = useState(ARTICLES_PER_PAGE);
-  const [selectedArticle, setSelectedArticle] = useState<any>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  
-  const { articles: rssArticles, loading: rssLoading, refetch: refetchRSS } = useRSSArticles();
-  const { user } = useAuth();
-  
+  const [visibleGrids, setVisibleGrids] = useState(INITIAL_GRIDS);
+  const [activeCategory, setActiveCategory] = useState("all");
+  const {
+    settings: displaySettings
+  } = useDisplayMode();
+  const {
+    articles: dbArticles,
+    loading: dbLoading,
+    refetch: refetchDB,
+    lastUpdated: dbLastUpdated
+  } = useArticles({
+    limit: 100
+  });
+  const {
+    articles: rssArticles,
+    loading: rssLoading,
+    refetch: refetchRSS,
+    lastUpdated: rssLastUpdated
+  } = useRSSArticles();
+  const {
+    user
+  } = useAuth();
+  const { getCarouselForPosition } = useCarouselBanners();
   const [userPreferences, setUserPreferences] = useState<string[]>([]);
+  const [recentCategories, setRecentCategories] = useState<string[]>([]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Auto-refresh every 5 minutes
   useEffect(() => {
     refreshIntervalRef.current = setInterval(() => {
+      console.log("Auto-refreshing articles...");
       refetchRSS();
+      refetchDB();
     }, 5 * 60 * 1000);
 
     return () => {
@@ -48,24 +82,44 @@ const Index = () => {
         clearInterval(refreshIntervalRef.current);
       }
     };
-  }, [refetchRSS]);
+  }, [refetchRSS, refetchDB]);
 
-  // Load user preferences
+  // Manual refresh handler
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await Promise.all([refetchRSS(), refetchDB()]);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [refetchRSS, refetchDB]);
+
+  // Load user preferences for personalization
   useEffect(() => {
     const loadUserPreferences = async () => {
       if (!user) {
         setUserPreferences([]);
+        setRecentCategories([]);
         return;
       }
       try {
-        const { data: prefData } = await supabase
-          .from("user_notification_preferences")
-          .select("categories")
-          .eq("user_id", user.id)
-          .maybeSingle();
-          
+        // Get notification preferences (selected categories)
+        const {
+          data: prefData
+        } = await supabase.from("user_notification_preferences").select("categories").eq("user_id", user.id).maybeSingle();
         if (prefData?.categories) {
           setUserPreferences(prefData.categories);
+        }
+
+        // Get recently viewed categories
+        const {
+          data: recentData
+        } = await supabase.from("user_recently_viewed").select("category").eq("user_id", user.id).order("viewed_at", {
+          ascending: false
+        }).limit(30);
+        if (recentData) {
+          const categories = [...new Set(recentData.map(item => item.category))];
+          setRecentCategories(categories);
         }
       } catch (error) {
         console.error("Error loading user preferences:", error);
@@ -74,124 +128,301 @@ const Index = () => {
     loadUserPreferences();
   }, [user]);
 
-  // Combine and format articles
+  // Always has more - infinite scroll
+  const hasMore = true;
+  const loadMore = useCallback(() => {
+    setVisibleGrids(prev => prev + GRIDS_PER_LOAD);
+  }, []);
+  const {
+    loadMoreRef,
+    isLoading
+  } = useInfiniteScroll(loadMore, hasMore);
+
+  // Combine RSS articles with DB articles, preferring RSS
   const allArticles = useMemo(() => {
+    // Format RSS articles with viewCount and pubDateMs for sorting
+    // Give RSS articles priority since they have real sources
     const formattedRSSArticles = rssArticles.map(article => ({
       ...formatRSSArticleForCard(article),
+      viewCount: 100, // Give RSS articles priority over DB articles
       pubDateMs: article.pubDateMs || Date.now(),
-      excerpt: article.content?.slice(0, 200) || "",
     }));
 
-    if (formattedRSSArticles.length > 0) {
-      return sortByDate(formattedRSSArticles);
-    }
-    
-    // Fallback to mock data
-    return allMockArticles.map(a => ({ ...a, pubDateMs: Date.now() }));
-  }, [rssArticles]);
+    // Format DB articles with viewCount and createdAt for sorting
+    const formattedDbArticles = dbArticles.map(article => ({
+      ...formatArticleForCard(article),
+      viewCount: article.view_count || 0,
+      createdAt: article.created_at,
+    }));
 
-  // Filter by user preferences if logged in
-  const displayArticles = useMemo(() => {
+    // Prioritize RSS articles, then add DB articles
+    let articles = [];
+    if (formattedRSSArticles.length > 0) {
+      // RSS has priority - sort by date, add DB articles at end
+      const sortedRSS = sortByPopularityAndDate(formattedRSSArticles);
+      const sortedDB = sortByPopularityAndDate(formattedDbArticles);
+      articles = [...sortedRSS, ...sortedDB];
+    } else if (formattedDbArticles.length > 0) {
+      articles = sortByPopularityAndDate(formattedDbArticles);
+    } else {
+      // Use mock data as fallback
+      articles = sortByPopularityAndDate(allMockArticles.map(a => ({ ...a, viewCount: 0 })));
+    }
+
+    // Filter by category if not "all"
+    if (activeCategory !== "all") {
+      // Check if it's a subcategory (format: category/subcategory)
+      const [mainCategory, subCategory] = activeCategory.split("/");
+      
+      // Map slugs to exact category names from RSS feeds
+      const categoryMap: Record<string, string[]> = {
+        wiadomosci: ["Wiadomości"],
+        biznes: ["Biznes"],
+        sport: ["Sport"],
+        technologia: ["Technologia"],
+        lifestyle: ["Lifestyle"],
+        rozrywka: ["Rozrywka"],
+        zdrowie: ["Zdrowie"],
+        nauka: ["Nauka"],
+        motoryzacja: ["Motoryzacja"],
+        kultura: ["Kultura"]
+      };
+      
+      // Subcategory keywords for title search (only for subcategories)
+      const subcategoryKeywords: Record<string, string[]> = {
+        // Wiadomości
+        "wiadomosci/polska": ["Polska", "Polski", "Polskie"],
+        "wiadomosci/swiat": ["Świat", "USA", "Europa", "Chiny", "Rosja", "Ukraina"],
+        "wiadomosci/polityka": ["Polityka", "Sejm", "Rząd", "Minister", "Premier", "Prezydent"],
+        "wiadomosci/spoleczenstwo": ["Społeczeństwo", "Społeczny"],
+        // Sport
+        "sport/pilka-nozna": ["Piłka nożna", "Ekstraklasa", "Liga", "UEFA", "Lech", "Legia", "Real", "Barcelona", "Messi", "Ronaldo"],
+        "sport/koszykowka": ["Koszykówka", "NBA", "Euroliga"],
+        "sport/siatkowka": ["Siatkówka", "PlusLiga"],
+        "sport/tenis": ["Tenis", "ATP", "WTA", "Wimbledon", "Roland Garros"],
+        "sport/sporty-motorowe": ["F1", "MotoGP", "Rajdy", "Żużel", "Formuła"],
+        "sport/sporty-walki": ["MMA", "UFC", "KSW", "Boks"],
+        "sport/e-sport": ["E-sport", "CS2", "League of Legends", "Valorant"],
+        // Biznes
+        "biznes/finanse-osobiste": ["Finanse osobiste", "Oszczędności", "Kredyt"],
+        "biznes/gielda": ["Giełda", "GPW", "Akcje", "Inwestycje"],
+        "biznes/nieruchomosci": ["Nieruchomości", "Mieszkania", "Dom"],
+        "biznes/gospodarka": ["Gospodarka", "PKB", "Inflacja"],
+        "biznes/kryptowaluty": ["Kryptowaluty", "Bitcoin", "Crypto", "Ethereum"],
+        // Technologia
+        "technologia/smartfony": ["Smartfon", "iPhone", "Samsung", "Telefon", "Android"],
+        "technologia/gaming": ["Gaming", "Gry", "PlayStation", "Xbox", "PC"],
+        "technologia/ai": ["AI", "Sztuczna inteligencja", "ChatGPT", "GPT", "OpenAI"],
+        "technologia/cyberbezpieczenstwo": ["Cyberbezpieczeństwo", "Haker", "Bezpieczeństwo"],
+        // Lifestyle
+        "lifestyle/moda": ["Moda", "Fashion"],
+        "lifestyle/podroze": ["Podróże", "Turystyka", "Wakacje"],
+        "lifestyle/gotowanie": ["Gotowanie", "Przepisy", "Kuchnia"],
+        // Rozrywka
+        "rozrywka/film": ["Film", "Kino", "Netflix", "Marvel"],
+        "rozrywka/muzyka": ["Muzyka", "Koncert", "Album"],
+        "rozrywka/seriale": ["Serial", "HBO", "Netflix"],
+        "rozrywka/gwiazdy": ["Gwiazdy", "Celebryci"],
+        // Zdrowie
+        "zdrowie/dieta": ["Dieta", "Odżywianie", "Odchudzanie"],
+        "zdrowie/fitness": ["Fitness", "Trening", "Ćwiczenia"],
+        // Nauka
+        "nauka/kosmos": ["Kosmos", "Astronomia", "NASA", "Kometa", "Gwiazda", "Mars"],
+        "nauka/historia": ["Historia", "Historyczne"],
+        "nauka/ekologia": ["Ekologia", "Klimat", "Środowisko"]
+      };
+      
+      if (subCategory) {
+        // For subcategories: first filter by main category, then by title keywords
+        const mainCategoryNames = categoryMap[mainCategory] || [];
+        const keywords = subcategoryKeywords[activeCategory] || [];
+        
+        articles = articles.filter(a => {
+          // Must match main category
+          const matchesCategory = mainCategoryNames.some(cat => 
+            a.category?.toLowerCase() === cat.toLowerCase()
+          );
+          if (!matchesCategory) return false;
+          
+          // Then check title for subcategory keywords
+          if (keywords.length > 0) {
+            return keywords.some(keyword => 
+              a.title?.toLowerCase().includes(keyword.toLowerCase())
+            );
+          }
+          return true;
+        });
+      } else {
+        // For main categories: exact category match only
+        const categoryNames = categoryMap[mainCategory] || [];
+        if (categoryNames.length > 0) {
+          articles = articles.filter(a => 
+            categoryNames.some(cat => a.category?.toLowerCase() === cat.toLowerCase())
+          );
+        }
+      }
+    }
+    return articles;
+  }, [rssArticles, dbArticles, activeCategory]);
+
+  // Personalize articles for logged-in users - FILTER by selected categories
+  const personalizedArticles = useMemo(() => {
     if (!user || userPreferences.length === 0) {
       return allArticles;
     }
 
+    // Map preference slugs to article category names (preferences are stored as slugs)
     const categoryMap: Record<string, string[]> = {
       "wiadomosci": ["wiadomości", "wiadomosci", "news"],
       "sport": ["sport"],
       "biznes": ["biznes", "business"],
-      "technologia": ["technologia", "tech"],
+      "tech": ["technologia", "tech", "technology"],
+      "technologia": ["technologia", "tech", "technology"],
       "lifestyle": ["lifestyle"],
       "rozrywka": ["rozrywka", "entertainment"],
       "zdrowie": ["zdrowie", "health"],
       "nauka": ["nauka", "science"],
+      "motoryzacja": ["motoryzacja", "auto"],
+      "kultura": ["kultura", "culture"],
     };
 
-    const filtered = allArticles.filter(article => {
+    // Filter articles to show ONLY from selected categories
+    const filteredArticles = allArticles.filter(article => {
       const articleCategory = article.category?.toLowerCase() || "";
+      
       return userPreferences.some(pref => {
         const prefLower = pref.toLowerCase();
+        // Check direct match
         if (articleCategory === prefLower || articleCategory.includes(prefLower)) {
           return true;
         }
-        const mapped = categoryMap[pref] || [];
-        return mapped.some(m => articleCategory.includes(m.toLowerCase()));
+        // Check mapped categories
+        const mappedCategories = categoryMap[pref] || [];
+        return mappedCategories.some(mapped => 
+          articleCategory.includes(mapped.toLowerCase())
+        );
       });
     });
 
-    return filtered.length > 0 ? filtered : allArticles;
-  }, [allArticles, user, userPreferences]);
-
-  const hasMore = visibleCount < displayArticles.length;
-  
-  const loadMore = useCallback(() => {
-    setVisibleCount(prev => prev + ARTICLES_PER_PAGE);
-  }, []);
-  
-  const { loadMoreRef, isLoading } = useInfiniteScroll(loadMore, hasMore);
-
-  const handleArticleClick = (article: any) => {
-    if (article.id) {
-      localStorage.setItem(`article_${article.id}`, JSON.stringify(article));
+    // If no articles match preferences, show all (fallback)
+    if (filteredArticles.length === 0) {
+      return allArticles;
     }
-    setSelectedArticle(article);
-    setIsModalOpen(true);
-  };
 
-  const visibleArticles = displayArticles.slice(0, visibleCount);
-  const heroArticles = visibleArticles.slice(0, 9);
-  const remainingArticles = visibleArticles.slice(9);
+    // Score by recency within filtered articles
+    const scoredArticles = filteredArticles.map(article => {
+      let score = 0;
+      const articleCategory = article.category?.toLowerCase() || "";
+      
+      // Higher score for categories that appear first in preferences
+      userPreferences.forEach((pref, index) => {
+        if (articleCategory.includes(pref.toLowerCase())) {
+          score += (userPreferences.length - index) * 2;
+        }
+      });
+      
+      // Bonus for recently viewed categories
+      recentCategories.forEach((cat, index) => {
+        if (articleCategory.includes(cat.toLowerCase())) {
+          score += (recentCategories.length - index);
+        }
+      });
+      
+      return { article, score };
+    });
 
-  return (
-    <div className="min-h-screen bg-background">
+    // Sort by score (highest first)
+    scoredArticles.sort((a, b) => b.score - a.score);
+    
+    return scoredArticles.map(s => s.article);
+  }, [allArticles, user, userPreferences, recentCategories]);
+
+  // Generate enough articles for infinite scroll by cycling
+  const getArticlesForDisplay = useMemo(() => {
+    const articlesToUse = user ? personalizedArticles : allArticles;
+    if (articlesToUse.length === 0) return [];
+    
+    const totalNeeded = visibleGrids * ARTICLES_PER_GRID;
+    const result = [];
+    for (let i = 0; i < totalNeeded; i++) {
+      result.push(articlesToUse[i % articlesToUse.length]);
+    }
+    return result;
+  }, [allArticles, personalizedArticles, visibleGrids, user]);
+
+  // Split feed articles into grids of 12
+  const articleGrids = [];
+  for (let i = 0; i < visibleGrids; i++) {
+    const startIndex = i * ARTICLES_PER_GRID;
+    const gridArticles = getArticlesForDisplay.slice(startIndex, startIndex + ARTICLES_PER_GRID);
+    if (gridArticles.length > 0) {
+      articleGrids.push(gridArticles);
+    }
+  }
+  return <div className="min-h-screen bg-background">
       <Header />
+      
+      {/* Floating Category Bar */}
+      <CategoryBar activeCategory={activeCategory} onCategoryChange={setActiveCategory} />
 
-      <main className="container mx-auto px-4 py-6 space-y-8">
-        {/* Hero Slider */}
-        <HeroSlider />
 
-        {/* MSN-style Grid */}
-        {heroArticles.length > 0 && (
-          <MSNSlotGrid articles={heroArticles} />
-        )}
-
-        {/* More News Sections */}
-        {remainingArticles.length > 0 && (
-          <NewsSection
-            title="Więcej wiadomości"
-            category="wiadomosci"
-            articles={remainingArticles}
-          />
-        )}
-
-        {/* Load more trigger */}
-        <div ref={loadMoreRef} className="py-8 flex justify-center">
-          {isLoading && (
-            <div className="flex items-center gap-3 text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin" />
-              <span className="text-sm">Ładowanie...</span>
-            </div>
-          )}
+      <main className="container py-4 sm:py-6">
+        {/* Top Ad Banner - Using Auction Engine */}
+        <div className="mb-6">
+          <AuctionAdSlot variant="horizontal" className="w-full" slotIndex={0} />
         </div>
 
-        {/* Empty state */}
-        {!rssLoading && visibleArticles.length === 0 && (
-          <div className="text-center py-12 text-muted-foreground">
-            <p>Brak artykułów do wyświetlenia</p>
+        {/* Main Content - Ad + 4x3 Grid pattern */}
+        <div className="space-y-6 sm:space-y-8">
+          {articleGrids.map((gridArticles, gridIndex) => <div key={`grid-${gridIndex}`}>
+              {/* 3x4 Article Grid (12 articles) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {gridArticles.map((article, articleIndex) => <NewsCard key={`${article.id}-${gridIndex}-${articleIndex}`} id={article.id} title={article.title} category={article.category} image={article.image} timestamp={article.timestamp} badge={article.badge} source={article.source} sourceUrl={article.sourceUrl} variant="default" />)}
+              </div>
+
+              {/* Carousel Banner after each grid of 12 items */}
+              <div className="mt-6 sm:mt-8">
+                {(() => {
+                  // Check if there's a carousel group for this position
+                  const carouselGroup = getCarouselForPosition(gridIndex + 1);
+                  
+                  if (carouselGroup && carouselGroup.banners.length > 0) {
+                    // Use the carousel with banners from the database
+                    const formattedBanners = formatBannersForCarousel(carouselGroup.banners);
+                    return (
+                      <FeedBannerCarousel
+                        banners={formattedBanners}
+                        className="w-full"
+                      />
+                    );
+                  }
+                  
+                  // Fallback to auction ad slot if no carousel configured
+                  return (
+                    <AuctionAdSlot 
+                      variant="horizontal" 
+                      className="w-full" 
+                      slotIndex={gridIndex + 1}
+                    />
+                  );
+                })()}
+              </div>
+            </div>)}
+
+          {/* Load more trigger - infinite scroll */}
+          <div ref={loadMoreRef} className="py-8 flex justify-center min-h-[200px] sm:min-h-[180px] md:min-h-[150px]" style={{
+          touchAction: 'pan-y'
+        }}>
+            {isLoading && <div className="flex items-center gap-2 text-muted-foreground animate-pulse">
+                <Loader2 className="h-6 w-6 sm:h-7 sm:w-7 animate-spin" />
+                <span className="text-senior-base">Ładowanie...</span>
+              </div>}
           </div>
-        )}
+        </div>
+
       </main>
 
       <Footer />
-
-      {/* Article Modal */}
-      <ArticlePreviewModal
-        article={selectedArticle}
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-      />
-    </div>
-  );
+    </div>;
 };
-
 export default Index;

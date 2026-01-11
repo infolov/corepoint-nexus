@@ -1,21 +1,22 @@
 import { useState, useEffect, createContext, useContext } from "react";
 
-type Theme = "light" | "dark" | "system";
-
 interface DisplaySettings {
-  theme: Theme;
+  mode: "standard" | "compact" | "comfortable";
   fontSize: "normal" | "large" | "extra-large";
+  dataSaver: boolean;
 }
 
 const defaultSettings: DisplaySettings = {
-  theme: "system",
+  mode: "standard",
   fontSize: "normal",
+  dataSaver: false,
 };
 
 interface DisplayModeContextType {
   settings: DisplaySettings;
-  setTheme: (theme: Theme) => void;
+  setMode: (mode: DisplaySettings["mode"]) => void;
   setFontSize: (size: DisplaySettings["fontSize"]) => void;
+  toggleDataSaver: () => void;
   updateSettings: (settings: Partial<DisplaySettings>) => void;
 }
 
@@ -24,15 +25,7 @@ const DisplayModeContext = createContext<DisplayModeContextType | null>(null);
 export function DisplayModeProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<DisplaySettings>(() => {
     const stored = localStorage.getItem("displaySettings");
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      // Migrate old settings
-      return {
-        theme: parsed.theme || "system",
-        fontSize: parsed.fontSize || "normal",
-      };
-    }
-    return defaultSettings;
+    return stored ? JSON.parse(stored) : defaultSettings;
   });
 
   useEffect(() => {
@@ -42,39 +35,20 @@ export function DisplayModeProvider({ children }: { children: React.ReactNode })
     document.documentElement.classList.remove("font-normal", "font-large", "font-extra-large");
     document.documentElement.classList.add(`font-${settings.fontSize}`);
     
-    // Apply theme
-    const root = document.documentElement;
-    root.classList.remove("light", "dark");
-    
-    if (settings.theme === "system") {
-      const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      root.classList.add(systemDark ? "dark" : "light");
-    } else {
-      root.classList.add(settings.theme);
-    }
+    // Apply data saver class
+    document.documentElement.classList.toggle("data-saver", settings.dataSaver);
   }, [settings]);
 
-  // Listen for system theme changes when theme is "system"
-  useEffect(() => {
-    if (settings.theme !== "system") return;
-    
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    const handler = (e: MediaQueryListEvent) => {
-      const root = document.documentElement;
-      root.classList.remove("light", "dark");
-      root.classList.add(e.matches ? "dark" : "light");
-    };
-    
-    mediaQuery.addEventListener("change", handler);
-    return () => mediaQuery.removeEventListener("change", handler);
-  }, [settings.theme]);
-
-  const setTheme = (theme: Theme) => {
-    setSettings(prev => ({ ...prev, theme }));
+  const setMode = (mode: DisplaySettings["mode"]) => {
+    setSettings(prev => ({ ...prev, mode }));
   };
 
   const setFontSize = (fontSize: DisplaySettings["fontSize"]) => {
     setSettings(prev => ({ ...prev, fontSize }));
+  };
+
+  const toggleDataSaver = () => {
+    setSettings(prev => ({ ...prev, dataSaver: !prev.dataSaver }));
   };
 
   const updateSettings = (newSettings: Partial<DisplaySettings>) => {
@@ -82,7 +56,7 @@ export function DisplayModeProvider({ children }: { children: React.ReactNode })
   };
 
   return (
-    <DisplayModeContext.Provider value={{ settings, setTheme, setFontSize, updateSettings }}>
+    <DisplayModeContext.Provider value={{ settings, setMode, setFontSize, toggleDataSaver, updateSettings }}>
       {children}
     </DisplayModeContext.Provider>
   );

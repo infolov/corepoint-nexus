@@ -127,8 +127,8 @@ const ARTICLES_PER_LOAD = 6;
 
 export default function Category() {
   const { category } = useParams<{ category: string }>();
-  // Always use standard layout now (data saver mode removed)
-  const isCompact = false;
+  const { settings: displaySettings } = useDisplayMode();
+  const isCompact = displaySettings.mode === "compact" || displaySettings.dataSaver;
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const { getCarouselForPosition } = useCarouselBanners();
   
