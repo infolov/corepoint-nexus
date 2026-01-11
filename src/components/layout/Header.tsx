@@ -44,10 +44,7 @@ export function Header() {
     user,
     signOut
   } = useAuth();
-  const {
-    settings: displaySettings,
-    toggleDataSaver
-  } = useDisplayMode();
+  const { settings: displaySettings } = useDisplayMode();
   const {
     data: weatherData,
     isLoading: weatherLoading
