@@ -145,7 +145,9 @@ export function AuctionAdSlot({
     trackImpression, 
     trackClick, 
     loading,
-    stats 
+    stats,
+    cacheHit,
+    isRevalidating,
   } = useAdAuction({ 
     userLocation,
     placementSlug 
@@ -303,6 +305,14 @@ export function AuctionAdSlot({
             )}
             <span className="text-cyan-400">Size: {responsiveSize.label}</span>
             {lazyLoad && <span className="text-purple-400">⚡Lazy</span>}
+            {/* Cache info */}
+            <span className={cn(
+              "px-1 rounded",
+              cacheHit ? "bg-emerald-600" : "bg-orange-600"
+            )}>
+              {cacheHit ? "📦 Cache" : "🌐 Fresh"}
+            </span>
+            {isRevalidating && <span className="text-yellow-400 animate-pulse">↻ Revalidating</span>}
           </div>
         )}
       </div>
@@ -353,6 +363,14 @@ export function AuctionAdSlot({
           <span className="text-cyan-400">Size: {responsiveSize.label}</span>
           <span className="text-purple-400">minH: {minHeight}px</span>
           {lazyLoad && <span className="text-purple-400">⚡Lazy</span>}
+          {/* Cache info */}
+          <span className={cn(
+            "px-1 rounded",
+            cacheHit ? "bg-emerald-600" : "bg-orange-600"
+          )}>
+            {cacheHit ? "📦 Cache" : "🌐 Fresh"}
+          </span>
+          {isRevalidating && <span className="text-yellow-400 animate-pulse">↻ Revalidating</span>}
         </div>
       )}
     </div>
