@@ -14,11 +14,12 @@ interface ArticleSummaryProps {
   title: string;
   content: string;
   category: string;
+  sourceUrl?: string;
 }
 
 type VoiceGender = "female" | "male";
 
-export const ArticleSummary = ({ title, content, category }: ArticleSummaryProps) => {
+export const ArticleSummary = ({ title, content, category, sourceUrl }: ArticleSummaryProps) => {
   const [summary, setSummary] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -68,7 +69,7 @@ export const ArticleSummary = ({ title, content, category }: ArticleSummaryProps
         }
         
         const { data, error: fnError } = await supabase.functions.invoke("summarize-article", {
-          body: { title, content: content || title, category },
+          body: { title, content: content || title, category, sourceUrl },
         });
 
         console.log("Summary response:", data, fnError);

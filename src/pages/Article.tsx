@@ -199,6 +199,7 @@ const Article = () => {
               title={article.title}
               content={content}
               category={article.category}
+              sourceUrl={sourceUrl}
             />
 
             {/* Action Buttons - Thumbs up/down, Save & Share */}

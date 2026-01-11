@@ -17,13 +17,59 @@ function createTitleHash(title: string): string {
   return Math.abs(hash).toString(36);
 }
 
+// Scrape full article content using Firecrawl
+async function scrapeFullContent(sourceUrl: string): Promise<string | null> {
+  try {
+    const apiKey = Deno.env.get('Firecrawl') || Deno.env.get('FIRECRAWL_API_KEY');
+    if (!apiKey) {
+      console.log('Firecrawl API key not configured, skipping scrape');
+      return null;
+    }
+
+    console.log(`Scraping full content from: ${sourceUrl}`);
+
+    const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        url: sourceUrl,
+        formats: ['markdown'],
+        onlyMainContent: true,
+        waitFor: 2000,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error(`Firecrawl failed for ${sourceUrl}: ${response.status}`);
+      return null;
+    }
+
+    const data = await response.json();
+    const content = data.data?.markdown || data.markdown || '';
+    
+    if (content && content.length > 200) {
+      console.log(`Successfully scraped ${content.length} characters`);
+      return content;
+    }
+    
+    console.log('Scraped content too short or empty');
+    return null;
+  } catch (error) {
+    console.error('Error scraping full content:', error);
+    return null;
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { title, content, category, articleId } = await req.json();
+    const { title, content, category, articleId, sourceUrl } = await req.json();
     
     if (!title || !content) {
       return new Response(
@@ -59,6 +105,21 @@ serve(async (req) => {
     }
 
     console.log(`Cache MISS for article: ${effectiveArticleId}, generating summary...`);
+
+    // Try to get full content if content is too short (less than 500 chars)
+    let fullContent = content;
+    let contentSource = 'rss';
+    
+    if (content.length < 500 && sourceUrl) {
+      console.log(`Content too short (${content.length} chars), attempting to scrape full article...`);
+      const scrapedContent = await scrapeFullContent(sourceUrl);
+      
+      if (scrapedContent && scrapedContent.length > content.length) {
+        fullContent = scrapedContent;
+        contentSource = 'firecrawl';
+        console.log(`Using scraped content (${fullContent.length} chars) instead of RSS content`);
+      }
+    }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -120,7 +181,7 @@ KATEGORIA: ${category}
 TYTUŁ: ${title}
 
 TREŚĆ ARTYKUŁU: 
-${content}
+${fullContent}
 
 PODSUMOWANIE (oparte TYLKO na powyższej treści):`
           }
@@ -170,7 +231,12 @@ PODSUMOWANIE (oparte TYLKO na powyższej treści):`
     }
 
     return new Response(
-      JSON.stringify({ summary, fromCache: false }),
+      JSON.stringify({ 
+        summary, 
+        fromCache: false, 
+        contentSource,
+        contentLength: fullContent.length 
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
