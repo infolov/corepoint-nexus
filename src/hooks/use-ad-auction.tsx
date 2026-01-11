@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   AuctionAd, 
@@ -7,91 +7,146 @@ import {
   runAuctionWithTracking,
   getSessionImpressions 
 } from "@/lib/ad-auction-engine";
+import {
+  getCachedAds,
+  setCachedAds,
+  getCacheStatus,
+  getCacheDebugInfo,
+} from "@/lib/ad-cache";
 
 interface UseAdAuctionOptions {
   userLocation?: UserLocation;
   placementSlug?: string;
+  /** Skip cache and always fetch fresh data */
+  skipCache?: boolean;
 }
 
 export function useAdAuction(options: UseAdAuctionOptions = {}) {
-  const { userLocation, placementSlug } = options;
+  const { userLocation, placementSlug, skipCache = false } = options;
   const [ads, setAds] = useState<AuctionAd[]>([]);
   const [loading, setLoading] = useState(true);
   const [slotCounter, setSlotCounter] = useState(0);
+  const [cacheHit, setCacheHit] = useState(false);
+  const [isRevalidating, setIsRevalidating] = useState(false);
+  const hasInitialized = useRef(false);
 
-  // Fetch all active campaigns and convert to AuctionAd format
-  const fetchAds = useCallback(async () => {
-    setLoading(true);
-    try {
-      const today = new Date().toISOString().split("T")[0];
-      
-      const { data, error } = await supabase
-        .from("ad_campaigns")
-        .select(`
-          id,
-          name,
-          ad_type,
-          content_url,
-          content_text,
-          target_url,
-          is_global,
-          region,
-          target_powiat,
-          target_gmina,
-          total_credits,
-          ad_placements!inner(slug, name, credit_cost)
-        `)
-        .eq("status", "active")
-        .lte("start_date", today)
-        .gte("end_date", today);
+  // Fetch ads from network
+  const fetchFromNetwork = useCallback(async (): Promise<AuctionAd[]> => {
+    const today = new Date().toISOString().split("T")[0];
+    
+    const { data, error } = await supabase
+      .from("ad_campaigns")
+      .select(`
+        id,
+        name,
+        ad_type,
+        content_url,
+        content_text,
+        target_url,
+        is_global,
+        region,
+        target_powiat,
+        target_gmina,
+        total_credits,
+        ad_placements!inner(slug, name, credit_cost)
+      `)
+      .eq("status", "active")
+      .lte("start_date", today)
+      .gte("end_date", today);
 
-      if (error) {
-        console.error("Error fetching ads:", error);
-        setAds([]);
+    if (error) {
+      console.error("Error fetching ads:", error);
+      return [];
+    }
+
+    // Convert to AuctionAd format
+    const auctionAds: AuctionAd[] = (data || []).map(campaign => {
+      const baseBid = campaign.total_credits / 10;
+      const placementCost = campaign.ad_placements?.credit_cost || 10;
+      const bidPrice = Math.max(1, baseBid * (placementCost / 10));
+
+      return {
+        id: campaign.id,
+        type: campaign.is_global ? 'national' : 'local',
+        bidPrice: bidPrice,
+        priorityMultiplier: 1.0,
+        ctrScore: 1.0,
+        impressionCount: getSessionImpressions(campaign.id),
+        targetVoivodeship: campaign.region || undefined,
+        targetPowiat: campaign.target_powiat || undefined,
+        targetGmina: campaign.target_gmina || undefined,
+        contentUrl: campaign.content_url,
+        contentText: campaign.content_text,
+        targetUrl: campaign.target_url,
+        name: campaign.name,
+        placementSlug: campaign.ad_placements?.slug || "",
+      };
+    });
+
+    // Filter by placement if specified
+    return placementSlug 
+      ? auctionAds.filter(ad => ad.placementSlug === placementSlug)
+      : auctionAds;
+  }, [placementSlug]);
+
+  // Main fetch function with cache-first strategy
+  const fetchAds = useCallback(async (forceRefresh = false) => {
+    // Try cache first (unless skipCache or forceRefresh)
+    if (!skipCache && !forceRefresh && !hasInitialized.current) {
+      const cacheStatus = getCacheStatus(placementSlug);
+      const cachedAds = getCachedAds(placementSlug);
+
+      if (cachedAds && cachedAds.length > 0) {
+        // Use cached data immediately
+        setAds(cachedAds);
+        setLoading(false);
+        setCacheHit(true);
+        hasInitialized.current = true;
+
+        // If stale, revalidate in background
+        if (cacheStatus.isStale) {
+          setIsRevalidating(true);
+          fetchFromNetwork().then(freshAds => {
+            if (freshAds.length > 0) {
+              setAds(freshAds);
+              setCachedAds(freshAds, placementSlug);
+            }
+            setIsRevalidating(false);
+          }).catch(() => setIsRevalidating(false));
+        }
         return;
       }
+    }
 
-      // Convert to AuctionAd format
-      const auctionAds: AuctionAd[] = (data || []).map(campaign => {
-        // Calculate bid price from credits (higher credits = higher bid)
-        const baseBid = campaign.total_credits / 10;
-        const placementCost = campaign.ad_placements?.credit_cost || 10;
-        const bidPrice = Math.max(1, baseBid * (placementCost / 10));
-
-        return {
-          id: campaign.id,
-          type: campaign.is_global ? 'national' : 'local',
-          bidPrice: bidPrice,
-          priorityMultiplier: 1.0, // Default, can be enhanced later
-          ctrScore: 1.0, // Default, can be calculated from stats later
-          impressionCount: getSessionImpressions(campaign.id),
-          targetVoivodeship: campaign.region || undefined,
-          targetPowiat: campaign.target_powiat || undefined,
-          targetGmina: campaign.target_gmina || undefined,
-          contentUrl: campaign.content_url,
-          contentText: campaign.content_text,
-          targetUrl: campaign.target_url,
-          name: campaign.name,
-          placementSlug: campaign.ad_placements?.slug || "",
-        };
-      });
-
-      // Filter by placement if specified
-      const filteredAds = placementSlug 
-        ? auctionAds.filter(ad => ad.placementSlug === placementSlug)
-        : auctionAds;
-
-      setAds(filteredAds);
+    // No cache or forced refresh - fetch from network
+    setLoading(true);
+    setCacheHit(false);
+    try {
+      const networkAds = await fetchFromNetwork();
+      setAds(networkAds);
+      
+      // Cache the results
+      if (networkAds.length > 0 && !skipCache) {
+        setCachedAds(networkAds, placementSlug);
+      }
+      
+      hasInitialized.current = true;
     } catch (error) {
       console.error("Error fetching ads:", error);
       setAds([]);
     } finally {
       setLoading(false);
     }
-  }, [placementSlug]);
+  }, [placementSlug, skipCache, fetchFromNetwork]);
 
   useEffect(() => {
     fetchAds();
+  }, [fetchAds]);
+
+  // Force refresh function (bypasses cache)
+  const forceRefresh = useCallback(() => {
+    hasInitialized.current = false;
+    return fetchAds(true);
   }, [fetchAds]);
 
   // Run auction for a single slot
@@ -143,6 +198,8 @@ export function useAdAuction(options: UseAdAuctionOptions = {}) {
   const stats = useMemo(() => {
     const national = ads.filter(a => a.type === 'national');
     const local = ads.filter(a => a.type === 'local');
+    const cacheInfo = getCacheDebugInfo(placementSlug);
+    
     return {
       total: ads.length,
       national: national.length,
@@ -153,8 +210,14 @@ export function useAdAuction(options: UseAdAuctionOptions = {}) {
       avgBidLocal: local.length > 0 
         ? local.reduce((sum, a) => sum + a.bidPrice, 0) / local.length 
         : 0,
+      // Cache info
+      cacheHit,
+      isRevalidating,
+      cacheStatus: cacheInfo.status,
+      cacheAge: cacheInfo.status.age,
+      lastCacheUpdate: cacheInfo.lastUpdated,
     };
-  }, [ads]);
+  }, [ads, placementSlug, cacheHit, isRevalidating]);
 
   // Track impression manually (for components that handle their own display)
   const trackImpression = useCallback(async (adId: string) => {
@@ -187,5 +250,8 @@ export function useAdAuction(options: UseAdAuctionOptions = {}) {
     trackClick,
     stats,
     refetch: fetchAds,
+    forceRefresh,
+    cacheHit,
+    isRevalidating,
   };
 }
