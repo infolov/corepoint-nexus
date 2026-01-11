@@ -44,8 +44,10 @@ import {
   Loader2,
   AlertTriangle,
   UserPlus,
-  Building
+  Building,
+  Send
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
@@ -89,6 +91,7 @@ export default function DashboardAdminUsers() {
     companyName: "",
   });
   const [creatingPartner, setCreatingPartner] = useState(false);
+  const [sendWelcomeEmail, setSendWelcomeEmail] = useState(true);
 
   useEffect(() => {
     if (user && isAdmin) {
@@ -303,7 +306,30 @@ export default function DashboardAdminUsers() {
         data.userId
       );
 
-      toast.success("Konto Partnera zostało utworzone!");
+      // Send welcome email if checkbox is checked
+      if (sendWelcomeEmail) {
+        const { data: emailData } = await supabase.functions.invoke("send-partner-welcome", {
+          body: {
+            email: partnerForm.email,
+            password: partnerForm.password,
+            fullName: partnerForm.fullName,
+            companyName: partnerForm.companyName,
+          },
+        });
+
+        if (emailData?.success) {
+          toast.success("Konto Partnera utworzone i email powitalny wysłany!");
+        } else if (emailData?.skipped) {
+          toast.success("Konto Partnera utworzone!");
+          toast.info("Email powitalny nie został wysłany - brak skonfigurowanego klucza API Resend");
+        } else {
+          toast.success("Konto Partnera utworzone!");
+          toast.warning("Nie udało się wysłać emaila powitalnego");
+        }
+      } else {
+        toast.success("Konto Partnera zostało utworzone!");
+      }
+
       setCreatePartnerDialogOpen(false);
       setPartnerForm({ email: "", password: "", fullName: "", companyName: "" });
       fetchUsers();
@@ -631,6 +657,20 @@ export default function DashboardAdminUsers() {
                   onChange={(e) => setPartnerForm(prev => ({ ...prev, companyName: e.target.value }))}
                 />
               </div>
+            </div>
+            <div className="flex items-center space-x-2 pt-2 border-t">
+              <Checkbox
+                id="send-welcome-email"
+                checked={sendWelcomeEmail}
+                onCheckedChange={(checked) => setSendWelcomeEmail(checked === true)}
+              />
+              <Label 
+                htmlFor="send-welcome-email" 
+                className="text-sm font-normal cursor-pointer flex items-center gap-2"
+              >
+                <Send className="h-4 w-4 text-muted-foreground" />
+                Wyślij email powitalny z danymi logowania
+              </Label>
             </div>
           </div>
           <DialogFooter>
