@@ -899,26 +899,41 @@ export type Database = {
       }
       user_notification_preferences: {
         Row: {
+          breaking_news: boolean
           categories: string[] | null
           created_at: string
+          daily_digest: boolean
+          font_size: string | null
           id: string
+          personalized: boolean
           tags: string[] | null
+          theme_preference: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          breaking_news?: boolean
           categories?: string[] | null
           created_at?: string
+          daily_digest?: boolean
+          font_size?: string | null
           id?: string
+          personalized?: boolean
           tags?: string[] | null
+          theme_preference?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          breaking_news?: boolean
           categories?: string[] | null
           created_at?: string
+          daily_digest?: boolean
+          font_size?: string | null
           id?: string
+          personalized?: boolean
           tags?: string[] | null
+          theme_preference?: string | null
           updated_at?: string
           user_id?: string
         }

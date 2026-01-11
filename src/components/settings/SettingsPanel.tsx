@@ -49,6 +49,13 @@ const regions = [
 ];
 
 type ThemeMode = "light" | "dark" | "system";
+type FontSize = "normal" | "large" | "extra-large";
+
+interface NotificationSettings {
+  breaking: boolean;
+  daily: boolean;
+  personalized: boolean;
+}
 
 export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPanelProps) {
   const { user } = useAuth();
@@ -57,54 +64,80 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [theme, setTheme] = useState<ThemeMode>("system");
-  const [notifications, setNotifications] = useState({
+  const [notifications, setNotifications] = useState<NotificationSettings>({
     breaking: true,
     daily: false,
     personalized: true,
   });
 
   // Font size slider value (0 = normal, 1 = large, 2 = extra-large)
-  const fontSizeToSlider = {
+  const fontSizeToSlider: Record<FontSize, number> = {
     "normal": 0,
     "large": 1,
     "extra-large": 2,
   };
-  const sliderToFontSize = ["normal", "large", "extra-large"] as const;
+  const sliderToFontSize: FontSize[] = ["normal", "large", "extra-large"];
   const fontSizeLabels = ["Mały", "Średni", "Duży"];
 
   useEffect(() => {
     if (isOpen) {
       loadSettings();
-      // Check current theme
-      const isDark = document.documentElement.classList.contains("dark");
-      const stored = localStorage.getItem("theme");
-      if (stored === "system" || !stored) {
-        setTheme("system");
-      } else {
-        setTheme(isDark ? "dark" : "light");
-      }
     }
   }, [isOpen, user]);
 
   const loadSettings = async () => {
+    // Load local settings first
     const localSettings = localStorage.getItem("userSettings");
     if (localSettings) {
       const parsed = JSON.parse(localSettings);
       setSelectedRegion(parsed.voivodeship || "mazowieckie");
     }
 
+    // Check current theme from localStorage
+    const storedTheme = localStorage.getItem("theme") as ThemeMode | null;
+    if (storedTheme) {
+      setTheme(storedTheme);
+    } else {
+      setTheme("system");
+    }
+
     if (user) {
       setIsLoading(true);
       try {
-        const { data, error } = await supabase
+        // Load site settings (region)
+        const { data: siteSettings, error: siteError } = await supabase
           .from("user_site_settings")
           .select("*")
           .eq("user_id", user.id)
           .maybeSingle();
 
-        if (error) throw error;
-        if (data) {
-          setSelectedRegion(data.voivodeship || "mazowieckie");
+        if (siteError) throw siteError;
+        if (siteSettings) {
+          setSelectedRegion(siteSettings.voivodeship || "mazowieckie");
+        }
+
+        // Load notification preferences
+        const { data: notifPrefs, error: notifError } = await supabase
+          .from("user_notification_preferences")
+          .select("*")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (notifError) throw notifError;
+        if (notifPrefs) {
+          setNotifications({
+            breaking: notifPrefs.breaking_news ?? true,
+            daily: notifPrefs.daily_digest ?? false,
+            personalized: notifPrefs.personalized ?? true,
+          });
+          // Load saved theme and font size from DB
+          if (notifPrefs.theme_preference) {
+            setTheme(notifPrefs.theme_preference as ThemeMode);
+            applyTheme(notifPrefs.theme_preference as ThemeMode);
+          }
+          if (notifPrefs.font_size) {
+            setFontSize(notifPrefs.font_size as FontSize);
+          }
         }
       } catch (error) {
         console.error("Error loading settings:", error);
@@ -114,16 +147,19 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
     }
   };
 
-  const handleThemeChange = (newTheme: ThemeMode) => {
-    setTheme(newTheme);
+  const applyTheme = (newTheme: ThemeMode) => {
     localStorage.setItem("theme", newTheme);
-    
     if (newTheme === "system") {
       const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
       document.documentElement.classList.toggle("dark", prefersDark);
     } else {
       document.documentElement.classList.toggle("dark", newTheme === "dark");
     }
+  };
+
+  const handleThemeChange = (newTheme: ThemeMode) => {
+    setTheme(newTheme);
+    applyTheme(newTheme);
   };
 
   const handleFontSizeChange = (value: number[]) => {
@@ -134,29 +170,59 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
   const handleSave = async () => {
     setIsSaving(true);
 
+    // Save to localStorage
     localStorage.setItem("userSettings", JSON.stringify({
       voivodeship: selectedRegion,
     }));
+    localStorage.setItem("theme", theme);
 
     if (user) {
       try {
-        const { data: existing } = await supabase
+        // Save site settings (region)
+        const { data: existingSite } = await supabase
           .from("user_site_settings")
           .select("id")
           .eq("user_id", user.id)
           .maybeSingle();
 
-        if (existing) {
-          const { error } = await supabase
+        if (existingSite) {
+          await supabase
             .from("user_site_settings")
             .update({ voivodeship: selectedRegion })
             .eq("user_id", user.id);
-          if (error) throw error;
         } else {
-          const { error } = await supabase
+          await supabase
             .from("user_site_settings")
             .insert({ user_id: user.id, voivodeship: selectedRegion });
-          if (error) throw error;
+        }
+
+        // Save notification preferences (including theme and font size)
+        const { data: existingNotif } = await supabase
+          .from("user_notification_preferences")
+          .select("id")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        const notifData = {
+          breaking_news: notifications.breaking,
+          daily_digest: notifications.daily,
+          personalized: notifications.personalized,
+          theme_preference: theme,
+          font_size: displaySettings.fontSize,
+        };
+
+        if (existingNotif) {
+          await supabase
+            .from("user_notification_preferences")
+            .update(notifData)
+            .eq("user_id", user.id);
+        } else {
+          await supabase
+            .from("user_notification_preferences")
+            .insert({ 
+              user_id: user.id,
+              ...notifData,
+            });
         }
 
         toast.success("Ustawienia zapisane");
@@ -209,6 +275,15 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
                 </section>
               )}
 
+              {/* Guest notice */}
+              {!user && (
+                <section className="p-4 rounded-xl bg-primary/5 border border-primary/10">
+                  <p className="text-sm text-muted-foreground">
+                    <span className="font-medium text-foreground">Zaloguj się</span>, aby zapisać ustawienia na koncie i synchronizować je między urządzeniami.
+                  </p>
+                </section>
+              )}
+
               {/* Preferences Section */}
               <section className="space-y-6">
                 {/* Theme Toggle */}
@@ -245,12 +320,12 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
                       Rozmiar tekstu
                     </Label>
                     <span className="text-sm font-medium text-foreground">
-                      {fontSizeLabels[fontSizeToSlider[displaySettings.fontSize]]}
+                      {fontSizeLabels[fontSizeToSlider[displaySettings.fontSize as FontSize] ?? 0]}
                     </span>
                   </div>
                   <div className="px-1">
                     <Slider
-                      value={[fontSizeToSlider[displaySettings.fontSize]]}
+                      value={[fontSizeToSlider[displaySettings.fontSize as FontSize] ?? 0]}
                       onValueChange={handleFontSizeChange}
                       max={2}
                       step={1}
