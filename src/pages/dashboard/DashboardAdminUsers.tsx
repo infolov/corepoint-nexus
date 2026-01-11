@@ -38,7 +38,10 @@ import {
   Search,
   UserCog,
   Mail,
-  Calendar
+  Calendar,
+  Trash2,
+  Loader2,
+  AlertTriangle
 } from "lucide-react";
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
@@ -67,8 +70,11 @@ export default function DashboardAdminUsers() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [roleDialogOpen, setRoleDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<UserProfile | null>(null);
   const [selectedRole, setSelectedRole] = useState<string>("");
   const [processing, setProcessing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (user && isAdmin) {
@@ -117,6 +123,45 @@ export default function DashboardAdminUsers() {
     setSelectedUser(userProfile);
     setSelectedRole("");
     setRoleDialogOpen(true);
+  };
+
+  const openDeleteDialog = (userProfile: UserProfile) => {
+    setUserToDelete(userProfile);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteUser = async () => {
+    if (!userToDelete || !user) return;
+
+    setDeleting(true);
+
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+
+      if (!token) {
+        toast.error("Brak autoryzacji");
+        return;
+      }
+
+      const response = await supabase.functions.invoke("admin-delete-user", {
+        body: { userId: userToDelete.user_id },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      toast.success("Użytkownik został usunięty");
+      setDeleteDialogOpen(false);
+      setUserToDelete(null);
+      fetchUsers();
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      toast.error("Błąd podczas usuwania użytkownika");
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const handleAddRole = async () => {
@@ -319,15 +364,26 @@ export default function DashboardAdminUsers() {
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openRoleDialog(userProfile)}
-                          className="gap-1"
-                        >
-                          <UserCog className="h-4 w-4" />
-                          Dodaj rolę
-                        </Button>
+                        <div className="flex items-center gap-2 justify-end">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openRoleDialog(userProfile)}
+                            className="gap-1"
+                          >
+                            <UserCog className="h-4 w-4" />
+                            Rola
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => openDeleteDialog(userProfile)}
+                            disabled={userProfile.user_id === user?.id}
+                            className="gap-1"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -371,6 +427,60 @@ export default function DashboardAdminUsers() {
               disabled={processing || !selectedRole}
             >
               Dodaj rolę
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete User Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Usuń użytkownika
+            </DialogTitle>
+            <DialogDescription>
+              Czy na pewno chcesz usunąć użytkownika "{userToDelete?.full_name || userToDelete?.email}"?
+              <br />
+              <strong className="text-destructive">Ta operacja jest nieodwracalna!</strong>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 p-4 rounded-lg bg-destructive/10 border border-destructive/20">
+            <p className="text-sm text-muted-foreground">
+              Zostaną usunięte:
+            </p>
+            <ul className="text-sm mt-2 space-y-1 text-muted-foreground">
+              <li>• Konto użytkownika</li>
+              <li>• Profil i ustawienia</li>
+              <li>• Wszystkie kampanie reklamowe</li>
+              <li>• Historia przeglądania</li>
+              <li>• Avatar i pliki</li>
+            </ul>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+            >
+              Anuluj
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteUser}
+              disabled={deleting}
+            >
+              {deleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Usuwanie...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Usuń użytkownika
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
