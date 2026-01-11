@@ -24,6 +24,7 @@ function getCacheTTL(category?: string | null): number {
 interface Article {
   id: string;
   title: string;
+  aiTitle?: string | null;
   excerpt: string;
   category: string;
   image: string;
@@ -246,6 +247,34 @@ serve(async (req) => {
       seenIds.add(article.id);
       return true;
     });
+
+    // Enrich articles with AI titles from processed_articles
+    const articleUrls = uniqueArticles
+      .map(a => a.sourceUrl)
+      .filter(url => url && url.length > 0);
+    
+    if (articleUrls.length > 0) {
+      console.log(`Looking up AI titles for ${articleUrls.length} articles...`);
+      
+      const { data: processedData } = await supabase
+        .from('processed_articles')
+        .select('url, ai_title')
+        .in('url', articleUrls)
+        .not('ai_title', 'is', null);
+      
+      if (processedData && processedData.length > 0) {
+        const aiTitleMap = new Map(processedData.map(p => [p.url, p.ai_title]));
+        console.log(`Found ${processedData.length} AI titles`);
+        
+        // Enrich articles with AI titles
+        for (const article of uniqueArticles) {
+          const aiTitle = aiTitleMap.get(article.sourceUrl);
+          if (aiTitle) {
+            article.aiTitle = aiTitle;
+          }
+        }
+      }
+    }
 
     // Sort by publication date (newest first)
     uniqueArticles.sort((a, b) => (b.pubDateMs || 0) - (a.pubDateMs || 0));

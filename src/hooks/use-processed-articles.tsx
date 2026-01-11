@@ -21,6 +21,7 @@ export interface ProcessedArticle {
   id: string;
   url: string;
   title: string;
+  ai_title: string | null;
   source: string | null;
   category: string | null;
   image_url: string | null;

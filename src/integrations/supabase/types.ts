@@ -721,6 +721,7 @@ export type Database = {
       processed_articles: {
         Row: {
           ai_summary: string | null
+          ai_title: string | null
           ai_verification_status: string
           category: string | null
           created_at: string
@@ -736,6 +737,7 @@ export type Database = {
         }
         Insert: {
           ai_summary?: string | null
+          ai_title?: string | null
           ai_verification_status?: string
           category?: string | null
           created_at?: string
@@ -751,6 +753,7 @@ export type Database = {
         }
         Update: {
           ai_summary?: string | null
+          ai_title?: string | null
           ai_verification_status?: string
           category?: string | null
           created_at?: string
