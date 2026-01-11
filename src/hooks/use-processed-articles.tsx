@@ -104,12 +104,22 @@ export function useProcessedArticles(limit = 50) {
     };
   }, [fetchArticles]);
 
-  const triggerBackgroundProcess = async () => {
+  interface BackgroundProcessResult {
+    success: boolean;
+    processed?: number;
+    verified?: number;
+    errors?: number;
+    adminWarning?: string;
+    firecrawlCreditsExhausted?: boolean;
+    error?: string;
+  }
+
+  const triggerBackgroundProcess = async (): Promise<BackgroundProcessResult> => {
     try {
       const { data, error } = await supabase.functions.invoke('process-news-background');
       if (error) throw error;
       console.log('Background process triggered:', data);
-      return data;
+      return data as BackgroundProcessResult;
     } catch (err) {
       console.error('Error triggering background process:', err);
       throw err;

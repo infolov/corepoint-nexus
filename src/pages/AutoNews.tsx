@@ -4,7 +4,8 @@ import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { RefreshCw, Clock, ExternalLink, Newspaper, Loader2, CheckCircle, XCircle, AlertCircle, ChevronDown } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { RefreshCw, Clock, ExternalLink, Newspaper, Loader2, CheckCircle, XCircle, AlertCircle, ChevronDown, AlertTriangle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { Header } from '@/components/layout/Header';
@@ -12,6 +13,7 @@ import { Footer } from '@/components/layout/Footer';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { VerificationStatus, VerificationLog } from '@/hooks/use-processed-articles';
+import { useAdmin } from '@/hooks/use-admin';
 
 function ArticleCard({ article }: { article: ProcessedArticle }) {
   const formattedDate = article.pub_date 
@@ -172,7 +174,9 @@ function ArticleCardSkeleton() {
 
 export default function AutoNews() {
   const { articles, loading, error, lastUpdate, refetch, triggerBackgroundProcess } = useProcessedArticles(100);
+  const { isAdmin } = useAdmin();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [firecrawlWarning, setFirecrawlWarning] = useState<string | null>(null);
 
   // Calculate verification stats
   const verificationStats = {
@@ -184,8 +188,15 @@ export default function AutoNews() {
 
   const handleManualProcess = async () => {
     setIsProcessing(true);
+    setFirecrawlWarning(null);
     try {
-      await triggerBackgroundProcess();
+      const result = await triggerBackgroundProcess();
+      
+      // Check for Firecrawl credits exhaustion warning
+      if (result?.firecrawlCreditsExhausted || result?.adminWarning) {
+        setFirecrawlWarning(result.adminWarning || 'Kredyty Firecrawl wyczerpane - artykuły przetwarzane tylko na podstawie danych RSS');
+      }
+      
       setTimeout(() => refetch(), 2000);
     } catch (err) {
       console.error('Error:', err);
@@ -240,6 +251,24 @@ export default function AutoNews() {
             </Button>
           </div>
         </div>
+
+        {/* Firecrawl Credits Warning - Admin Only */}
+        {isAdmin && firecrawlWarning && (
+          <Alert variant="destructive" className="mb-6 border-orange-500/50 bg-orange-500/10">
+            <AlertTriangle className="h-4 w-4 text-orange-500" />
+            <AlertTitle className="text-orange-600 dark:text-orange-400">
+              Ostrzeżenie: Brak kredytów Firecrawl
+            </AlertTitle>
+            <AlertDescription className="text-orange-600/80 dark:text-orange-400/80">
+              {firecrawlWarning}
+              <br />
+              <span className="text-sm mt-1 block">
+                Artykuły są przetwarzane w trybie awaryjnym - generowanie streszczeń tylko na podstawie tytułów RSS. 
+                Uzupełnij kredyty na <a href="https://firecrawl.dev/pricing" target="_blank" rel="noopener noreferrer" className="underline font-medium hover:text-orange-500">firecrawl.dev</a>
+              </span>
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Error State */}
         {error && (

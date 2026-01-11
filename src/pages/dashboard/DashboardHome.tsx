@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useDemo } from "@/contexts/DemoContext";
 import { supabase } from "@/integrations/supabase/client";
+import { FirecrawlStatusAlert } from "@/components/admin/FirecrawlStatusAlert";
 
 interface DashboardStats {
   credits: number;
@@ -118,6 +119,9 @@ export default function DashboardHome() {
 
   return (
     <div className="space-y-6">
+      {/* Firecrawl Status Alert for Admins */}
+      <FirecrawlStatusAlert />
+
       {/* Welcome */}
       <div>
         <h1 className="text-2xl font-bold">
