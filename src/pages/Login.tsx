@@ -1,41 +1,32 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Mail, Lock, User, Building, Loader2, Play, ArrowLeft } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { InterestsSelector } from "@/components/auth/InterestsSelector";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { useDemo } from "@/contexts/DemoContext";
 import { toast } from "sonner";
 
-type AuthMode = "login" | "register" | "advertiser";
+type AuthMode = "login" | "register";
 type RegistrationStep = "form" | "interests";
 
 export default function Login() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
-  const { enterDemoMode, isDemoMode } = useDemo();
   const [mode, setMode] = useState<AuthMode>("login");
   const [registrationStep, setRegistrationStep] = useState<RegistrationStep>("form");
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-  const [company, setCompany] = useState("");
   const [loading, setLoading] = useState(false);
   
   // Interests state
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [newUserId, setNewUserId] = useState<string | null>(null);
-
-  const handleDemoLogin = () => {
-    enterDemoMode();
-    navigate("/dashboard");
-    toast.success("Zalogowano do konta demo!");
-  };
 
   // Redirect if already logged in
   useEffect(() => {
@@ -78,7 +69,7 @@ export default function Login() {
         toast.success("Zalogowano pomyślnie!");
         navigate("/");
       } else {
-        // Register (both regular and advertiser)
+        // Register regular user
         const redirectUrl = `${window.location.origin}/`;
         
         const { data, error } = await supabase.auth.signUp({
@@ -88,8 +79,6 @@ export default function Login() {
             emailRedirectTo: redirectUrl,
             data: {
               full_name: name,
-              company_name: mode === "advertiser" ? company : null,
-              is_advertiser: mode === "advertiser",
             },
           },
         });
@@ -217,14 +206,12 @@ export default function Login() {
                     </div>
                   </Link>
                   <h1 className="mt-4 text-2xl font-bold">
-                    {mode === "login" && "Zaloguj się"}
-                    {mode === "register" && "Utwórz konto"}
-                    {mode === "advertiser" && "Konto Partnera"}
+                    {mode === "login" ? "Zaloguj się" : "Utwórz konto"}
                   </h1>
                   <p className="text-muted-foreground text-sm mt-2">
-                    {mode === "login" && "Witaj ponownie! Zaloguj się do swojego konta."}
-                    {mode === "register" && "Załóż konto, aby śledzić ulubione tematy."}
-                    {mode === "advertiser" && "Załóż konto i zacznij promować swoją markę."}
+                    {mode === "login" 
+                      ? "Witaj ponownie! Zaloguj się do swojego konta." 
+                      : "Załóż konto, aby śledzić ulubione tematy."}
                   </p>
                 </div>
 
@@ -250,21 +237,11 @@ export default function Login() {
                   >
                     Rejestracja
                   </button>
-                  <button
-                    className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all ${
-                      mode === "advertiser"
-                        ? "bg-card text-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                    onClick={() => setMode("advertiser")}
-                  >
-                    Partner
-                  </button>
                 </div>
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
-              {(mode === "register" || mode === "advertiser") && (
+              {mode === "register" && (
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <input
@@ -272,19 +249,6 @@ export default function Login() {
                     placeholder="Imię"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full pl-11 pr-4 py-3 rounded-lg bg-background border border-input focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                  />
-                </div>
-              )}
-
-              {mode === "advertiser" && (
-                <div className="relative">
-                  <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                  <input
-                    type="text"
-                    placeholder="Nazwa firmy"
-                    value={company}
-                    onChange={(e) => setCompany(e.target.value)}
                     className="w-full pl-11 pr-4 py-3 rounded-lg bg-background border border-input focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                   />
                 </div>
@@ -334,7 +298,7 @@ export default function Login() {
                 </div>
               )}
 
-              {(mode === "register" || mode === "advertiser") && (
+              {mode === "register" && (
                 <label className="flex items-start gap-2 cursor-pointer text-sm">
                   <input type="checkbox" className="rounded border-input mt-1" required />
                   <span className="text-muted-foreground">
@@ -354,11 +318,7 @@ export default function Login() {
                 {loading ? (
                   <Loader2 className="h-5 w-5 animate-spin" />
                 ) : (
-                  <>
-                    {mode === "login" && "Zaloguj się"}
-                    {mode === "register" && "Utwórz konto"}
-                    {mode === "advertiser" && "Załóż konto Partnera"}
-                  </>
+                  mode === "login" ? "Zaloguj się" : "Utwórz konto"
                 )}
               </Button>
             </form>
@@ -404,25 +364,13 @@ export default function Login() {
               </Button>
             </div>
 
-            {/* Demo Account Divider */}
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border"></div>
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">lub wypróbuj</span>
-              </div>
+            {/* Partner Info */}
+            <div className="mt-6 p-4 rounded-lg bg-muted/50 border border-border">
+              <p className="text-sm text-muted-foreground text-center">
+                <strong className="text-foreground">Chcesz zostać Partnerem?</strong><br />
+                Skontaktuj się z nami, aby uzyskać dostęp do panelu Partnera i możliwość prowadzenia kampanii reklamowych.
+              </p>
             </div>
-
-            {/* Demo Account Button */}
-            <Button 
-              variant="outline" 
-              className="w-full border-amber-500/50 text-amber-600 hover:bg-amber-500/10 hover:text-amber-700 hover:border-amber-500"
-              onClick={handleDemoLogin}
-            >
-              <Play className="h-4 w-4 mr-2" />
-              Konto demo Partnera
-            </Button>
               </>
             )}
           </div>

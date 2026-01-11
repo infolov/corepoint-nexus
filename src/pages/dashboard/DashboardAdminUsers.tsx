@@ -42,8 +42,11 @@ import {
   Calendar,
   Trash2,
   Loader2,
-  AlertTriangle
+  AlertTriangle,
+  UserPlus,
+  Building
 } from "lucide-react";
+import { Label } from "@/components/ui/label";
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
 
@@ -76,6 +79,16 @@ export default function DashboardAdminUsers() {
   const [selectedRole, setSelectedRole] = useState<string>("");
   const [processing, setProcessing] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  
+  // Create Partner state
+  const [createPartnerDialogOpen, setCreatePartnerDialogOpen] = useState(false);
+  const [partnerForm, setPartnerForm] = useState({
+    email: "",
+    password: "",
+    fullName: "",
+    companyName: "",
+  });
+  const [creatingPartner, setCreatingPartner] = useState(false);
 
   useEffect(() => {
     if (user && isAdmin) {
@@ -249,6 +262,59 @@ export default function DashboardAdminUsers() {
     setProcessing(false);
   };
 
+  const handleCreatePartner = async () => {
+    if (!partnerForm.email || !partnerForm.password || !partnerForm.fullName) {
+      toast.error("Wypełnij wszystkie wymagane pola");
+      return;
+    }
+
+    if (partnerForm.password.length < 6) {
+      toast.error("Hasło musi mieć co najmniej 6 znaków");
+      return;
+    }
+
+    setCreatingPartner(true);
+
+    try {
+      // Create user via admin API (using Edge Function)
+      const { data, error } = await supabase.functions.invoke("admin-create-partner", {
+        body: {
+          email: partnerForm.email,
+          password: partnerForm.password,
+          fullName: partnerForm.fullName,
+          companyName: partnerForm.companyName,
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data.error) {
+        toast.error(data.error);
+        return;
+      }
+
+      // Log the action
+      await logAction(
+        "partner_created",
+        { partner_email: partnerForm.email, company_name: partnerForm.companyName },
+        "user",
+        data.userId
+      );
+
+      toast.success("Konto Partnera zostało utworzone!");
+      setCreatePartnerDialogOpen(false);
+      setPartnerForm({ email: "", password: "", fullName: "", companyName: "" });
+      fetchUsers();
+    } catch (error) {
+      console.error("Error creating partner:", error);
+      toast.error("Błąd podczas tworzenia konta Partnera");
+    } finally {
+      setCreatingPartner(false);
+    }
+  };
+
   const filteredUsers = users.filter(u => {
     const query = searchQuery.toLowerCase();
     return (
@@ -282,11 +348,17 @@ export default function DashboardAdminUsers() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Zarządzanie użytkownikami</h1>
-        <p className="text-muted-foreground">
-          Przeglądaj użytkowników i zarządzaj ich rolami
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Zarządzanie użytkownikami</h1>
+          <p className="text-muted-foreground">
+            Przeglądaj użytkowników i zarządzaj ich rolami
+          </p>
+        </div>
+        <Button onClick={() => setCreatePartnerDialogOpen(true)} className="gap-2">
+          <UserPlus className="h-4 w-4" />
+          Utwórz konto Partnera
+        </Button>
       </div>
 
       <Card>
@@ -496,6 +568,94 @@ export default function DashboardAdminUsers() {
                 <>
                   <Trash2 className="h-4 w-4 mr-2" />
                   Usuń użytkownika
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Partner Dialog */}
+      <Dialog open={createPartnerDialogOpen} onOpenChange={setCreatePartnerDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5" />
+              Utwórz konto Partnera
+            </DialogTitle>
+            <DialogDescription>
+              Utwórz nowe konto z rolą Partnera umożliwiającą prowadzenie kampanii reklamowych.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="partner-email">Email *</Label>
+              <Input
+                id="partner-email"
+                type="email"
+                placeholder="partner@firma.pl"
+                value={partnerForm.email}
+                onChange={(e) => setPartnerForm(prev => ({ ...prev, email: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="partner-password">Hasło *</Label>
+              <Input
+                id="partner-password"
+                type="password"
+                placeholder="Minimum 6 znaków"
+                value={partnerForm.password}
+                onChange={(e) => setPartnerForm(prev => ({ ...prev, password: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="partner-name">Imię i nazwisko *</Label>
+              <Input
+                id="partner-name"
+                type="text"
+                placeholder="Jan Kowalski"
+                value={partnerForm.fullName}
+                onChange={(e) => setPartnerForm(prev => ({ ...prev, fullName: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="partner-company">Nazwa firmy</Label>
+              <div className="relative">
+                <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="partner-company"
+                  type="text"
+                  placeholder="Nazwa firmy Sp. z o.o."
+                  className="pl-9"
+                  value={partnerForm.companyName}
+                  onChange={(e) => setPartnerForm(prev => ({ ...prev, companyName: e.target.value }))}
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setCreatePartnerDialogOpen(false);
+                setPartnerForm({ email: "", password: "", fullName: "", companyName: "" });
+              }}
+            >
+              Anuluj
+            </Button>
+            <Button
+              onClick={handleCreatePartner}
+              disabled={creatingPartner || !partnerForm.email || !partnerForm.password || !partnerForm.fullName}
+            >
+              {creatingPartner ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Tworzenie...
+                </>
+              ) : (
+                <>
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Utwórz Partnera
                 </>
               )}
             </Button>
