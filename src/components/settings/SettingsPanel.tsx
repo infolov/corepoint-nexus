@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useDisplayMode } from "@/hooks/use-display-mode";
 import { cn } from "@/lib/utils";
+import { ImageCropDialog } from "./ImageCropDialog";
 import {
   Sheet,
   SheetContent,
@@ -77,6 +78,8 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
   });
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [cropDialogOpen, setCropDialogOpen] = useState(false);
+  const [selectedImageSrc, setSelectedImageSrc] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -285,66 +288,64 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
     fileInputRef.current?.click();
   };
 
-  const validateImage = (file: File): Promise<boolean> => {
-    return new Promise((resolve) => {
-      // Check file type
-      if (!ALLOWED_TYPES.includes(file.type)) {
-        toast.error("Dozwolone formaty: JPG, PNG, WebP");
-        resolve(false);
-        return;
-      }
+  const validateImageBasic = (file: File): boolean => {
+    // Check file type
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      toast.error("Dozwolone formaty: JPG, PNG, WebP");
+      return false;
+    }
 
-      // Check file size
-      if (file.size > MAX_FILE_SIZE) {
-        toast.error("Maksymalny rozmiar pliku: 2MB");
-        resolve(false);
-        return;
-      }
+    // Check file size (increased for pre-crop - will be reduced after crop)
+    if (file.size > MAX_FILE_SIZE * 5) { // 10MB max for pre-crop
+      toast.error("Maksymalny rozmiar pliku: 10MB");
+      return false;
+    }
 
-      // Check dimensions
-      const img = new Image();
-      img.onload = () => {
-        URL.revokeObjectURL(img.src);
-        if (img.width > MAX_DIMENSIONS || img.height > MAX_DIMENSIONS) {
-          toast.error(`Maksymalne wymiary: ${MAX_DIMENSIONS}x${MAX_DIMENSIONS}px`);
-          resolve(false);
-        } else {
-          resolve(true);
-        }
-      };
-      img.onerror = () => {
-        toast.error("Nie udało się wczytać obrazu");
-        resolve(false);
-      };
-      img.src = URL.createObjectURL(file);
-    });
+    return true;
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
-    const isValid = await validateImage(file);
+    const isValid = validateImageBasic(file);
     if (!isValid) {
       e.target.value = "";
       return;
     }
 
+    // Create object URL for cropping
+    const imageUrl = URL.createObjectURL(file);
+    setSelectedImageSrc(imageUrl);
+    setCropDialogOpen(true);
+    e.target.value = "";
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    if (!user) return;
+
+    setCropDialogOpen(false);
+    if (selectedImageSrc) {
+      URL.revokeObjectURL(selectedImageSrc);
+      setSelectedImageSrc(null);
+    }
+
     setIsUploadingAvatar(true);
 
     try {
-      // Generate unique filename
-      const fileExt = file.name.split(".").pop();
-      const fileName = `avatar.${fileExt}`;
+      const fileName = `avatar.jpg`;
       const filePath = `${user.id}/${fileName}`;
 
       // Delete old avatar if exists
       await supabase.storage.from("avatars").remove([filePath]);
 
-      // Upload new avatar
+      // Upload cropped avatar
       const { error: uploadError } = await supabase.storage
         .from("avatars")
-        .upload(filePath, file, { upsert: true });
+        .upload(filePath, croppedBlob, { 
+          upsert: true,
+          contentType: "image/jpeg"
+        });
 
       if (uploadError) throw uploadError;
 
@@ -368,7 +369,14 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
       toast.error("Błąd podczas uploadu avatara");
     } finally {
       setIsUploadingAvatar(false);
-      e.target.value = "";
+    }
+  };
+
+  const handleCropDialogClose = () => {
+    setCropDialogOpen(false);
+    if (selectedImageSrc) {
+      URL.revokeObjectURL(selectedImageSrc);
+      setSelectedImageSrc(null);
     }
   };
 
@@ -616,6 +624,16 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
             </div>
           )}
         </div>
+
+        {/* Crop dialog */}
+        {selectedImageSrc && (
+          <ImageCropDialog
+            isOpen={cropDialogOpen}
+            onClose={handleCropDialogClose}
+            imageSrc={selectedImageSrc}
+            onCropComplete={handleCropComplete}
+          />
+        )}
       </SheetContent>
     </Sheet>
   );
