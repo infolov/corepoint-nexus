@@ -27,8 +27,8 @@ interface MSNSlotGridProps {
  * Row 2: [Card] [Card] [Card] continuing grid
  */
 export function MSNSlotGrid({ articles, className }: MSNSlotGridProps) {
-  const { settings } = useDisplayMode();
-  const isCompact = settings.mode === "compact" || settings.dataSaver;
+  // Always use standard layout now (data saver mode removed)
+  const isCompact = false;
   
   if (articles.length === 0) return null;
 

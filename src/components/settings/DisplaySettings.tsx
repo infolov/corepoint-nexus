@@ -1,8 +1,6 @@
 import { useDisplayMode } from "@/hooks/use-display-mode";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Monitor, Smartphone, ZoomIn, Zap, LayoutGrid, List, LayoutTemplate } from "lucide-react";
+import { Sun, Moon, Monitor, ZoomIn } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface DisplaySettingsProps {
@@ -10,47 +8,47 @@ interface DisplaySettingsProps {
 }
 
 export function DisplaySettings({ className }: DisplaySettingsProps) {
-  const { settings, setMode, setFontSize, toggleDataSaver } = useDisplayMode();
+  const { settings, setTheme, setFontSize } = useDisplayMode();
 
   return (
     <div className={cn("space-y-6", className)}>
-      {/* Display Mode */}
+      {/* Theme Selection */}
       <div>
         <h3 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">
-          Tryb wyświetlania
+          Motyw
         </h3>
         <div className="grid grid-cols-3 gap-2">
           <Button
-            variant={settings.mode === "standard" ? "default" : "outline"}
+            variant={settings.theme === "light" ? "default" : "outline"}
             className="flex-col h-auto py-3 gap-1"
-            onClick={() => setMode("standard")}
+            onClick={() => setTheme("light")}
           >
-            <LayoutTemplate className="h-5 w-5" />
-            <span className="text-xs">Standard</span>
+            <Sun className="h-5 w-5" />
+            <span className="text-xs">Jasny</span>
           </Button>
           <Button
-            variant={settings.mode === "compact" ? "default" : "outline"}
+            variant={settings.theme === "dark" ? "default" : "outline"}
             className="flex-col h-auto py-3 gap-1"
-            onClick={() => setMode("compact")}
+            onClick={() => setTheme("dark")}
           >
-            <List className="h-5 w-5" />
-            <span className="text-xs">Kompakt</span>
+            <Moon className="h-5 w-5" />
+            <span className="text-xs">Ciemny</span>
           </Button>
           <Button
-            variant={settings.mode === "comfortable" ? "default" : "outline"}
+            variant={settings.theme === "system" ? "default" : "outline"}
             className="flex-col h-auto py-3 gap-1"
-            onClick={() => setMode("comfortable")}
+            onClick={() => setTheme("system")}
           >
-            <LayoutGrid className="h-5 w-5" />
-            <span className="text-xs">Wygodny</span>
+            <Monitor className="h-5 w-5" />
+            <span className="text-xs">System</span>
           </Button>
         </div>
       </div>
 
-      {/* Font Size for 40+ UX */}
+      {/* Font Size */}
       <div>
-        <h3 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">
-          <ZoomIn className="h-4 w-4 inline mr-2" />
+        <h3 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide flex items-center gap-2">
+          <ZoomIn className="h-4 w-4" />
           Rozmiar tekstu
         </h3>
         <div className="grid grid-cols-3 gap-2">
@@ -79,28 +77,6 @@ export function DisplaySettings({ className }: DisplaySettingsProps) {
         <p className="text-xs text-muted-foreground mt-2">
           Większy tekst ułatwia czytanie
         </p>
-      </div>
-
-      {/* Data Saver Mode */}
-      <div className="flex items-center justify-between p-4 rounded-xl bg-muted/30">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-            <Zap className="h-5 w-5 text-primary" />
-          </div>
-          <div>
-            <Label htmlFor="data-saver" className="font-semibold text-foreground cursor-pointer">
-              Oszczędzanie danych
-            </Label>
-            <p className="text-xs text-muted-foreground">
-              Mniejsze obrazki, szybsze ładowanie
-            </p>
-          </div>
-        </div>
-        <Switch
-          id="data-saver"
-          checked={settings.dataSaver}
-          onCheckedChange={toggleDataSaver}
-        />
       </div>
     </div>
   );
