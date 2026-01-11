@@ -5,6 +5,7 @@ import { decodeHTMLEntities } from "@/lib/utils";
 export interface RSSArticle {
   id: string;
   title: string;
+  aiTitle?: string | null;
   excerpt: string;
   category: string;
   image: string;
@@ -119,7 +120,8 @@ export function useRSSArticles() {
 export function formatRSSArticleForCard(article: RSSArticle) {
   return {
     id: article.id,
-    title: decodeHTMLEntities(article.title),
+    title: article.aiTitle ? decodeHTMLEntities(article.aiTitle) : decodeHTMLEntities(article.title),
+    originalTitle: decodeHTMLEntities(article.title),
     excerpt: decodeHTMLEntities(article.excerpt),
     content: decodeHTMLEntities(article.content),
     category: article.category,

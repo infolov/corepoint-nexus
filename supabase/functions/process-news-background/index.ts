@@ -260,38 +260,55 @@ async function verifySummary(
   }
 }
 
-// Generate AI summary using Lovable AI (no rate limits, no API key needed)
-async function generateSummaryWithRetry(
-  title: string, 
+// Result interface for title + summary generation
+interface GenerationResult {
+  title: string;
+  summary: string;
+}
+
+// Generate AI title and summary using Lovable AI
+async function generateTitleAndSummaryWithRetry(
+  originalTitle: string, 
   content: string, 
+  category: string,
   maxRetries: number = 3
-): Promise<string | null> {
+): Promise<GenerationResult | null> {
   const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
   if (!lovableApiKey) {
     console.error('LOVABLE_API_KEY not configured');
     return null;
   }
 
-  const prompt = `Jesteś profesjonalnym dziennikarzem. Przygotuj zwięzłe streszczenie poniższego artykułu:
+  const prompt = `Jesteś profesjonalnym redaktorem newsowym. Twoim zadaniem jest:
+1. Stworzyć nowy, lepszy tytuł artykułu
+2. Przygotować zwięzłe streszczenie
 
-TYTUŁ: ${title}
+KATEGORIA: ${category}
 
-TREŚĆ:
+ORYGINALNY TYTUŁ (do przepisania): ${originalTitle}
+
+TREŚĆ ARTYKUŁU:
 ${content.substring(0, 8000)}
 
-ZASADY:
-1. Zacznij od LEADU - odpowiedz na pytania: Kto? Co? Gdzie? Kiedy? Dlaczego?
-2. NIE PISZ wstępów typu "Artykuł omawia..." - od razu przejdź do faktów
-3. Użyj znaczników <b></b> do wyróżnienia najważniejszych faktów, nazwisk, dat i liczb
-4. Długość: 3-10 gęstych merytorycznie zdań, przekaż WSZYSTKIE najważniejsze informacje
-5. Pisz w języku polskim, profesjonalnie, obiektywnie
-6. Każde zdanie musi nieść konkretną informację
+ZASADY DLA TYTUŁU:
+- Max 80 znaków, ZWIĘZŁY i KONKRETNY
+- Oddaj esencję artykułu - co jest najważniejsze?
+- Unikaj clickbaitów, pytań retorycznych i wykrzykników
+- Pisz w czasie teraźniejszym dla większej dynamiki
 
-STRESZCZENIE:`;
+ZASADY DLA PODSUMOWANIA:
+- Zacznij od LEADU - odpowiedz na pytania: Kto? Co? Gdzie? Kiedy? Dlaczego?
+- NIE PISZ wstępów typu "Artykuł omawia..." - od razu przejdź do faktów
+- Użyj znaczników <b></b> do wyróżnienia najważniejszych faktów
+- Długość: 3-10 gęstych merytorycznie zdań
+- Pisz w języku polskim, profesjonalnie, obiektywnie
+
+FORMAT ODPOWIEDZI (DOKŁADNIE w tym formacie JSON, bez dodatkowego tekstu):
+{"title": "Tutaj nowy tytuł", "summary": "Tutaj podsumowanie"}`;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      console.log(`Lovable AI attempt ${attempt}/${maxRetries} for: ${title.substring(0, 40)}...`);
+      console.log(`Lovable AI attempt ${attempt}/${maxRetries} for: ${originalTitle.substring(0, 40)}...`);
       
       const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
         method: 'POST',
@@ -304,14 +321,14 @@ STRESZCZENIE:`;
           messages: [
             { role: 'user', content: prompt }
           ],
-          max_tokens: 500,
+          max_tokens: 800,
           temperature: 0,
         }),
       });
 
-      // Handle rate limit (429) - less likely with Lovable AI
+      // Handle rate limit (429)
       if (response.status === 429) {
-        const waitTime = Math.pow(2, attempt) * 3000; // 3s, 6s, 12s
+        const waitTime = Math.pow(2, attempt) * 3000;
         console.log(`Rate limited (429). Waiting ${waitTime / 1000}s before retry...`);
         await delay(waitTime);
         continue;
@@ -330,11 +347,38 @@ STRESZCZENIE:`;
       }
 
       const data = await response.json();
-      const summary = data.choices?.[0]?.message?.content;
+      const rawContent = data.choices?.[0]?.message?.content;
       
-      if (summary) {
-        console.log(`Generated summary on attempt ${attempt}, length: ${summary.length}`);
-        return summary;
+      if (rawContent) {
+        try {
+          // Clean up the response - remove markdown code blocks if present
+          let jsonContent = rawContent.trim();
+          if (jsonContent.startsWith('```json')) {
+            jsonContent = jsonContent.slice(7);
+          } else if (jsonContent.startsWith('```')) {
+            jsonContent = jsonContent.slice(3);
+          }
+          if (jsonContent.endsWith('```')) {
+            jsonContent = jsonContent.slice(0, -3);
+          }
+          jsonContent = jsonContent.trim();
+          
+          const parsed = JSON.parse(jsonContent);
+          if (parsed.title && parsed.summary) {
+            console.log(`Generated title+summary on attempt ${attempt}`);
+            return {
+              title: parsed.title,
+              summary: parsed.summary,
+            };
+          }
+        } catch (parseError) {
+          console.error('Failed to parse AI response as JSON, using raw content as summary');
+          // Fallback: use raw content as summary, keep original title
+          return {
+            title: originalTitle,
+            summary: rawContent,
+          };
+        }
       }
       
       return null;
@@ -417,15 +461,18 @@ serve(async (req) => {
         console.log(`Waiting ${preApiDelay}ms before AI call...`);
         await delay(preApiDelay);
         
-        // Generate initial AI summary
-        let aiSummary = await generateSummaryWithRetry(article.title, fullContent);
+        // Generate AI title and summary
+        const generationResult = await generateTitleAndSummaryWithRetry(article.title, fullContent, article.category);
         
-        if (!aiSummary) {
-          console.log(`Skipping ${article.url} - failed to generate summary after retries`);
+        if (!generationResult) {
+          console.log(`Skipping ${article.url} - failed to generate title+summary after retries`);
           failedCount++;
           rateLimitedCount++;
           continue;
         }
+
+        const aiTitle = generationResult.title;
+        let aiSummary = generationResult.summary;
 
         // === FACT-CHECKING SYSTEM ===
         const verificationLogs: any[] = [];
@@ -484,12 +531,13 @@ serve(async (req) => {
           }
         }
 
-        // Save to database with verification status
+        // Save to database with verification status and AI title
         const { error: insertError } = await supabase
           .from('processed_articles')
           .insert({
             url: article.url,
             title: article.title,
+            ai_title: aiTitle,
             source: article.source,
             category: article.category,
             image_url: article.imageUrl,
