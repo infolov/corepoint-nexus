@@ -106,6 +106,8 @@ export default function DashboardAdminFactCheck() {
   const [processing, setProcessing] = useState(false);
   const [regenerating, setRegenerating] = useState<string | null>(null);
   const [expandedErrors, setExpandedErrors] = useState<Record<string, boolean>>({});
+  const [batchReverifying, setBatchReverifying] = useState(false);
+  const [batchProgress, setBatchProgress] = useState<{ verified: number; rejected: number; errors: number } | null>(null);
 
   useEffect(() => {
     if (user && isAdmin) {
@@ -239,6 +241,34 @@ export default function DashboardAdminFactCheck() {
     }));
   };
 
+  const handleBatchReverify = async () => {
+    setBatchReverifying(true);
+    setBatchProgress(null);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('batch-reverify', {
+        body: { batchSize: 50 }
+      });
+
+      if (error) {
+        toast.error("Błąd podczas masowej weryfikacji: " + error.message);
+      } else if (data) {
+        setBatchProgress({
+          verified: data.verified || 0,
+          rejected: data.stillRejected || 0,
+          errors: data.errors || 0
+        });
+        toast.success(`Weryfikacja zakończona: ${data.verified} zweryfikowanych, ${data.stillRejected} nadal odrzuconych`);
+        fetchArticles();
+      }
+    } catch (err) {
+      console.error("Batch reverify error:", err);
+      toast.error("Błąd podczas masowej weryfikacji");
+    } finally {
+      setBatchReverifying(false);
+    }
+  };
+
   const filteredArticles = articles.filter(article => {
     if (activeTab === "all") return true;
     return article.ai_verification_status === activeTab;
@@ -333,13 +363,45 @@ export default function DashboardAdminFactCheck() {
                 Rygorystyczny system kontroli jakości podsumowań AI - Single Source of Truth
               </CardDescription>
             </div>
-            <Button variant="outline" onClick={fetchArticles} disabled={loading}>
-              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-              Odśwież
-            </Button>
+            <div className="flex items-center gap-2">
+              {counts.rejected > 0 && (
+                <Button 
+                  variant="default" 
+                  onClick={handleBatchReverify} 
+                  disabled={batchReverifying || loading}
+                >
+                  <RefreshCw className={`h-4 w-4 mr-2 ${batchReverifying ? 'animate-spin' : ''}`} />
+                  {batchReverifying ? 'Weryfikuję...' : `Weryfikuj ponownie wszystkie (${counts.rejected})`}
+                </Button>
+              )}
+              <Button variant="outline" onClick={fetchArticles} disabled={loading}>
+                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                Odśwież
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
+          {batchProgress && (
+            <div className="mb-4 p-4 bg-muted rounded-lg flex items-center gap-4">
+              <CheckCircle className="h-5 w-5 text-green-500" />
+              <div className="flex-1">
+                <p className="font-medium">Wynik masowej weryfikacji</p>
+                <p className="text-sm text-muted-foreground">
+                  <span className="text-green-500 font-medium">{batchProgress.verified} zweryfikowanych</span>
+                  {" • "}
+                  <span className="text-red-500">{batchProgress.rejected} nadal odrzuconych</span>
+                  {batchProgress.errors > 0 && (
+                    <span className="text-amber-500"> • {batchProgress.errors} błędów</span>
+                  )}
+                </p>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => setBatchProgress(null)}>
+                <XCircle className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+          
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="mb-4">
               <TabsTrigger value="manual_review" className="gap-2">
