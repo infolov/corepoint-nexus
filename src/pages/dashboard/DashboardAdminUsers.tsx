@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useAdmin } from "@/hooks/use-admin";
+import { useAdminLogs } from "@/hooks/use-admin-logs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -145,7 +146,7 @@ export default function DashboardAdminUsers() {
       }
 
       const response = await supabase.functions.invoke("admin-delete-user", {
-        body: { userId: userToDelete.user_id },
+        body: { userId: userToDelete.user_id, userEmail: userToDelete.email },
       });
 
       if (response.error) {
@@ -163,6 +164,8 @@ export default function DashboardAdminUsers() {
       setDeleting(false);
     }
   };
+
+  const { logAction } = useAdminLogs();
 
   const handleAddRole = async () => {
     if (!selectedUser || !selectedRole) {
@@ -193,6 +196,13 @@ export default function DashboardAdminUsers() {
         toast.error("Błąd podczas dodawania roli");
       }
     } else {
+      // Log the action
+      await logAction(
+        "role_added",
+        { role: selectedRole, user_email: selectedUser.email },
+        "user",
+        selectedUser.user_id
+      );
       toast.success(`Rola "${roleConfig[selectedRole]?.label}" została dodana`);
       setRoleDialogOpen(false);
       fetchUsers();
@@ -225,6 +235,13 @@ export default function DashboardAdminUsers() {
     if (error) {
       toast.error("Błąd podczas usuwania roli");
     } else {
+      // Log the action
+      await logAction(
+        "role_removed",
+        { role, user_email: userProfile.email },
+        "user",
+        userProfile.user_id
+      );
       toast.success(`Rola "${roleConfig[role]?.label}" została usunięta`);
       fetchUsers();
     }

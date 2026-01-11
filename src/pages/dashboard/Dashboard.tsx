@@ -18,7 +18,8 @@ import {
   LayoutGrid,
   AlertTriangle,
   Building2,
-  Eye
+  Eye,
+  Activity
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
@@ -40,6 +41,7 @@ const sidebarLinks = [
 
 const adminLinks = [
   { name: "Ustawienia globalne", href: "/dashboard/admin/settings", icon: Settings },
+  { name: "Logi aktywności", href: "/dashboard/admin/logs", icon: Activity },
   { name: "Statystyki platformy", href: "/dashboard/admin/stats", icon: BarChart3 },
   { name: "Weryfikacja Faktów", href: "/dashboard/admin/factcheck", icon: Shield },
   { name: "Zarządzanie kampaniami", href: "/dashboard/admin/campaigns", icon: Megaphone },

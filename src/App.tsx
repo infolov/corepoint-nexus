@@ -34,6 +34,7 @@ import DashboardAdminPartners from "./pages/dashboard/DashboardAdminPartners";
 import DashboardAdminCarousels from "./pages/dashboard/DashboardAdminCarousels";
 import DashboardAdminFactCheck from "./pages/dashboard/DashboardAdminFactCheck";
 import DashboardAdminSettings from "./pages/dashboard/DashboardAdminSettings";
+import DashboardAdminLogs from "./pages/dashboard/DashboardAdminLogs";
 import DashboardPreview from "./pages/dashboard/DashboardPreview";
 
 const queryClient = new QueryClient();
@@ -75,6 +76,7 @@ const App = () => (
               <Route path="admin/carousels" element={<DashboardAdminCarousels />} />
               <Route path="admin/factcheck" element={<DashboardAdminFactCheck />} />
               <Route path="admin/settings" element={<DashboardAdminSettings />} />
+              <Route path="admin/logs" element={<DashboardAdminLogs />} />
             </Route>
             <Route path="/sport/:subcategory" element={<Category />} />
             <Route path="/:category" element={<Category />} />

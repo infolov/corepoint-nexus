@@ -48,10 +48,13 @@ export function useSiteSettings() {
     fetchSettings();
   }, [fetchSettings]);
 
-  const updateSetting = async (key: string, value: Json): Promise<boolean> => {
+  const updateSetting = async (key: string, value: Json, logAction = true): Promise<boolean> => {
     if (!user) return false;
 
     try {
+      // Get old value for logging
+      const oldValue = settings[key];
+
       const { error: updateError } = await supabase
         .from("site_settings")
         .update({
@@ -62,6 +65,22 @@ export function useSiteSettings() {
         .eq("setting_key", key);
 
       if (updateError) throw updateError;
+
+      // Log the action
+      if (logAction) {
+        await supabase.from("admin_activity_logs").insert([{
+          admin_id: user.id,
+          admin_email: user.email || null,
+          action_type: "setting_updated",
+          action_details: { 
+            setting_key: key, 
+            old_value: oldValue as Json,
+            new_value: value 
+          } as Json,
+          target_type: "setting",
+          target_id: key,
+        }]);
+      }
 
       setSettings((prev) => ({ ...prev, [key]: value }));
       return true;
