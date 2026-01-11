@@ -1,9 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
-import { Loader2, User, Sun, Moon, Monitor, Bell, MapPin, Check } from "lucide-react";
+import { Loader2, User, Sun, Moon, Monitor, Bell, MapPin, Check, Cloud } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -57,20 +56,24 @@ interface NotificationSettings {
   personalized: boolean;
 }
 
+type SaveStatus = "idle" | "saving" | "saved";
+
 export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPanelProps) {
   const { user } = useAuth();
   const { settings: displaySettings, setFontSize } = useDisplayMode();
   const [selectedRegion, setSelectedRegion] = useState("mazowieckie");
   const [isLoading, setIsLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [theme, setTheme] = useState<ThemeMode>("system");
   const [notifications, setNotifications] = useState<NotificationSettings>({
     breaking: true,
     daily: false,
     personalized: true,
   });
+  
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const initialLoadRef = useRef(true);
 
-  // Font size slider value (0 = normal, 1 = large, 2 = extra-large)
   const fontSizeToSlider: Record<FontSize, number> = {
     "normal": 0,
     "large": 1,
@@ -79,97 +82,20 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
   const sliderToFontSize: FontSize[] = ["normal", "large", "extra-large"];
   const fontSizeLabels = ["Mały", "Średni", "Duży"];
 
-  useEffect(() => {
-    if (isOpen) {
-      loadSettings();
+  // Debounced save function
+  const debouncedSave = useCallback(() => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
     }
-  }, [isOpen, user]);
+    
+    setSaveStatus("saving");
+    
+    saveTimeoutRef.current = setTimeout(() => {
+      saveSettings();
+    }, 800);
+  }, [user, selectedRegion, theme, notifications, displaySettings.fontSize]);
 
-  const loadSettings = async () => {
-    // Load local settings first
-    const localSettings = localStorage.getItem("userSettings");
-    if (localSettings) {
-      const parsed = JSON.parse(localSettings);
-      setSelectedRegion(parsed.voivodeship || "mazowieckie");
-    }
-
-    // Check current theme from localStorage
-    const storedTheme = localStorage.getItem("theme") as ThemeMode | null;
-    if (storedTheme) {
-      setTheme(storedTheme);
-    } else {
-      setTheme("system");
-    }
-
-    if (user) {
-      setIsLoading(true);
-      try {
-        // Load site settings (region)
-        const { data: siteSettings, error: siteError } = await supabase
-          .from("user_site_settings")
-          .select("*")
-          .eq("user_id", user.id)
-          .maybeSingle();
-
-        if (siteError) throw siteError;
-        if (siteSettings) {
-          setSelectedRegion(siteSettings.voivodeship || "mazowieckie");
-        }
-
-        // Load notification preferences
-        const { data: notifPrefs, error: notifError } = await supabase
-          .from("user_notification_preferences")
-          .select("*")
-          .eq("user_id", user.id)
-          .maybeSingle();
-
-        if (notifError) throw notifError;
-        if (notifPrefs) {
-          setNotifications({
-            breaking: notifPrefs.breaking_news ?? true,
-            daily: notifPrefs.daily_digest ?? false,
-            personalized: notifPrefs.personalized ?? true,
-          });
-          // Load saved theme and font size from DB
-          if (notifPrefs.theme_preference) {
-            setTheme(notifPrefs.theme_preference as ThemeMode);
-            applyTheme(notifPrefs.theme_preference as ThemeMode);
-          }
-          if (notifPrefs.font_size) {
-            setFontSize(notifPrefs.font_size as FontSize);
-          }
-        }
-      } catch (error) {
-        console.error("Error loading settings:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-  };
-
-  const applyTheme = (newTheme: ThemeMode) => {
-    localStorage.setItem("theme", newTheme);
-    if (newTheme === "system") {
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      document.documentElement.classList.toggle("dark", prefersDark);
-    } else {
-      document.documentElement.classList.toggle("dark", newTheme === "dark");
-    }
-  };
-
-  const handleThemeChange = (newTheme: ThemeMode) => {
-    setTheme(newTheme);
-    applyTheme(newTheme);
-  };
-
-  const handleFontSizeChange = (value: number[]) => {
-    const size = sliderToFontSize[value[0]];
-    setFontSize(size);
-  };
-
-  const handleSave = async () => {
-    setIsSaving(true);
-
+  const saveSettings = async () => {
     // Save to localStorage
     localStorage.setItem("userSettings", JSON.stringify({
       voivodeship: selectedRegion,
@@ -196,7 +122,7 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
             .insert({ user_id: user.id, voivodeship: selectedRegion });
         }
 
-        // Save notification preferences (including theme and font size)
+        // Save notification preferences
         const { data: existingNotif } = await supabase
           .from("user_notification_preferences")
           .select("id")
@@ -225,19 +151,122 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
             });
         }
 
-        toast.success("Ustawienia zapisane");
+        setSaveStatus("saved");
         onSettingsSaved?.();
+        
+        // Reset to idle after showing "saved" status
+        setTimeout(() => setSaveStatus("idle"), 2000);
       } catch (error) {
         console.error("Error saving settings:", error);
         toast.error("Błąd podczas zapisywania");
+        setSaveStatus("idle");
       }
     } else {
-      toast.success("Ustawienia zapisane lokalnie");
-      onSettingsSaved?.();
+      setSaveStatus("saved");
+      setTimeout(() => setSaveStatus("idle"), 2000);
+    }
+  };
+
+  // Trigger autosave when settings change (but not on initial load)
+  useEffect(() => {
+    if (initialLoadRef.current) return;
+    debouncedSave();
+  }, [selectedRegion, theme, notifications, displaySettings.fontSize]);
+
+  useEffect(() => {
+    if (isOpen) {
+      initialLoadRef.current = true;
+      loadSettings();
+    }
+    
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [isOpen, user]);
+
+  const loadSettings = async () => {
+    const localSettings = localStorage.getItem("userSettings");
+    if (localSettings) {
+      const parsed = JSON.parse(localSettings);
+      setSelectedRegion(parsed.voivodeship || "mazowieckie");
     }
 
-    setIsSaving(false);
-    onClose();
+    const storedTheme = localStorage.getItem("theme") as ThemeMode | null;
+    if (storedTheme) {
+      setTheme(storedTheme);
+    } else {
+      setTheme("system");
+    }
+
+    if (user) {
+      setIsLoading(true);
+      try {
+        const { data: siteSettings } = await supabase
+          .from("user_site_settings")
+          .select("*")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (siteSettings) {
+          setSelectedRegion(siteSettings.voivodeship || "mazowieckie");
+        }
+
+        const { data: notifPrefs } = await supabase
+          .from("user_notification_preferences")
+          .select("*")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (notifPrefs) {
+          setNotifications({
+            breaking: notifPrefs.breaking_news ?? true,
+            daily: notifPrefs.daily_digest ?? false,
+            personalized: notifPrefs.personalized ?? true,
+          });
+          if (notifPrefs.theme_preference) {
+            setTheme(notifPrefs.theme_preference as ThemeMode);
+            applyTheme(notifPrefs.theme_preference as ThemeMode);
+          }
+          if (notifPrefs.font_size) {
+            setFontSize(notifPrefs.font_size as FontSize);
+          }
+        }
+      } catch (error) {
+        console.error("Error loading settings:", error);
+      } finally {
+        setIsLoading(false);
+        // Allow autosave after initial load completes
+        setTimeout(() => {
+          initialLoadRef.current = false;
+        }, 100);
+      }
+    } else {
+      setTimeout(() => {
+        initialLoadRef.current = false;
+      }, 100);
+    }
+  };
+
+  const applyTheme = (newTheme: ThemeMode) => {
+    localStorage.setItem("theme", newTheme);
+    if (newTheme === "system") {
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      document.documentElement.classList.toggle("dark", prefersDark);
+    } else {
+      document.documentElement.classList.toggle("dark", newTheme === "dark");
+    }
+  };
+
+  const handleThemeChange = (newTheme: ThemeMode) => {
+    setTheme(newTheme);
+    applyTheme(newTheme);
+  };
+
+  const handleFontSizeChange = (value: number[]) => {
+    const size = sliderToFontSize[value[0]];
+    setFontSize(size);
   };
 
   return (
@@ -245,9 +274,13 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
       <SheetContent side="right" className="w-full sm:max-w-[480px] overflow-y-auto p-0">
         <div className="max-w-[400px] mx-auto px-6 py-8">
           <SheetHeader className="mb-8">
-            <SheetTitle className="text-2xl font-semibold tracking-tight">
-              Ustawienia
-            </SheetTitle>
+            <div className="flex items-center justify-between">
+              <SheetTitle className="text-2xl font-semibold tracking-tight">
+                Ustawienia
+              </SheetTitle>
+              {/* Save status indicator */}
+              <SaveStatusIndicator status={saveStatus} />
+            </div>
           </SheetHeader>
 
           {isLoading ? (
@@ -389,32 +422,39 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
                 </div>
               </section>
 
-              {/* Save Button */}
-              <div className="pt-4">
-                <Button
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="w-full h-12 rounded-xl font-medium"
-                  variant="default"
-                >
-                  {isSaving ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" strokeWidth={1.5} />
-                      Zapisywanie...
-                    </>
-                  ) : (
-                    <>
-                      <Check className="h-4 w-4 mr-2" strokeWidth={1.5} />
-                      Zapisz zmiany
-                    </>
-                  )}
-                </Button>
-              </div>
+              {/* Autosave info */}
+              <p className="text-xs text-muted-foreground text-center pt-4">
+                Zmiany zapisują się automatycznie
+              </p>
             </div>
           )}
         </div>
       </SheetContent>
     </Sheet>
+  );
+}
+
+// Save status indicator
+function SaveStatusIndicator({ status }: { status: SaveStatus }) {
+  if (status === "idle") return null;
+  
+  return (
+    <div className={cn(
+      "flex items-center gap-1.5 text-xs font-medium transition-all duration-300",
+      status === "saving" ? "text-muted-foreground" : "text-green-600 dark:text-green-400"
+    )}>
+      {status === "saving" ? (
+        <>
+          <Cloud className="h-3.5 w-3.5 animate-pulse" strokeWidth={1.5} />
+          <span>Zapisywanie...</span>
+        </>
+      ) : (
+        <>
+          <Check className="h-3.5 w-3.5" strokeWidth={1.5} />
+          <span>Zapisano</span>
+        </>
+      )}
+    </div>
   );
 }
 
