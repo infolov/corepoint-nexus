@@ -29,6 +29,9 @@ import {
   Save,
   Loader2,
   Check,
+  Key,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 
 const regions = [
@@ -54,10 +57,11 @@ interface SettingConfig {
   key: string;
   label: string;
   description: string;
-  type: "text" | "number" | "boolean" | "select";
+  type: "text" | "number" | "boolean" | "select" | "password";
   icon: React.ComponentType<{ className?: string }>;
   options?: { value: string; label: string }[];
   category: string;
+  placeholder?: string;
 }
 
 const settingsConfig: SettingConfig[] = [
@@ -142,6 +146,15 @@ const settingsConfig: SettingConfig[] = [
     icon: Cloud,
     category: "Widgety",
   },
+  {
+    key: "firecrawl_api_key",
+    label: "Klucz API Firecrawl",
+    description: "Własny klucz API do scrapowania artykułów (firecrawl.dev)",
+    type: "password",
+    icon: Key,
+    category: "Integracje",
+    placeholder: "fc-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  },
 ];
 
 export default function DashboardAdminSettings() {
@@ -150,6 +163,7 @@ export default function DashboardAdminSettings() {
   const [localValues, setLocalValues] = useState<Record<string, unknown>>({});
   const [savingKeys, setSavingKeys] = useState<Set<string>>(new Set());
   const [savedKeys, setSavedKeys] = useState<Set<string>>(new Set());
+  const [showPassword, setShowPassword] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (!settingsLoading && settings) {
@@ -343,6 +357,32 @@ export default function DashboardAdminSettings() {
                               }
                               className="w-24"
                             />
+                          ) : config.type === "password" ? (
+                            <div className="relative flex items-center">
+                              <Input
+                                type={showPassword[config.key] ? "text" : "password"}
+                                value={String(localValues[config.key] || "")}
+                                onChange={(e) => handleChange(config.key, e.target.value)}
+                                placeholder={config.placeholder}
+                                className="w-80 pr-10"
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="absolute right-1 h-7 w-7 p-0"
+                                onClick={() => setShowPassword(prev => ({ 
+                                  ...prev, 
+                                  [config.key]: !prev[config.key] 
+                                }))}
+                              >
+                                {showPassword[config.key] ? (
+                                  <EyeOff className="h-4 w-4 text-muted-foreground" />
+                                ) : (
+                                  <Eye className="h-4 w-4 text-muted-foreground" />
+                                )}
+                              </Button>
+                            </div>
                           ) : (
                             <Input
                               type="text"

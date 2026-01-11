@@ -149,10 +149,12 @@ interface ScrapeResult {
 }
 
 // Scrape full content using Firecrawl
-async function scrapeWithFirecrawl(url: string): Promise<ScrapeResult> {
-  const firecrawlApiKey = Deno.env.get('Firecrawl');
+async function scrapeWithFirecrawl(url: string, customApiKey?: string | null): Promise<ScrapeResult> {
+  // Try custom API key first, then fallback to env variable
+  const firecrawlApiKey = customApiKey || Deno.env.get('Firecrawl') || Deno.env.get('FIRECRAWL_API_KEY');
+  
   if (!firecrawlApiKey) {
-    console.error('FIRECRAWL_API_KEY not configured');
+    console.error('FIRECRAWL_API_KEY not configured (neither in settings nor env)');
     return { content: null, creditExhausted: false };
   }
 
@@ -472,6 +474,21 @@ serve(async (req) => {
   try {
     console.log('Starting background news processing...');
     
+    // Fetch custom Firecrawl API key from site_settings (if configured)
+    let customFirecrawlApiKey: string | null = null;
+    const { data: firecrawlSetting } = await supabase
+      .from('site_settings')
+      .select('setting_value')
+      .eq('setting_key', 'firecrawl_api_key')
+      .single();
+    
+    if (firecrawlSetting?.setting_value && typeof firecrawlSetting.setting_value === 'string') {
+      customFirecrawlApiKey = firecrawlSetting.setting_value;
+      console.log('Using custom Firecrawl API key from site settings');
+    } else {
+      console.log('Using default Firecrawl API key from environment');
+    }
+    
     // Track Firecrawl credit status
     let firecrawlCreditsExhausted = false;
     let firecrawlExhaustedAt: string | null = null;
@@ -521,7 +538,7 @@ serve(async (req) => {
         
         // Try to scrape full content (unless credits already exhausted)
         if (!firecrawlCreditsExhausted) {
-          const scrapeResult = await scrapeWithFirecrawl(article.url);
+          const scrapeResult = await scrapeWithFirecrawl(article.url, customFirecrawlApiKey);
           
           if (scrapeResult.creditExhausted) {
             firecrawlCreditsExhausted = true;
