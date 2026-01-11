@@ -56,30 +56,33 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 
-interface VerificationFeedback {
+interface VerificationLog {
   attempt: number;
   timestamp: string;
   status: string;
-  errors: string[];
-  claimsChecked?: number;
-  claimsVerified?: number;
-  claimsRejected?: number;
+  errors?: string[];
+  details?: {
+    claimsChecked?: number;
+    claimsVerified?: number;
+    claimsRejected?: number;
+    fabricatedClaims?: string[];
+  };
 }
 
-interface Article {
+interface ProcessedArticle {
   id: string;
   title: string;
-  excerpt: string | null;
-  content: string | null;
-  category: string;
-  image: string;
+  url: string;
+  source: string | null;
+  category: string | null;
+  image_url: string | null;
   ai_summary: string | null;
-  ai_verification_status: string | null;
-  verification_feedback: VerificationFeedback[] | null;
-  generation_attempts: number | null;
+  full_content: string | null;
+  ai_verification_status: string;
+  verification_logs: VerificationLog[] | null;
+  pub_date: string | null;
   created_at: string;
-  updated_at: string;
-  is_published: boolean;
+  processed_at: string;
 }
 
 type VerificationStatus = 'pending' | 'verified' | 'rejected' | 'manual_review';
@@ -94,10 +97,10 @@ const statusConfig: Record<string, { label: string; variant: "default" | "second
 export default function DashboardAdminFactCheck() {
   const { user } = useAuth();
   const { isAdmin, loading: adminLoading } = useAdmin();
-  const [articles, setArticles] = useState<Article[]>([]);
+  const [articles, setArticles] = useState<ProcessedArticle[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<string>("manual_review");
-  const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
+  const [activeTab, setActiveTab] = useState<string>("rejected");
+  const [selectedArticle, setSelectedArticle] = useState<ProcessedArticle | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [processing, setProcessing] = useState(false);
@@ -113,11 +116,12 @@ export default function DashboardAdminFactCheck() {
   const fetchArticles = async () => {
     setLoading(true);
     
+    // Fetch from processed_articles table which has the verification data
     const { data, error } = await supabase
-      .from("articles")
+      .from("processed_articles")
       .select("*")
-      .not("ai_verification_status", "is", null)
-      .order("updated_at", { ascending: false });
+      .order("processed_at", { ascending: false })
+      .limit(500);
 
     if (error) {
       console.error("Error fetching articles:", error);
@@ -126,11 +130,11 @@ export default function DashboardAdminFactCheck() {
       return;
     }
 
-    // Parse verification_feedback from Json to proper type
+    // Parse verification_logs from Json to proper type
     const parsedArticles = (data || []).map(article => ({
       ...article,
-      verification_feedback: Array.isArray(article.verification_feedback) 
-        ? article.verification_feedback as unknown as VerificationFeedback[]
+      verification_logs: Array.isArray(article.verification_logs) 
+        ? article.verification_logs as unknown as VerificationLog[]
         : null,
     }));
 
@@ -144,17 +148,16 @@ export default function DashboardAdminFactCheck() {
     setProcessing(true);
     
     const { error } = await supabase
-      .from("articles")
+      .from("processed_articles")
       .update({ 
         ai_verification_status: "verified",
-        is_published: true,
       })
       .eq("id", selectedArticle.id);
 
     if (error) {
       toast.error("Błąd podczas zatwierdzania artykułu");
     } else {
-      toast.success("Faktografia zatwierdzona - artykuł opublikowany");
+      toast.success("Faktografia zatwierdzona");
       setApproveDialogOpen(false);
       setSelectedArticle(null);
       fetchArticles();
@@ -163,23 +166,31 @@ export default function DashboardAdminFactCheck() {
     setProcessing(false);
   };
 
-  const handleRegenerate = async (article: Article) => {
+  const handleRegenerate = async (article: ProcessedArticle) => {
     setRegenerating(article.id);
     
     try {
-      const { data, error } = await supabase.functions.invoke('verify-article', {
-        body: { articleId: article.id, forceRegenerate: true }
+      const { data, error } = await supabase.functions.invoke('verify-summary', {
+        body: { 
+          title: article.title,
+          originalContent: article.full_content || '',
+          aiSummary: article.ai_summary || '',
+          attemptNumber: 1 
+        }
       });
 
       if (error) {
         toast.error("Błąd podczas ponownej weryfikacji: " + error.message);
       } else {
         if (data.status === 'verified') {
-          toast.success(`Artykuł zweryfikowany pomyślnie po ${data.attempts} próbach`);
-        } else if (data.status === 'manual_review') {
-          toast.warning(`Artykuł wymaga ręcznej weryfikacji po ${data.attempts} próbach`);
+          // Update the article status in database
+          await supabase
+            .from("processed_articles")
+            .update({ ai_verification_status: 'verified' })
+            .eq("id", article.id);
+          toast.success("Artykuł zweryfikowany pomyślnie");
         } else {
-          toast.info(`Status weryfikacji: ${data.status}`);
+          toast.warning(`Weryfikacja nie przeszła: ${data.errors?.length || 0} błędów`);
         }
         fetchArticles();
       }
@@ -191,32 +202,32 @@ export default function DashboardAdminFactCheck() {
     }
   };
 
-  const handleBlockArticle = async (article: Article) => {
+  const handleRejectArticle = async (article: ProcessedArticle) => {
     setProcessing(true);
     
     const { error } = await supabase
-      .from("articles")
+      .from("processed_articles")
       .update({ 
-        is_published: false,
+        ai_verification_status: "rejected",
       })
       .eq("id", article.id);
 
     if (error) {
-      toast.error("Błąd podczas blokowania artykułu");
+      toast.error("Błąd podczas odrzucania artykułu");
     } else {
-      toast.success("Artykuł zablokowany przed publikacją");
+      toast.success("Artykuł odrzucony");
       fetchArticles();
     }
     
     setProcessing(false);
   };
 
-  const openDetailsDialog = (article: Article) => {
+  const openDetailsDialog = (article: ProcessedArticle) => {
     setSelectedArticle(article);
     setDetailsDialogOpen(true);
   };
 
-  const openApproveDialog = (article: Article) => {
+  const openApproveDialog = (article: ProcessedArticle) => {
     setSelectedArticle(article);
     setApproveDialogOpen(true);
   };
@@ -361,8 +372,8 @@ export default function DashboardAdminFactCheck() {
               ) : (
                 <div className="space-y-4">
                   {filteredArticles.map((article) => {
-                    const lastFeedback = article.verification_feedback?.slice(-1)[0];
-                    const hasErrors = lastFeedback?.errors && lastFeedback.errors.length > 0;
+                    const lastLog = article.verification_logs?.slice(-1)[0];
+                    const hasErrors = lastLog?.errors && lastLog.errors.length > 0;
                     const isExpanded = expandedErrors[article.id];
 
                     return (
@@ -375,20 +386,16 @@ export default function DashboardAdminFactCheck() {
                         <CardContent className="p-4">
                           <div className="flex items-start justify-between gap-4">
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-2">
+                              <div className="flex items-center gap-2 mb-2 flex-wrap">
                                 <Badge variant={statusConfig[article.ai_verification_status || 'pending']?.variant || "outline"} className="gap-1">
                                   {statusConfig[article.ai_verification_status || 'pending']?.icon}
                                   {statusConfig[article.ai_verification_status || 'pending']?.label}
                                 </Badge>
-                                <Badge variant="outline">{article.category}</Badge>
-                                <span className="text-xs text-muted-foreground">
-                                  Próby: {article.generation_attempts || 0}/3
-                                </span>
-                                {!article.is_published && (
-                                  <Badge variant="destructive" className="gap-1">
-                                    <AlertCircle className="h-3 w-3" />
-                                    Zablokowany
-                                  </Badge>
+                                {article.category && <Badge variant="outline">{article.category}</Badge>}
+                                {article.source && (
+                                  <span className="text-xs text-muted-foreground">
+                                    Źródło: {article.source}
+                                  </span>
                                 )}
                               </div>
                               
@@ -407,13 +414,13 @@ export default function DashboardAdminFactCheck() {
                                   <CollapsibleTrigger asChild>
                                     <Button variant="ghost" size="sm" className="gap-2 text-destructive hover:text-destructive">
                                       <AlertCircle className="h-4 w-4" />
-                                      {lastFeedback.errors.length} wykrytych błędów
+                                      {lastLog.errors!.length} wykrytych błędów
                                       {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                                     </Button>
                                   </CollapsibleTrigger>
                                   <CollapsibleContent className="mt-2">
                                     <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 space-y-2">
-                                      {lastFeedback.errors.map((error, idx) => (
+                                      {lastLog.errors!.map((error, idx) => (
                                         <div key={idx} className="flex items-start gap-2 text-sm">
                                           <XCircle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
                                           <span>{error}</span>
@@ -425,8 +432,12 @@ export default function DashboardAdminFactCheck() {
                               )}
 
                               <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
-                                <span>Utworzono: {format(new Date(article.created_at), "dd MMM yyyy HH:mm", { locale: pl })}</span>
-                                <span>Aktualizacja: {format(new Date(article.updated_at), "dd MMM yyyy HH:mm", { locale: pl })}</span>
+                                <span>Przetworzono: {format(new Date(article.processed_at), "dd MMM yyyy HH:mm", { locale: pl })}</span>
+                                {article.url && (
+                                  <a href={article.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                                    Źródło oryginalne
+                                  </a>
+                                )}
                               </div>
                             </div>
 
@@ -463,16 +474,16 @@ export default function DashboardAdminFactCheck() {
                                     Zatwierdź faktografię
                                   </Button>
                                   
-                                  {article.is_published && (
+                                  {article.ai_verification_status !== 'rejected' && (
                                     <Button
                                       variant="destructive"
                                       size="sm"
-                                      onClick={() => handleBlockArticle(article)}
+                                      onClick={() => handleRejectArticle(article)}
                                       disabled={processing}
                                       className="gap-1"
                                     >
                                       <XCircle className="h-4 w-4" />
-                                      Zablokuj publikację
+                                      Odrzuć
                                     </Button>
                                   )}
                                 </>
@@ -506,15 +517,17 @@ export default function DashboardAdminFactCheck() {
                 {/* Article Info */}
                 <div>
                   <h3 className="font-semibold text-lg mb-2">{selectedArticle.title}</h3>
-                  <div className="flex items-center gap-2 mb-4">
+                  <div className="flex items-center gap-2 mb-4 flex-wrap">
                     <Badge variant={statusConfig[selectedArticle.ai_verification_status || 'pending']?.variant}>
                       {statusConfig[selectedArticle.ai_verification_status || 'pending']?.icon}
                       <span className="ml-1">{statusConfig[selectedArticle.ai_verification_status || 'pending']?.label}</span>
                     </Badge>
-                    <Badge variant="outline">{selectedArticle.category}</Badge>
-                    <span className="text-sm text-muted-foreground">
-                      Próby generowania: {selectedArticle.generation_attempts || 0}/3
-                    </span>
+                    {selectedArticle.category && <Badge variant="outline">{selectedArticle.category}</Badge>}
+                    {selectedArticle.source && (
+                      <span className="text-sm text-muted-foreground">
+                        Źródło: {selectedArticle.source}
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -541,7 +554,7 @@ export default function DashboardAdminFactCheck() {
                   </h4>
                   <div className="bg-green-500/5 border border-green-500/20 rounded-lg p-4">
                     <p className="text-sm whitespace-pre-wrap max-h-[300px] overflow-y-auto">
-                      {selectedArticle.content || "Brak treści źródłowej"}
+                      {selectedArticle.full_content || "Brak treści źródłowej"}
                     </p>
                   </div>
                 </div>
@@ -551,34 +564,34 @@ export default function DashboardAdminFactCheck() {
                 {/* Verification History */}
                 <div>
                   <h4 className="font-medium mb-2">Historia weryfikacji</h4>
-                  {selectedArticle.verification_feedback && selectedArticle.verification_feedback.length > 0 ? (
+                  {selectedArticle.verification_logs && selectedArticle.verification_logs.length > 0 ? (
                     <div className="space-y-3">
-                      {selectedArticle.verification_feedback.map((feedback, idx) => (
-                        <div key={idx} className={`rounded-lg p-4 ${feedback.status === 'verified' ? 'bg-green-500/10 border border-green-500/20' : 'bg-destructive/10 border border-destructive/20'}`}>
+                      {selectedArticle.verification_logs.map((log, idx) => (
+                        <div key={idx} className={`rounded-lg p-4 ${log.status === 'verified' ? 'bg-green-500/10 border border-green-500/20' : 'bg-destructive/10 border border-destructive/20'}`}>
                           <div className="flex items-center justify-between mb-2">
-                            <span className="font-medium">Próba #{feedback.attempt}</span>
+                            <span className="font-medium">Próba #{log.attempt}</span>
                             <div className="flex items-center gap-2">
-                              <Badge variant={feedback.status === 'verified' ? 'default' : 'destructive'}>
-                                {feedback.status === 'verified' ? 'Zweryfikowano' : 'Odrzucono'}
+                              <Badge variant={log.status === 'verified' ? 'default' : 'destructive'}>
+                                {log.status === 'verified' ? 'Zweryfikowano' : 'Odrzucono'}
                               </Badge>
                               <span className="text-xs text-muted-foreground">
-                                {format(new Date(feedback.timestamp), "dd MMM yyyy HH:mm:ss", { locale: pl })}
+                                {format(new Date(log.timestamp), "dd MMM yyyy HH:mm:ss", { locale: pl })}
                               </span>
                             </div>
                           </div>
                           
-                          {feedback.claimsChecked !== undefined && (
+                          {log.details?.claimsChecked !== undefined && (
                             <div className="flex gap-4 text-sm mb-2">
-                              <span>Sprawdzono: {feedback.claimsChecked}</span>
-                              <span className="text-green-600">Poprawne: {feedback.claimsVerified}</span>
-                              <span className="text-destructive">Błędne: {feedback.claimsRejected}</span>
+                              <span>Sprawdzono: {log.details.claimsChecked}</span>
+                              <span className="text-green-600">Poprawne: {log.details.claimsVerified}</span>
+                              <span className="text-destructive">Błędne: {log.details.claimsRejected}</span>
                             </div>
                           )}
                           
-                          {feedback.errors && feedback.errors.length > 0 && (
+                          {log.errors && log.errors.length > 0 && (
                             <div className="mt-2 space-y-1">
                               <p className="text-sm font-medium text-destructive">Wykryte błędy:</p>
-                              {feedback.errors.map((error, errIdx) => (
+                              {log.errors.map((error, errIdx) => (
                                 <div key={errIdx} className="flex items-start gap-2 text-sm">
                                   <XCircle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
                                   <span>{error}</span>
