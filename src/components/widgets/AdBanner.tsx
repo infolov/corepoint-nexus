@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { Monitor, Square, Smartphone, Maximize2 } from "lucide-react";
+import { Monitor, Square, Smartphone, Maximize2, Loader2 } from "lucide-react";
 import { useAdCampaigns } from "@/hooks/use-ad-campaigns";
+import { useLazyLoad } from "@/hooks/use-lazy-load";
 import { 
   useWindowSize, 
   useBreakpoint, 
@@ -21,6 +22,10 @@ interface AdBannerProps {
   placement?: AdPlacement;
   /** When true, automatically selects the best ad size for the current viewport */
   auto?: boolean;
+  /** Enable lazy loading - only load ad when near viewport */
+  lazyLoad?: boolean;
+  /** Root margin for lazy loading trigger (default: 200px) */
+  lazyRootMargin?: string;
 }
 
 const variantNames: Record<string, { name: string; icon: typeof Monitor; placementSlug: string }> = {
@@ -56,11 +61,20 @@ export function AdBanner({
   className,
   placement = "main",
   auto = false,
+  lazyLoad = true,
+  lazyRootMargin = "200px",
 }: AdBannerProps) {
   const { getRandomCampaign, trackImpression, trackClick, loading } = useAdCampaigns();
   const [currentCampaign, setCurrentCampaign] = useState<ReturnType<typeof getRandomCampaign>>(null);
   const [hasTrackedImpression, setHasTrackedImpression] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
+
+  // Lazy loading hook
+  const { ref: lazyRef, hasBeenVisible } = useLazyLoad<HTMLDivElement>({
+    rootMargin: lazyRootMargin,
+    triggerOnce: true,
+    initialVisible: !lazyLoad,
+  });
 
   // Responsive hooks
   const { width: windowWidth } = useWindowSize();
@@ -92,13 +106,14 @@ export function AdBanner({
   const config = variantNames[effectiveVariant] || variantNames.horizontal;
   const { name, icon: Icon, placementSlug } = config;
 
+  // Fetch campaign when visible and data ready
   useEffect(() => {
-    if (!loading) {
+    if (!loading && hasBeenVisible) {
       const campaign = getRandomCampaign(placementSlug);
       setCurrentCampaign(campaign);
       setHasTrackedImpression(false);
     }
-  }, [loading, placementSlug, getRandomCampaign]);
+  }, [loading, placementSlug, getRandomCampaign, hasBeenVisible]);
 
   // Track impression when ad becomes visible
   useEffect(() => {
@@ -136,13 +151,51 @@ export function AdBanner({
     )}>
       <Maximize2 className="h-2.5 w-2.5" />
       <span>{breakpointLabels[breakpoint]}: {responsiveSize.width}×{responsiveSize.height}</span>
+      {lazyLoad && (
+        <span className={cn(
+          "ml-1 px-1 rounded text-[8px]",
+          hasBeenVisible ? "bg-green-600" : "bg-yellow-600"
+        )}>
+          {hasBeenVisible ? "⚡" : "💤"}
+        </span>
+      )}
     </div>
   );
+
+  // Lazy loading placeholder
+  const LazyPlaceholder = () => (
+    <div
+      className={cn(
+        "relative bg-gradient-to-br from-muted/30 to-muted/10 rounded-lg overflow-hidden flex items-center justify-center border border-border/30 animate-pulse",
+        className
+      )}
+      style={containerStyles}
+    >
+      <div className="text-center p-4">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground/40 mx-auto mb-2" />
+        <p className="text-[10px] text-muted-foreground/40">
+          Ładowanie reklamy...
+        </p>
+      </div>
+      <span className="absolute top-1 right-2 text-[10px] text-muted-foreground/30">
+        AD
+      </span>
+    </div>
+  );
+
+  // Show lazy placeholder if not yet visible
+  if (lazyLoad && !hasBeenVisible) {
+    return (
+      <div ref={lazyRef}>
+        <LazyPlaceholder />
+      </div>
+    );
+  }
 
   // Show active campaign if available
   if (currentCampaign) {
     return (
-      <div
+      <div ref={lazyRef}
         className={cn(
           "relative rounded-lg overflow-hidden cursor-pointer group transition-opacity duration-300",
           isTransitioning ? "opacity-80" : "opacity-100",
@@ -175,7 +228,7 @@ export function AdBanner({
 
   // Fallback placeholder when no active campaign
   return (
-    <div
+    <div ref={lazyRef}
       className={cn(
         "relative bg-gradient-to-br from-muted to-muted/50 rounded-lg overflow-hidden flex items-center justify-center border border-border/50 transition-opacity duration-300",
         isTransitioning ? "opacity-80" : "opacity-100",

@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { Monitor, Square, Smartphone, Bug, Maximize2 } from "lucide-react";
+import { Monitor, Square, Smartphone, Bug, Maximize2, Loader2 } from "lucide-react";
 import { useAdAuction } from "@/hooks/use-ad-auction";
 import { useUserSettings } from "@/hooks/use-user-settings";
 import { AuctionResult } from "@/lib/ad-auction-engine";
+import { useLazyLoad } from "@/hooks/use-lazy-load";
 import { 
   useWindowSize, 
   useBreakpoint, 
@@ -25,6 +26,10 @@ interface AuctionAdSlotProps {
   placement?: AdPlacement;
   /** When true, automatically selects the best ad size for the current viewport */
   auto?: boolean;
+  /** Enable lazy loading - only load ad when near viewport */
+  lazyLoad?: boolean;
+  /** Root margin for lazy loading trigger (default: 200px) */
+  lazyRootMargin?: string;
 }
 
 const variantConfig: Record<string, { 
@@ -82,11 +87,20 @@ export function AuctionAdSlot({
   showDevOverlay = true,
   placement = "main",
   auto = false,
+  lazyLoad = true,
+  lazyRootMargin = "200px",
 }: AuctionAdSlotProps) {
   const { settings } = useUserSettings();
   const [auctionResult, setAuctionResult] = useState<AuctionResult | null>(null);
   const [hasTrackedImpression, setHasTrackedImpression] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  
+  // Lazy loading hook
+  const { ref: lazyRef, hasBeenVisible } = useLazyLoad<HTMLDivElement>({
+    rootMargin: lazyRootMargin,
+    triggerOnce: true,
+    initialVisible: !lazyLoad, // If lazy loading disabled, start visible
+  });
   
   // Responsive hooks
   const { width: windowWidth } = useWindowSize();
@@ -137,14 +151,15 @@ export function AuctionAdSlot({
     placementSlug 
   });
 
-  // Run auction when component mounts or dependencies change
+  // Run auction when component becomes visible (lazy loading) or dependencies change
   useEffect(() => {
-    if (!loading) {
+    // Only run auction when visible (for lazy loading) and data is ready
+    if (!loading && hasBeenVisible) {
       const result = getNextAd(placementSlug);
       setAuctionResult(result);
       setHasTrackedImpression(false);
     }
-  }, [loading, placementSlug]);
+  }, [loading, placementSlug, hasBeenVisible]);
 
   // Track impression when ad becomes visible
   useEffect(() => {
@@ -184,15 +199,59 @@ export function AuctionAdSlot({
     )}>
       <Maximize2 className="h-2.5 w-2.5" />
       <span>{breakpointLabels[breakpoint]}: {responsiveSize.width}×{responsiveSize.height}</span>
+      {lazyLoad && (
+        <span className={cn(
+          "ml-1 px-1 rounded text-[8px]",
+          hasBeenVisible ? "bg-green-600" : "bg-yellow-600"
+        )}>
+          {hasBeenVisible ? "⚡" : "💤"}
+        </span>
+      )}
     </div>
   );
+
+  // Lazy loading placeholder (shown before content enters viewport)
+  const LazyPlaceholder = () => (
+    <div
+      className={cn(
+        "relative bg-gradient-to-br from-muted/30 to-muted/10 rounded-lg overflow-hidden flex items-center justify-center border border-border/30 animate-pulse",
+        className
+      )}
+      style={containerStyles}
+    >
+      <div className="text-center p-4">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground/40 mx-auto mb-2" />
+        <p className="text-[10px] text-muted-foreground/40">
+          Ładowanie reklamy...
+        </p>
+      </div>
+      <span className="absolute top-1 right-2 text-[10px] text-muted-foreground/30">
+        AD
+      </span>
+      {showDev && (
+        <div className="absolute top-1 left-1 z-10 flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold text-white bg-yellow-600">
+          <Maximize2 className="h-2.5 w-2.5" />
+          <span>LAZY: {responsiveSize.width}×{responsiveSize.height}</span>
+        </div>
+      )}
+    </div>
+  );
+
+  // Show lazy placeholder if not yet visible
+  if (lazyLoad && !hasBeenVisible) {
+    return (
+      <div ref={lazyRef}>
+        <LazyPlaceholder />
+      </div>
+    );
+  }
 
   // Show active campaign from auction
   if (auctionResult) {
     const { ad, finalScore, debugInfo } = auctionResult;
 
     return (
-      <div className="relative">
+      <div ref={lazyRef} className="relative">
         <div
           className={cn(
             "relative rounded-lg overflow-hidden cursor-pointer group transition-opacity duration-300",
@@ -243,6 +302,7 @@ export function AuctionAdSlot({
               <span className="text-red-400">-{(debugInfo.frequencyPenalty / (debugInfo.baseScore + debugInfo.targetingBonus) * 100).toFixed(0)}% freq</span>
             )}
             <span className="text-cyan-400">Size: {responsiveSize.label}</span>
+            {lazyLoad && <span className="text-purple-400">⚡Lazy</span>}
           </div>
         )}
       </div>
@@ -251,7 +311,7 @@ export function AuctionAdSlot({
 
   // Fallback placeholder when no active campaign
   return (
-    <div className="relative">
+    <div ref={lazyRef} className="relative">
       <div
         className={cn(
           "relative bg-gradient-to-br from-muted to-muted/50 rounded-lg overflow-hidden flex items-center justify-center border border-border/50 transition-opacity duration-300",
@@ -292,6 +352,7 @@ export function AuctionAdSlot({
           <span className="text-green-400">L:{stats.local}</span>
           <span className="text-cyan-400">Size: {responsiveSize.label}</span>
           <span className="text-purple-400">minH: {minHeight}px</span>
+          {lazyLoad && <span className="text-purple-400">⚡Lazy</span>}
         </div>
       )}
     </div>
