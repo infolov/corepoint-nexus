@@ -65,7 +65,14 @@ export function DisplayModeProvider({ children }: { children: React.ReactNode })
 export function useDisplayMode() {
   const context = useContext(DisplayModeContext);
   if (!context) {
-    throw new Error("useDisplayMode must be used within DisplayModeProvider");
+    // Return default fallback instead of throwing - prevents crash during HMR
+    return {
+      settings: { mode: "standard" as const, fontSize: "normal" as const, dataSaver: false },
+      setMode: () => {},
+      setFontSize: () => {},
+      toggleDataSaver: () => {},
+      updateSettings: () => {},
+    };
   }
   return context;
 }
