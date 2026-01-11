@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
     }
 
     // Get user ID to delete from request body
-    const { userId } = await req.json();
+    const { userId, userEmail } = await req.json();
     if (!userId) {
       return new Response(
         JSON.stringify({ error: "User ID is required" }),
@@ -69,6 +69,16 @@ Deno.serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    // Log the action before deleting
+    await userClient.from("admin_activity_logs").insert({
+      admin_id: requestingUser.id,
+      admin_email: requestingUser.email,
+      action_type: "user_deleted",
+      action_details: { deleted_user_email: userEmail || "unknown" },
+      target_type: "user",
+      target_id: userId,
+    });
 
     // Use service role client to delete user
     const adminClient = createClient(supabaseUrl, supabaseServiceKey, {

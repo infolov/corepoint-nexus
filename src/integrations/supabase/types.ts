@@ -121,6 +121,39 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_activity_logs: {
+        Row: {
+          action_details: Json | null
+          action_type: string
+          admin_email: string | null
+          admin_id: string
+          created_at: string
+          id: string
+          target_id: string | null
+          target_type: string | null
+        }
+        Insert: {
+          action_details?: Json | null
+          action_type: string
+          admin_email?: string | null
+          admin_id: string
+          created_at?: string
+          id?: string
+          target_id?: string | null
+          target_type?: string | null
+        }
+        Update: {
+          action_details?: Json | null
+          action_type?: string
+          admin_email?: string | null
+          admin_id?: string
+          created_at?: string
+          id?: string
+          target_id?: string | null
+          target_type?: string | null
+        }
+        Relationships: []
+      }
       advertiser_credits: {
         Row: {
           balance: number
