@@ -55,6 +55,7 @@ interface RSSItem {
   category: string;
   imageUrl: string;
   pubDate: Date | null;
+  description?: string;
 }
 
 function parseRSSItem(item: string, source: string, category: string): RSSItem | null {
@@ -62,6 +63,7 @@ function parseRSSItem(item: string, source: string, category: string): RSSItem |
     const titleMatch = item.match(/<title>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/title>/s);
     const linkMatch = item.match(/<link>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/link>/s);
     const pubDateMatch = item.match(/<pubDate>(.*?)<\/pubDate>/);
+    const descriptionMatch = item.match(/<description>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/description>/s);
     
     let image = '';
     const enclosureMatch = item.match(/<enclosure[^>]*url=["']([^"']+)["'][^>]*type=["']image/);
@@ -86,6 +88,7 @@ function parseRSSItem(item: string, source: string, category: string): RSSItem |
 
     const title = decodeHTMLEntities(titleMatch?.[1]?.trim() || '');
     const url = linkMatch?.[1]?.trim() || '';
+    const description = decodeHTMLEntities(descriptionMatch?.[1]?.trim() || '');
     
     if (!title || !url) return null;
     
@@ -97,7 +100,7 @@ function parseRSSItem(item: string, source: string, category: string): RSSItem |
       }
     }
 
-    return { title, url, source, category, imageUrl: image, pubDate };
+    return { title, url, source, category, imageUrl: image, pubDate, description };
   } catch (error) {
     console.error('Error parsing RSS item:', error);
     return null;
@@ -139,12 +142,18 @@ async function fetchRSSFeed(feedUrl: string, source: string, category: string): 
   }
 }
 
+// Scrape result with status
+interface ScrapeResult {
+  content: string | null;
+  creditExhausted: boolean;
+}
+
 // Scrape full content using Firecrawl
-async function scrapeWithFirecrawl(url: string): Promise<string | null> {
+async function scrapeWithFirecrawl(url: string): Promise<ScrapeResult> {
   const firecrawlApiKey = Deno.env.get('Firecrawl');
   if (!firecrawlApiKey) {
     console.error('FIRECRAWL_API_KEY not configured');
-    return null;
+    return { content: null, creditExhausted: false };
   }
 
   try {
@@ -163,9 +172,15 @@ async function scrapeWithFirecrawl(url: string): Promise<string | null> {
       }),
     });
 
+    // Check for credit exhaustion (402 Payment Required)
+    if (response.status === 402) {
+      console.warn(`⚠️ Firecrawl credits exhausted (402) for ${url}`);
+      return { content: null, creditExhausted: true };
+    }
+
     if (!response.ok) {
       console.error(`Firecrawl error for ${url}: ${response.status}`);
-      return null;
+      return { content: null, creditExhausted: false };
     }
 
     const data = await response.json();
@@ -175,10 +190,10 @@ async function scrapeWithFirecrawl(url: string): Promise<string | null> {
       console.log(`Successfully scraped ${url}, content length: ${markdown.length}`);
     }
     
-    return markdown;
+    return { content: markdown, creditExhausted: false };
   } catch (error) {
     console.error(`Error scraping ${url}:`, error);
-    return null;
+    return { content: null, creditExhausted: false };
   }
 }
 
@@ -266,7 +281,7 @@ interface GenerationResult {
   summary: string;
 }
 
-// Generate AI title and summary using Lovable AI
+// Generate AI title and summary using Lovable AI (full content mode)
 async function generateTitleAndSummaryWithRetry(
   originalTitle: string, 
   content: string, 
@@ -305,6 +320,55 @@ ZASADY DLA PODSUMOWANIA:
 
 FORMAT ODPOWIEDZI (DOKŁADNIE w tym formacie JSON, bez dodatkowego tekstu):
 {"title": "Tutaj nowy tytuł", "summary": "Tutaj podsumowanie"}`;
+
+  return await callLovableAI(prompt, originalTitle, maxRetries);
+}
+
+// Generate AI title and summary from RSS data only (fallback mode)
+async function generateTitleAndSummaryFromRSS(
+  originalTitle: string, 
+  description: string,
+  category: string,
+  source: string,
+  maxRetries: number = 3
+): Promise<GenerationResult | null> {
+  const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+  if (!lovableApiKey) {
+    console.error('LOVABLE_API_KEY not configured');
+    return null;
+  }
+
+  const prompt = `Jesteś profesjonalnym redaktorem newsowym. Na podstawie OGRANICZONYCH danych z RSS:
+
+KATEGORIA: ${category}
+ŹRÓDŁO: ${source}
+
+ORYGINALNY TYTUŁ: ${originalTitle}
+
+OPIS Z RSS (jeśli dostępny): ${description || 'Brak opisu'}
+
+⚠️ UWAGA: Masz dostęp TYLKO do tytułu i krótkiego opisu z RSS. NIE MASZ pełnej treści artykułu.
+
+ZADANIE:
+1. Przepisz tytuł na bardziej czytelny i konkretny (max 80 znaków)
+2. Na podstawie tytułu i opisu napisz KRÓTKIE streszczenie (2-3 zdania)
+
+ZASADY:
+- NIE WYMYŚLAJ faktów których nie ma w tytule/opisie
+- Jeśli opis jest pusty, streszczenie powinno być prostą parafrazą tytułu
+- Użyj znaczników <b></b> dla kluczowych pojęć
+- Bądź ostrożny - lepiej napisać mniej niż zmyślać
+
+FORMAT ODPOWIEDZI (DOKŁADNIE w tym formacie JSON):
+{"title": "Tutaj nowy tytuł", "summary": "Tutaj krótkie podsumowanie"}`;
+
+  return await callLovableAI(prompt, originalTitle, maxRetries);
+}
+
+// Common function to call Lovable AI
+async function callLovableAI(prompt: string, originalTitle: string, maxRetries: number): Promise<GenerationResult | null> {
+  const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+  if (!lovableApiKey) return null;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
@@ -408,6 +472,10 @@ serve(async (req) => {
   try {
     console.log('Starting background news processing...');
     
+    // Track Firecrawl credit status
+    let firecrawlCreditsExhausted = false;
+    let firecrawlExhaustedAt: string | null = null;
+    
     // 1. Fetch RSS from all sources
     const fetchPromises = RSS_SOURCES.map(({ url, source, category }) =>
       fetchRSSFeed(url, source, category)
@@ -440,6 +508,7 @@ serve(async (req) => {
     let processedCount = 0;
     let failedCount = 0;
     let rateLimitedCount = 0;
+    let fallbackModeCount = 0;
     
     for (let i = 0; i < articlesToProcess.length; i++) {
       const article = articlesToProcess[i];
@@ -447,13 +516,20 @@ serve(async (req) => {
       try {
         console.log(`Processing [${i + 1}/${articlesToProcess.length}]: ${article.title.substring(0, 50)}...`);
         
-        // Scrape full content
-        const fullContent = await scrapeWithFirecrawl(article.url);
+        let fullContent: string | null = null;
+        let usedFallbackMode = false;
         
-        if (!fullContent || fullContent.length < 100) {
-          console.log(`Skipping ${article.url} - content too short or empty`);
-          failedCount++;
-          continue;
+        // Try to scrape full content (unless credits already exhausted)
+        if (!firecrawlCreditsExhausted) {
+          const scrapeResult = await scrapeWithFirecrawl(article.url);
+          
+          if (scrapeResult.creditExhausted) {
+            firecrawlCreditsExhausted = true;
+            firecrawlExhaustedAt = new Date().toISOString();
+            console.warn('🚨 Firecrawl credits exhausted! Switching to RSS-only mode for remaining articles.');
+          } else {
+            fullContent = scrapeResult.content;
+          }
         }
         
         // Small delay between requests
@@ -461,8 +537,23 @@ serve(async (req) => {
         console.log(`Waiting ${preApiDelay}ms before AI call...`);
         await delay(preApiDelay);
         
-        // Generate AI title and summary
-        const generationResult = await generateTitleAndSummaryWithRetry(article.title, fullContent, article.category);
+        let generationResult: GenerationResult | null = null;
+        
+        if (fullContent && fullContent.length >= 100) {
+          // Full content available - use standard generation
+          generationResult = await generateTitleAndSummaryWithRetry(article.title, fullContent, article.category);
+        } else {
+          // No full content - use RSS fallback mode
+          console.log(`Using RSS-only fallback mode for: ${article.title.substring(0, 40)}...`);
+          usedFallbackMode = true;
+          fallbackModeCount++;
+          generationResult = await generateTitleAndSummaryFromRSS(
+            article.title, 
+            article.description || '', 
+            article.category,
+            article.source
+          );
+        }
         
         if (!generationResult) {
           console.log(`Skipping ${article.url} - failed to generate title+summary after retries`);
@@ -478,57 +569,78 @@ serve(async (req) => {
         const verificationLogs: any[] = [];
         let verificationStatus: 'pending' | 'verified' | 'rejected' = 'pending';
         let finalSummary = aiSummary;
-        const maxVerificationAttempts = 3;
+        
+        // Only verify if we have full content
+        if (fullContent && fullContent.length >= 100) {
+          const maxVerificationAttempts = 3;
 
-        for (let attempt = 1; attempt <= maxVerificationAttempts; attempt++) {
-          console.log(`Verification attempt ${attempt}/${maxVerificationAttempts} for: ${article.title.substring(0, 40)}...`);
-          
-          await delay(300); // Small delay before verification
-          
-          const verificationResult = await verifySummary(
-            article.title,
-            fullContent,
-            finalSummary,
-            attempt
-          );
-
-          // Log verification attempt
-          verificationLogs.push({
-            attempt,
-            timestamp: new Date().toISOString(),
-            status: verificationResult.status,
-            isValid: verificationResult.isValid,
-            errors: verificationResult.errors,
-            details: verificationResult.verificationDetails,
-          });
-
-          if (verificationResult.isValid && verificationResult.status === 'verified') {
-            // Summary passed verification
-            verificationStatus = 'verified';
-            console.log(`✅ Summary VERIFIED on attempt ${attempt}`);
-            break;
-          }
-
-          if (verificationResult.status === 'rejected') {
-            console.log(`❌ Summary REJECTED on attempt ${attempt}. Errors: ${verificationResult.errors.join(', ')}`);
+          for (let attempt = 1; attempt <= maxVerificationAttempts; attempt++) {
+            console.log(`Verification attempt ${attempt}/${maxVerificationAttempts} for: ${article.title.substring(0, 40)}...`);
             
-            // If we have a corrected summary, use it for next verification
-            if (verificationResult.correctedSummary && attempt < maxVerificationAttempts) {
-              console.log(`Using corrected summary for next attempt...`);
-              finalSummary = verificationResult.correctedSummary;
-              await delay(500); // Delay before next attempt
-            } else if (attempt === maxVerificationAttempts) {
-              // Max attempts reached, mark as rejected
-              verificationStatus = 'rejected';
-              console.log(`🚫 Max verification attempts reached. Status: REJECTED`);
+            await delay(300); // Small delay before verification
+            
+            const verificationResult = await verifySummary(
+              article.title,
+              fullContent,
+              finalSummary,
+              attempt
+            );
+
+            // Log verification attempt
+            verificationLogs.push({
+              attempt,
+              timestamp: new Date().toISOString(),
+              status: verificationResult.status,
+              isValid: verificationResult.isValid,
+              errors: verificationResult.errors,
+              details: verificationResult.verificationDetails,
+            });
+
+            if (verificationResult.isValid && verificationResult.status === 'verified') {
+              // Summary passed verification
+              verificationStatus = 'verified';
+              console.log(`✅ Summary VERIFIED on attempt ${attempt}`);
+              break;
             }
-          } else {
-            // Status is 'pending' (verification service error)
-            console.log(`⚠️ Verification pending (service issue) on attempt ${attempt}`);
-            if (attempt === maxVerificationAttempts) {
-              verificationStatus = 'pending';
+
+            if (verificationResult.status === 'rejected') {
+              console.log(`❌ Summary REJECTED on attempt ${attempt}. Errors: ${verificationResult.errors.join(', ')}`);
+              
+              // If we have a corrected summary, use it for next verification
+              if (verificationResult.correctedSummary && attempt < maxVerificationAttempts) {
+                console.log(`Using corrected summary for next attempt...`);
+                finalSummary = verificationResult.correctedSummary;
+                await delay(500); // Delay before next attempt
+              } else if (attempt === maxVerificationAttempts) {
+                // Max attempts reached, mark as rejected
+                verificationStatus = 'rejected';
+                console.log(`🚫 Max verification attempts reached. Status: REJECTED`);
+              }
+            } else {
+              // Status is 'pending' (verification service error)
+              console.log(`⚠️ Verification pending (service issue) on attempt ${attempt}`);
+              if (attempt === maxVerificationAttempts) {
+                verificationStatus = 'pending';
+              }
             }
           }
+        } else {
+          // No full content - mark as pending with note
+          verificationStatus = 'pending';
+          verificationLogs.push({
+            attempt: 0,
+            timestamp: new Date().toISOString(),
+            status: 'pending',
+            isValid: false,
+            errors: ['Brak pełnej treści artykułu - wygenerowano na podstawie danych RSS'],
+            details: {
+              claimsChecked: 0,
+              claimsVerified: 0,
+              claimsRejected: 0,
+              fabricatedClaims: [],
+              fallbackMode: true,
+            },
+          });
         }
 
         // Save to database with verification status and AI title
@@ -541,7 +653,7 @@ serve(async (req) => {
             source: article.source,
             category: article.category,
             image_url: article.imageUrl,
-            full_content: fullContent.substring(0, 50000), // Original content as SSOT
+            full_content: fullContent ? fullContent.substring(0, 50000) : null, // May be null in fallback mode
             ai_summary: finalSummary,
             pub_date: article.pubDate?.toISOString() || null,
             ai_verification_status: verificationStatus,
@@ -553,7 +665,8 @@ serve(async (req) => {
           failedCount++;
         } else {
           processedCount++;
-          console.log(`✅ Saved: ${article.title.substring(0, 50)}... [${verificationStatus.toUpperCase()}]`);
+          const modeLabel = usedFallbackMode ? ' [RSS-ONLY]' : '';
+          console.log(`✅ Saved: ${article.title.substring(0, 50)}... [${verificationStatus.toUpperCase()}]${modeLabel}`);
         }
         
       } catch (error) {
@@ -569,10 +682,25 @@ serve(async (req) => {
       processed: processedCount,
       failed: failedCount,
       rateLimited: rateLimitedCount,
+      fallbackModeUsed: fallbackModeCount,
+      firecrawlCreditsExhausted,
+      firecrawlExhaustedAt,
       timestamp: new Date().toISOString(),
+      // Admin warning message
+      adminWarning: firecrawlCreditsExhausted 
+        ? `⚠️ UWAGA: Kredyty Firecrawl zostały wyczerpane! ${fallbackModeCount} artykułów przetworzono w trybie awaryjnym (tylko dane z RSS). Uzupełnij kredyty na firecrawl.dev/pricing aby uzyskać pełne streszczenia.`
+        : null,
     };
     
     console.log('Processing complete:', result);
+    
+    if (firecrawlCreditsExhausted) {
+      console.warn('='.repeat(60));
+      console.warn('⚠️ ADMIN ALERT: Firecrawl credits exhausted!');
+      console.warn(`Fallback mode used for ${fallbackModeCount} articles.`);
+      console.warn('Please top up at: https://firecrawl.dev/pricing');
+      console.warn('='.repeat(60));
+    }
     
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
