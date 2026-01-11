@@ -35,6 +35,7 @@ const Article = () => {
   const { articles: rssArticles, loading: rssLoading } = useRSSArticles();
   const [isSaved, setIsSaved] = useState(false);
   const [cachedArticle, setCachedArticle] = useState<any>(null);
+  const [aiGeneratedTitle, setAiGeneratedTitle] = useState<string | null>(null);
 
   // Load cached article from localStorage FIRST (instant load)
   useEffect(() => {
@@ -160,7 +161,7 @@ const Article = () => {
             {article.category}
           </Link>
           <ChevronRight className="h-4 w-4" />
-          <span className="text-foreground truncate max-w-[200px]">{article.title}</span>
+          <span className="text-foreground truncate max-w-[200px]">{aiGeneratedTitle || article.title}</span>
         </nav>
 
         <div className="max-w-3xl mx-auto">
@@ -168,7 +169,7 @@ const Article = () => {
           <article>
             {/* Article Title */}
             <h1 className="text-xl md:text-2xl lg:text-3xl font-medium text-foreground mb-4 leading-tight">
-              {article.title}
+              {aiGeneratedTitle || article.title}
             </h1>
 
             {/* Publication Time & Category */}
@@ -200,6 +201,7 @@ const Article = () => {
               content={content}
               category={article.category}
               sourceUrl={sourceUrl}
+              onTitleGenerated={(newTitle) => setAiGeneratedTitle(newTitle)}
             />
 
             {/* Action Buttons - Thumbs up/down, Save & Share */}

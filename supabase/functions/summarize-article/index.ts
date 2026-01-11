@@ -98,6 +98,24 @@ serve(async (req) => {
 
     if (cachedSummary && !cacheError) {
       console.log(`Cache HIT for article: ${effectiveArticleId}`);
+      
+      // Try to parse cached data (new format has title+summary JSON)
+      try {
+        const parsed = JSON.parse(cachedSummary.summary);
+        if (parsed.title && parsed.summary) {
+          return new Response(
+            JSON.stringify({ 
+              title: parsed.title, 
+              summary: parsed.summary, 
+              fromCache: true 
+            }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      } catch {
+        // Old format - just summary text
+      }
+      
       return new Response(
         JSON.stringify({ summary: cachedSummary.summary, fromCache: true }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -139,7 +157,9 @@ serve(async (req) => {
             role: "user",
             content: `# ROLE
 
-Jesteś starszym redaktorem newsowym (Senior News Editor) w czołowym polskim portalu informacyjnym. Twoim zadaniem jest tworzenie obiektywnych, konkretnych i profesjonalnych streszczeń typu "TL;DR" (Too Long; Didn't Read).
+Jesteś starszym redaktorem newsowym (Senior News Editor) w czołowym polskim portalu informacyjnym. Twoim zadaniem jest:
+1. Stworzyć nowy, lepszy tytuł artykułu
+2. Przygotować obiektywne, konkretne podsumowanie TL;DR
 
 # ABSOLUTNIE KRYTYCZNE ZASADY:
 
@@ -151,7 +171,15 @@ Jesteś starszym redaktorem newsowym (Senior News Editor) w czołowym polskim po
 
 4. **NIE UŻYWAJ PLACEHOLDER'ÓW** typu [data], [miejsce], [nazwa]. Jeśli nie znasz informacji - pomiń ją całkowicie.
 
-# KRYTYCZNE ZASADY KONSTRUKCJI:
+# ZASADY DLA TYTUŁU:
+
+1. Tytuł musi być ZWIĘZŁY (max 80 znaków), KONKRETNY i INFORMACYJNY
+2. Tytuł musi oddawać esencję artykułu - co jest najważniejsze?
+3. Unikaj clickbaitów, pytań retorycznych i wykrzykników
+4. Nie używaj cudzysłowów chyba że cytujesz kogoś
+5. Pisz w czasie teraźniejszym dla większej dynamiki
+
+# KRYTYCZNE ZASADY DLA PODSUMOWANIA:
 
 1. LEAD: Pierwsze zdanie musi zawierać esencję wydarzenia (Kto? Co? Gdzie? Kiedy?) - ALE TYLKO jeśli te informacje są w tekście.
 
@@ -169,24 +197,28 @@ Jesteś starszym redaktorem newsowym (Senior News Editor) w czołowym polskim po
 
 # SPECYFIKACJA TECHNICZNA:
 
-- Długość: 1-6 zdań, proporcjonalnie do długości źródła. Krótkie źródło = krótkie podsumowanie.
-- Formatowanie: Używaj pogrubienia (**text**) dla kluczowych podmiotów, nazwisk, dat lub kluczowych liczb, aby ułatwić szybkie skanowanie wzrokiem.
+- Tytuł: max 80 znaków
+- Podsumowanie: 1-6 zdań, proporcjonalnie do długości źródła
+- Formatowanie podsumowania: Używaj pogrubienia (**text**) dla kluczowych podmiotów, nazwisk, dat lub kluczowych liczb
+
+# FORMAT ODPOWIEDZI:
+
+Odpowiedz DOKŁADNIE w tym formacie JSON (bez dodatkowego tekstu):
+{"title": "Tutaj nowy tytuł", "summary": "Tutaj podsumowanie"}
 
 # ZADANIE DO WYKONANIA:
 
-Przygotuj podsumowanie WYŁĄCZNIE na podstawie poniższego artykułu. Nie dodawaj ŻADNYCH informacji z zewnątrz.
+Przygotuj tytuł i podsumowanie WYŁĄCZNIE na podstawie poniższego artykułu:
 
 KATEGORIA: ${category}
 
-TYTUŁ: ${title}
+ORYGINALNY TYTUŁ (do przepisania): ${title}
 
 TREŚĆ ARTYKUŁU: 
-${fullContent}
-
-PODSUMOWANIE (oparte TYLKO na powyższej treści):`
+${fullContent}`
           }
         ],
-        max_tokens: 1000,
+        max_tokens: 1200,
         temperature: 0,
       }),
     });
@@ -210,15 +242,45 @@ PODSUMOWANIE (oparte TYLKO na powyższej treści):`
     }
 
     const data = await response.json();
-    const summary = data.choices?.[0]?.message?.content || "Nie udało się wygenerować podsumowania.";
+    const rawContent = data.choices?.[0]?.message?.content || "";
+    
+    // Parse JSON response
+    let generatedTitle = title;
+    let summary = "Nie udało się wygenerować podsumowania.";
+    
+    try {
+      // Clean up the response - remove markdown code blocks if present
+      let jsonContent = rawContent.trim();
+      if (jsonContent.startsWith('```json')) {
+        jsonContent = jsonContent.slice(7);
+      } else if (jsonContent.startsWith('```')) {
+        jsonContent = jsonContent.slice(3);
+      }
+      if (jsonContent.endsWith('```')) {
+        jsonContent = jsonContent.slice(0, -3);
+      }
+      jsonContent = jsonContent.trim();
+      
+      const parsed = JSON.parse(jsonContent);
+      if (parsed.title) {
+        generatedTitle = parsed.title;
+      }
+      if (parsed.summary) {
+        summary = parsed.summary;
+      }
+    } catch (parseError) {
+      console.error("Failed to parse AI response as JSON:", parseError);
+      // Fallback: use raw content as summary if JSON parsing fails
+      summary = rawContent;
+    }
 
-    // Save summary to cache
+    // Save to cache with both title and summary
     const { error: insertError } = await supabase
       .from('article_summaries')
       .upsert({
         article_id: effectiveArticleId,
         title_hash: titleHash,
-        summary: summary,
+        summary: JSON.stringify({ title: generatedTitle, summary }),
         created_at: new Date().toISOString()
       }, {
         onConflict: 'title_hash'
@@ -232,6 +294,7 @@ PODSUMOWANIE (oparte TYLKO na powyższej treści):`
 
     return new Response(
       JSON.stringify({ 
+        title: generatedTitle,
         summary, 
         fromCache: false, 
         contentSource,
