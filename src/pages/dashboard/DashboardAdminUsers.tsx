@@ -45,7 +45,8 @@ import {
   AlertTriangle,
   UserPlus,
   Building,
-  Send
+  Send,
+  KeyRound
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -92,6 +93,13 @@ export default function DashboardAdminUsers() {
   });
   const [creatingPartner, setCreatingPartner] = useState(false);
   const [sendWelcomeEmail, setSendWelcomeEmail] = useState(true);
+
+  // Reset Password state
+  const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
+  const [userToResetPassword, setUserToResetPassword] = useState<UserProfile | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [sendPasswordEmail, setSendPasswordEmail] = useState(true);
+  const [resettingPassword, setResettingPassword] = useState(false);
 
   useEffect(() => {
     if (user && isAdmin) {
@@ -145,6 +153,74 @@ export default function DashboardAdminUsers() {
   const openDeleteDialog = (userProfile: UserProfile) => {
     setUserToDelete(userProfile);
     setDeleteDialogOpen(true);
+  };
+
+  const openResetPasswordDialog = (userProfile: UserProfile) => {
+    setUserToResetPassword(userProfile);
+    setNewPassword("");
+    setSendPasswordEmail(true);
+    setResetPasswordDialogOpen(true);
+  };
+
+  const handleResetPassword = async () => {
+    if (!userToResetPassword || !newPassword) {
+      toast.error("Wprowadź nowe hasło");
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast.error("Hasło musi mieć co najmniej 6 znaków");
+      return;
+    }
+
+    setResettingPassword(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-reset-password", {
+        body: {
+          userId: userToResetPassword.user_id,
+          newPassword,
+          sendEmail: sendPasswordEmail,
+          userEmail: userToResetPassword.email,
+          userName: userToResetPassword.full_name,
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data.error) {
+        toast.error(data.error);
+        return;
+      }
+
+      // Log the action
+      await logAction(
+        "password_reset",
+        { user_email: userToResetPassword.email, email_sent: sendPasswordEmail },
+        "user",
+        userToResetPassword.user_id
+      );
+
+      if (data.emailSent) {
+        toast.success("Hasło zmienione i email wysłany!");
+      } else if (data.emailSkipped) {
+        toast.success("Hasło zostało zmienione!");
+        toast.info("Email nie został wysłany - brak skonfigurowanego klucza API Resend");
+      } else {
+        toast.success("Hasło zostało zmienione!");
+      }
+
+      setResetPasswordDialogOpen(false);
+      setUserToResetPassword(null);
+      setNewPassword("");
+    } catch (error) {
+      console.error("Error resetting password:", error);
+      toast.error("Błąd podczas resetowania hasła");
+    } finally {
+      setResettingPassword(false);
+    }
   };
 
   const handleDeleteUser = async () => {
@@ -483,6 +559,15 @@ export default function DashboardAdminUsers() {
                           <Button
                             variant="outline"
                             size="sm"
+                            onClick={() => openResetPasswordDialog(userProfile)}
+                            className="gap-1"
+                            title="Resetuj hasło"
+                          >
+                            <KeyRound className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => openRoleDialog(userProfile)}
                             className="gap-1"
                           >
@@ -696,6 +781,75 @@ export default function DashboardAdminUsers() {
                 <>
                   <UserPlus className="h-4 w-4 mr-2" />
                   Utwórz Partnera
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reset Password Dialog */}
+      <Dialog open={resetPasswordDialogOpen} onOpenChange={setResetPasswordDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5" />
+              Resetuj hasło użytkownika
+            </DialogTitle>
+            <DialogDescription>
+              Ustaw nowe hasło dla użytkownika "{userToResetPassword?.full_name || userToResetPassword?.email}"
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-password">Nowe hasło *</Label>
+              <Input
+                id="new-password"
+                type="password"
+                placeholder="Minimum 6 znaków"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
+            </div>
+            <div className="flex items-center space-x-2 pt-2 border-t">
+              <Checkbox
+                id="send-password-email"
+                checked={sendPasswordEmail}
+                onCheckedChange={(checked) => setSendPasswordEmail(checked === true)}
+              />
+              <Label 
+                htmlFor="send-password-email" 
+                className="text-sm font-normal cursor-pointer flex items-center gap-2"
+              >
+                <Send className="h-4 w-4 text-muted-foreground" />
+                Wyślij email z nowym hasłem
+              </Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setResetPasswordDialogOpen(false);
+                setUserToResetPassword(null);
+                setNewPassword("");
+              }}
+            >
+              Anuluj
+            </Button>
+            <Button
+              onClick={handleResetPassword}
+              disabled={resettingPassword || !newPassword || newPassword.length < 6}
+            >
+              {resettingPassword ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Resetowanie...
+                </>
+              ) : (
+                <>
+                  <KeyRound className="h-4 w-4 mr-2" />
+                  Zmień hasło
                 </>
               )}
             </Button>

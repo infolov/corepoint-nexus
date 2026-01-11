@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { User, LayoutDashboard, LogOut, Settings, Bell, Bookmark, History, ChevronRight, Heart } from "lucide-react";
+import { User, LayoutDashboard, LogOut, Settings, Bell, Bookmark, History, ChevronRight, Heart, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
@@ -128,6 +128,15 @@ export function UserPanel({ onSignOut, onSettingsClick, className }: UserPanelPr
           </Button>
         </Link>
       </div>
+
+      {/* Password recovery link */}
+      <Link 
+        to="/reset-password" 
+        className="flex items-center justify-center gap-2 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors group text-center"
+      >
+        <KeyRound className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
+        <span className="text-sm text-muted-foreground group-hover:text-foreground">Odzyskaj hasło</span>
+      </Link>
 
       {/* Benefits */}
       <div className="p-3 rounded-lg bg-primary/5 border border-primary/10">
