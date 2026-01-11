@@ -42,6 +42,9 @@ export const ArticleSummary = ({ title, content, category }: ArticleSummaryProps
     };
   }, []);
 
+  // Check if content is too short (less than 100 characters)
+  const isContentTooShort = !content || content.trim().length < 100;
+  
   useEffect(() => {
     // If no content at all (not even title), stop loading
     // Allow generating summary from title alone if content is missing
@@ -57,8 +60,15 @@ export const ArticleSummary = ({ title, content, category }: ArticleSummaryProps
       
       try {
         console.log("Fetching summary for:", title.substring(0, 50));
+        console.log("Content length:", content?.length || 0);
+        
+        // Warn if content is very short
+        if (isContentTooShort) {
+          console.warn("Warning: Article content is too short for reliable summarization");
+        }
+        
         const { data, error: fnError } = await supabase.functions.invoke("summarize-article", {
-          body: { title, content, category },
+          body: { title, content: content || title, category },
         });
 
         console.log("Summary response:", data, fnError);
@@ -81,7 +91,7 @@ export const ArticleSummary = ({ title, content, category }: ArticleSummaryProps
     };
 
     fetchSummary();
-  }, [title, content, category]);
+  }, [title, content, category, isContentTooShort]);
 
   // Cleanup speech synthesis on unmount
   useEffect(() => {
