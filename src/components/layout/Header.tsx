@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Menu, X, Search, User, Sun, Moon, Settings, LayoutDashboard, LogOut, MapPin, Loader2, Cloud, CloudRain, CloudSnow, CloudSun, CloudMoon, Snowflake, Wind, Droplets } from "lucide-react";
+import { Menu, X, Search, User, Sun, Moon, Settings, LayoutDashboard, LogOut, MapPin, Loader2, Cloud, CloudRain, CloudSnow, CloudSun, CloudMoon, Snowflake, Wind, Droplets, Navigation } from "lucide-react";
 import { useWeather } from "@/hooks/use-weather";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ import { UserPanel } from "@/components/panels/UserPanel";
 import { useAuth } from "@/hooks/use-auth";
 import { useDisplayMode } from "@/hooks/use-display-mode";
 import { DynamicHeaderBranding } from "@/components/layout/DynamicHeaderBranding";
+import { useUserSettings } from "@/hooks/use-user-settings";
 const categories = [{
   name: "Wiadomości",
   slug: "wiadomosci",
@@ -45,6 +46,7 @@ export function Header() {
     signOut
   } = useAuth();
   const { settings: displaySettings } = useDisplayMode();
+  const { settings: userSettings } = useUserSettings();
   const {
     data: weatherData,
     isLoading: weatherLoading
@@ -317,6 +319,41 @@ export function Header() {
                 <SheetTitle className="text-left text-senior">Menu</SheetTitle>
               </SheetHeader>
               <div className="mt-6 flex flex-col gap-4">
+                {/* Location section */}
+                <div className="border-b border-border pb-4">
+                  <h3 className="text-sm font-semibold text-muted-foreground mb-3">Twoja lokalizacja</h3>
+                  <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <Navigation className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      {userSettings.city || userSettings.county || userSettings.voivodeship ? (
+                        <>
+                          <p className="text-sm font-medium text-foreground truncate">
+                            {userSettings.city || userSettings.county || userSettings.voivodeship}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {[
+                              userSettings.county && userSettings.city ? `pow. ${userSettings.county}` : null,
+                              userSettings.voivodeship
+                            ].filter(Boolean).join(', ')}
+                          </p>
+                        </>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">Nie ustawiono lokalizacji</p>
+                      )}
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="flex-shrink-0 text-xs"
+                      onClick={() => setIsSettingsOpen(true)}
+                    >
+                      Zmień
+                    </Button>
+                  </div>
+                </div>
+
                 {/* User Panel */}
                 <div className="border-b border-border pb-4">
                   <UserPanel onSignOut={handleSignOut} onSettingsClick={() => setIsSettingsOpen(true)} />
