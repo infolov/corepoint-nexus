@@ -88,6 +88,44 @@ export type Database = {
           },
         ]
       }
+      ad_placement_regional_pricing: {
+        Row: {
+          created_at: string
+          credit_cost: number
+          id: string
+          placement_id: string
+          region_name: string
+          region_slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          credit_cost: number
+          id?: string
+          placement_id: string
+          region_name: string
+          region_slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          credit_cost?: number
+          id?: string
+          placement_id?: string
+          region_name?: string
+          region_slug?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_placement_regional_pricing_placement_id_fkey"
+            columns: ["placement_id"]
+            isOneToOne: false
+            referencedRelation: "ad_placements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ad_placements: {
         Row: {
           created_at: string
