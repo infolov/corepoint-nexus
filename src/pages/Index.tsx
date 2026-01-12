@@ -359,7 +359,7 @@ const Index = () => {
       articleGrids.push(gridArticles);
     }
   }
-  return <div className="min-h-screen bg-background w-full overflow-x-hidden">
+  return <div className="min-h-screen bg-background w-full overflow-x-clip">
       <Header />
       
       {/* Floating Category Bar */}
