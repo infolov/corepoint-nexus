@@ -91,6 +91,30 @@ const STATIONS: StationCoords[] = [
   { id: "12400", name: "Zielona Góra", lat: 51.9356, lon: 15.5062 },
 ];
 
+// City coordinates mapping for location-based station lookup
+const CITY_COORDINATES: Record<string, { lat: number; lon: number }> = {
+  "Pasłęk": { lat: 54.0567, lon: 19.6603 },
+  "Elbląg": { lat: 54.1522, lon: 19.4088 },
+  "Olsztyn": { lat: 53.7784, lon: 20.4801 },
+  "Gdańsk": { lat: 54.3520, lon: 18.6466 },
+  "Warszawa": { lat: 52.2297, lon: 21.0122 },
+  "Kraków": { lat: 50.0647, lon: 19.9450 },
+  "Wrocław": { lat: 51.1079, lon: 17.0385 },
+  "Poznań": { lat: 52.4064, lon: 16.9252 },
+  "Katowice": { lat: 50.2649, lon: 19.0238 },
+  "Łódź": { lat: 51.7592, lon: 19.4560 },
+  "Szczecin": { lat: 53.4285, lon: 14.5528 },
+  "Lublin": { lat: 51.2465, lon: 22.5684 },
+  "Bydgoszcz": { lat: 53.1235, lon: 18.0084 },
+  "Białystok": { lat: 53.1325, lon: 23.1688 },
+  "Rzeszów": { lat: 50.0413, lon: 21.9990 },
+  "Toruń": { lat: 53.0138, lon: 18.5984 },
+  "Kielce": { lat: 50.8661, lon: 20.6286 },
+  "Gorzów Wielkopolski": { lat: 52.7368, lon: 15.2288 },
+  "Zielona Góra": { lat: 51.9356, lon: 15.5062 },
+  "Opole": { lat: 50.6751, lon: 17.9213 },
+};
+
 // Calculate distance between two points using Haversine formula
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371; // Earth's radius in km
@@ -120,7 +144,31 @@ function findNearestStation(lat: number, lon: number): StationCoords {
   return nearest;
 }
 
-export function useWeather(defaultStationId: string = "12375") {
+// Find station based on city name
+function findStationByCity(cityName: string): StationCoords | null {
+  // First check if city is in our coordinates map
+  const cityCoords = CITY_COORDINATES[cityName];
+  if (cityCoords) {
+    return findNearestStation(cityCoords.lat, cityCoords.lon);
+  }
+
+  // Try to find a station with similar name
+  const normalizedCity = cityName.toLowerCase();
+  const matchingStation = STATIONS.find(s => 
+    s.name.toLowerCase() === normalizedCity ||
+    s.name.toLowerCase().includes(normalizedCity) ||
+    normalizedCity.includes(s.name.toLowerCase())
+  );
+  
+  return matchingStation || null;
+}
+
+interface UseWeatherOptions {
+  city?: string | null;
+  voivodeship?: string | null;
+}
+
+export function useWeather(defaultStationId: string = "12375", options?: UseWeatherOptions) {
   const [state, setState] = useState<WeatherState>({
     data: null,
     isLoading: true,
@@ -128,8 +176,19 @@ export function useWeather(defaultStationId: string = "12375") {
   });
   const [stationId, setStationId] = useState<string>(defaultStationId);
 
-  // Get user's location and find nearest station
+  // Get station based on user location from options or browser geolocation
   useEffect(() => {
+    // First try to use city from options (user's saved location)
+    if (options?.city) {
+      const stationByCity = findStationByCity(options.city);
+      if (stationByCity) {
+        console.log(`Weather: Using station ${stationByCity.name} for city ${options.city}`);
+        setStationId(stationByCity.id);
+        return;
+      }
+    }
+
+    // Fallback to browser geolocation
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -137,16 +196,18 @@ export function useWeather(defaultStationId: string = "12375") {
             position.coords.latitude,
             position.coords.longitude
           );
+          console.log(`Weather: Using nearest station ${nearest.name} from browser geolocation`);
           setStationId(nearest.id);
         },
         () => {
           // Geolocation denied or failed, use default (Warszawa)
+          console.log("Weather: Using default station (Warszawa)");
           setStationId(defaultStationId);
         },
         { timeout: 5000, maximumAge: 600000 } // 10 min cache
       );
     }
-  }, [defaultStationId]);
+  }, [defaultStationId, options?.city]);
 
   const fetchWeather = async () => {
     try {

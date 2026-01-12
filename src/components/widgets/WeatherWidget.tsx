@@ -2,6 +2,7 @@ import { Sun, Moon, Cloud, CloudRain, CloudSnow, CloudSun, CloudMoon, Snowflake,
 import { useNavigate } from "react-router-dom";
 import { useWeather } from "@/hooks/use-weather";
 import { Button } from "@/components/ui/button";
+import { useLocationContext } from "@/components/geolocation/LocationProvider";
 
 // Check if it's currently daytime (simplified: 6:00 - 20:00)
 const isDaytime = (): boolean => {
@@ -78,7 +79,11 @@ const getWeatherDescription = (
 
 export function WeatherWidget() {
   const navigate = useNavigate();
-  const { data, isLoading, error } = useWeather();
+  const { location } = useLocationContext();
+  const { data, isLoading, error } = useWeather("12375", { 
+    city: location.city,
+    voivodeship: location.voivodeship 
+  });
 
   if (isLoading) {
     return (
