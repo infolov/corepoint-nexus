@@ -173,16 +173,23 @@ export default function DashboardCampaignCreator() {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Validate file size (5MB max)
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("Plik jest za duży. Maksymalny rozmiar to 5MB.");
+      // Validate file type first to determine size limit
+      const imageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/apng'];
+      const videoTypes = ['video/mp4', 'video/webm'];
+      const allowedTypes = [...imageTypes, ...videoTypes];
+      
+      if (!allowedTypes.includes(file.type)) {
+        toast.error("Nieobsługiwany format pliku. Dozwolone: JPG, PNG, GIF, WebP, APNG, MP4, WebM.");
         return;
       }
       
-      // Validate file type
-      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'video/mp4'];
-      if (!allowedTypes.includes(file.type)) {
-        toast.error("Nieobsługiwany format pliku. Dozwolone: JPG, PNG, GIF, MP4.");
+      // Different size limits for images (5MB) and videos/animations (15MB)
+      const isVideo = videoTypes.includes(file.type);
+      const maxSize = isVideo ? 15 * 1024 * 1024 : 5 * 1024 * 1024;
+      const maxSizeLabel = isVideo ? "15MB" : "5MB";
+      
+      if (file.size > maxSize) {
+        toast.error(`Plik jest za duży. Maksymalny rozmiar dla ${isVideo ? 'wideo' : 'obrazów'} to ${maxSizeLabel}.`);
         return;
       }
 
@@ -824,14 +831,14 @@ export default function DashboardCampaignCreator() {
                 type="file"
                 ref={fileInputRef}
                 onChange={handleFileSelect}
-                accept="image/jpeg,image/png,image/gif,video/mp4"
+                accept="image/jpeg,image/png,image/gif,image/webp,image/apng,video/mp4,video/webm"
                 className="hidden"
               />
 
               {!selectedFile ? (
                 <>
                   <div className="space-y-2">
-                    <Label htmlFor="content-url">URL kreacji (grafika/wideo)</Label>
+                    <Label htmlFor="content-url">URL kreacji (grafika/wideo/animacja)</Label>
                     <Input
                       id="content-url"
                       type="url"
@@ -853,9 +860,10 @@ export default function DashboardCampaignCreator() {
                     <Button variant="outline" type="button" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}>
                       Wybierz plik
                     </Button>
-                    <p className="text-xs text-muted-foreground mt-4">
-                      Obsługiwane formaty: JPG, PNG, GIF, MP4. Max 5MB.
-                    </p>
+                    <div className="text-xs text-muted-foreground mt-4 space-y-1">
+                      <p><strong>Obrazy:</strong> JPG, PNG, GIF, WebP, APNG (max 5MB)</p>
+                      <p><strong>Wideo/Animacje:</strong> MP4, WebM (max 15MB)</p>
+                    </div>
                   </div>
                 </>
               ) : (
