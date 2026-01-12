@@ -34,10 +34,12 @@ import {
   Pencil,
   Lock,
   Unlock,
-  Trash2
+  Trash2,
+  MapPin
 } from "lucide-react";
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
+import { RegionalPricingDialog } from "@/components/admin/RegionalPricingDialog";
 
 interface Placement {
   id: string;
@@ -56,8 +58,10 @@ export default function DashboardAdminPlacements() {
   const [placements, setPlacements] = useState<Placement[]>([]);
   const [loading, setLoading] = useState(true);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [regionalPricingOpen, setRegionalPricingOpen] = useState(false);
   const [selectedPlacement, setSelectedPlacement] = useState<Placement | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [regionalPriceCounts, setRegionalPriceCounts] = useState<Record<string, number>>({});
   
   // Form state
   const [formData, setFormData] = useState({
@@ -88,9 +92,33 @@ export default function DashboardAdminPlacements() {
       toast.error("Błąd podczas pobierania miejsc reklamowych");
     } else {
       setPlacements(data || []);
+      // Fetch regional price counts
+      fetchRegionalPriceCounts(data?.map(p => p.id) || []);
     }
 
     setLoading(false);
+  };
+
+  const fetchRegionalPriceCounts = async (placementIds: string[]) => {
+    if (placementIds.length === 0) return;
+    
+    const { data, error } = await supabase
+      .from("ad_placement_regional_pricing")
+      .select("placement_id")
+      .in("placement_id", placementIds);
+
+    if (!error && data) {
+      const counts: Record<string, number> = {};
+      data.forEach(item => {
+        counts[item.placement_id] = (counts[item.placement_id] || 0) + 1;
+      });
+      setRegionalPriceCounts(counts);
+    }
+  };
+
+  const openRegionalPricing = (placement: Placement) => {
+    setSelectedPlacement(placement);
+    setRegionalPricingOpen(true);
   };
 
   const openEditDialog = (placement?: Placement) => {
@@ -309,9 +337,17 @@ export default function DashboardAdminPlacements() {
                       </TableCell>
                       <TableCell>{placement.dimensions || "-"}</TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-primary">{placement.credit_cost}</span>
-                          <span className="text-xs text-muted-foreground">kr./dzień</span>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-primary">{placement.credit_cost}</span>
+                            <span className="text-xs text-muted-foreground">kr./dzień</span>
+                          </div>
+                          {regionalPriceCounts[placement.id] ? (
+                            <Badge variant="outline" className="text-xs gap-1">
+                              <MapPin className="h-3 w-3" />
+                              {regionalPriceCounts[placement.id]} woj.
+                            </Badge>
+                          ) : null}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -352,8 +388,18 @@ export default function DashboardAdminPlacements() {
                           <Button
                             variant="ghost"
                             size="sm"
+                            onClick={() => openRegionalPricing(placement)}
+                            disabled={processing}
+                            title="Ceny regionalne"
+                          >
+                            <MapPin className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => openEditDialog(placement)}
                             disabled={processing}
+                            title="Edytuj"
                           >
                             <Pencil className="h-4 w-4" />
                           </Button>
@@ -363,6 +409,7 @@ export default function DashboardAdminPlacements() {
                             onClick={() => handleDelete(placement)}
                             disabled={processing}
                             className="text-destructive hover:text-destructive"
+                            title="Usuń"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -476,6 +523,22 @@ export default function DashboardAdminPlacements() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Regional Pricing Dialog */}
+      {selectedPlacement && (
+        <RegionalPricingDialog
+          open={regionalPricingOpen}
+          onOpenChange={(open) => {
+            setRegionalPricingOpen(open);
+            if (!open) {
+              fetchPlacements(); // Refresh to update regional price counts
+            }
+          }}
+          placementId={selectedPlacement.id}
+          placementName={selectedPlacement.name}
+          defaultCost={selectedPlacement.credit_cost}
+        />
+      )}
     </div>
   );
 }
