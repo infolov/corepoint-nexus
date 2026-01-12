@@ -16,6 +16,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useDisplayMode } from "@/hooks/use-display-mode";
 import { DynamicHeaderBranding } from "@/components/layout/DynamicHeaderBranding";
 import { useUserSettings } from "@/hooks/use-user-settings";
+import { useLocationContext } from "@/components/geolocation/LocationProvider";
 const categories = [{
   name: "Wiadomości",
   slug: "wiadomosci",
@@ -46,10 +47,11 @@ export function Header() {
   } = useAuth();
   const { settings: displaySettings, toggleTheme, isDark } = useDisplayMode();
   const { settings: userSettings } = useUserSettings();
+  const { location } = useLocationContext();
   const {
     data: weatherData,
     isLoading: weatherLoading
-  } = useWeather();
+  } = useWeather("12375", { city: location.city, voivodeship: location.voivodeship });
   const [forecast, setForecast] = useState<{
     day: string;
     temp: number;
