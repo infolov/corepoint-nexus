@@ -195,7 +195,7 @@ export function Header() {
       setSearchQuery("");
     }
   };
-  return <header className="sticky top-0 z-50 w-full overflow-hidden">
+  return <header className="sticky top-0 z-50 w-full bg-nav">
       {/* Top Bar */}
       <div className="bg-nav text-nav-foreground w-full">
         <div className="w-full px-2 sm:px-4 md:container flex h-12 sm:h-14 md:h-16 items-center justify-between">
