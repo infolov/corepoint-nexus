@@ -272,6 +272,9 @@ export default function DashboardAdminPartners() {
                   value={formData.logo_url}
                   onChange={(e) => setFormData({ ...formData, logo_url: e.target.value })}
                 />
+                <p className="text-xs text-muted-foreground">
+                  Zalecane wymiary: <strong>200×60 px</strong> (max 400×120 px). Maks. rozmiar pliku: <strong>500 KB</strong>. Formaty: PNG, JPG, SVG, WebP.
+                </p>
               </div>
 
               <div className="space-y-2">
