@@ -431,55 +431,72 @@ export function NewsCard({
     );
   }
 
-  // MSN-style default card (grid item) - 16:9 aspect ratio with proper height
+  // MSN-style default card (grid item) - mobile: title below image, desktop: overlay
   return renderWithContextMenu(
     <a href={articleUrl} target="_blank" rel="noopener noreferrer" className="block" onClick={handleArticleClick}>
       <article className={cn(
-        "group rounded-xl overflow-hidden relative",
-        "aspect-[16/9] min-h-[180px] max-h-[250px] bg-muted",
+        "group rounded-xl overflow-hidden bg-card",
+        // Mobile: flex column layout, Desktop: relative overlay layout
+        "flex flex-col md:block md:relative",
+        "md:aspect-[16/9] md:min-h-[180px] md:max-h-[250px]",
         className
       )}>
-        <CardImage
-          src={image}
-          alt={title}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-        />
-        {/* Light gradient under text */}
-        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-        
-        {hasVideo && (
-          <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-            <Play className="w-4 h-4 text-white fill-white" />
-          </div>
-        )}
-
-        {/* Category badge - top left */}
-        <div className="absolute top-3 left-3">
-          <Badge variant="secondary" className={cn(getCategoryColor(category), "text-white text-[10px] font-medium px-2 py-0.5")}>
-            {category}
-          </Badge>
-        </div>
-        
-        {badge && (
-          <div className="absolute top-3 right-3">
-            <div className={cn(
-              "w-7 h-7 rounded-full flex items-center justify-center text-sm",
-              badge === "pilne" ? "bg-destructive text-destructive-foreground" : 
-              badge === "hot" ? "bg-orange-500 text-white" : 
-              badge === "trending" ? "bg-blue-500 text-white" : "bg-primary text-primary-foreground"
-            )}>
-              {badge === "pilne" ? "!" : badge === "hot" ? "🔥" : badge === "trending" ? "📈" : "✨"}
+        {/* Image container */}
+        <div className="relative aspect-[16/9] md:w-full md:h-full overflow-hidden bg-muted">
+          <CardImage
+            src={image}
+            alt={title}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+          
+          {/* Desktop only: gradient overlay */}
+          <div className="hidden md:block absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+          
+          {hasVideo && (
+            <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+              <Play className="w-4 h-4 text-white fill-white" />
             </div>
-          </div>
-        )}
-        
-        <div className="absolute inset-x-0 bottom-0 p-3 sm:p-4">
-          <div className="flex items-center gap-1.5 sm:gap-2 mb-2 flex-wrap">
-            <span className="text-[11px] sm:text-xs text-white font-light">{source}</span>
-            <span className="text-[11px] sm:text-xs text-white/80 font-light">· {timestamp}</span>
+          )}
+
+          {/* Category badge - top left */}
+          <div className="absolute top-2 left-2 md:top-3 md:left-3">
+            <Badge variant="secondary" className={cn(getCategoryColor(category), "text-white text-[10px] font-medium px-2 py-0.5")}>
+              {category}
+            </Badge>
           </div>
           
-          <h3 className="font-bold text-lg sm:text-xl text-white line-clamp-2 leading-snug">
+          {badge && (
+            <div className="absolute top-2 right-2 md:top-3 md:right-3">
+              <div className={cn(
+                "w-6 h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center text-xs md:text-sm",
+                badge === "pilne" ? "bg-destructive text-destructive-foreground" : 
+                badge === "hot" ? "bg-orange-500 text-white" : 
+                badge === "trending" ? "bg-blue-500 text-white" : "bg-primary text-primary-foreground"
+              )}>
+                {badge === "pilne" ? "!" : badge === "hot" ? "🔥" : badge === "trending" ? "📈" : "✨"}
+              </div>
+            </div>
+          )}
+
+          {/* Desktop only: overlay content */}
+          <div className="hidden md:block absolute inset-x-0 bottom-0 p-3 sm:p-4">
+            <div className="flex items-center gap-1.5 sm:gap-2 mb-2 flex-wrap">
+              <span className="text-[11px] sm:text-xs text-white font-light">{source}</span>
+              <span className="text-[11px] sm:text-xs text-white/80 font-light">· {timestamp}</span>
+            </div>
+            <h3 className="font-bold text-lg sm:text-xl text-white line-clamp-2 leading-tight">
+              {title}
+            </h3>
+          </div>
+        </div>
+
+        {/* Mobile only: content below image */}
+        <div className="md:hidden p-3 bg-card">
+          <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
+            <span className="text-[11px] text-muted-foreground font-medium">{source}</span>
+            <span className="text-[11px] text-muted-foreground">· {timestamp}</span>
+          </div>
+          <h3 className="font-bold text-base text-foreground line-clamp-2 leading-tight group-hover:text-primary transition-colors">
             {title}
           </h3>
         </div>
