@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { useWeather } from "@/hooks/use-weather";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { useLocationContext } from "@/components/geolocation/LocationProvider";
 
 // Get wind direction arrow rotation
 const getWindRotation = (degrees: string): number => {
@@ -117,7 +118,11 @@ const getWeatherCondition = (
 
 export default function WeatherDetails() {
   const navigate = useNavigate();
-  const { data, isLoading, error, stationId, refetch } = useWeather();
+  const { location } = useLocationContext();
+  const { data, isLoading, error, stationId, refetch } = useWeather("12375", {
+    city: location.city,
+    voivodeship: location.voivodeship
+  });
 
   if (isLoading) {
     return (
