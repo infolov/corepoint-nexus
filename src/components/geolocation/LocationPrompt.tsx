@@ -114,43 +114,43 @@ export function LocationPrompt({ open, onClose, onLocationSet }: LocationPromptP
 
   return (
     <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent className="sm:max-w-md" hideCloseButton>
+      <DialogContent className="w-[calc(100%-2rem)] max-w-md mx-auto rounded-lg" hideCloseButton>
         <DialogHeader>
           <div className="flex items-center justify-between">
-            <DialogTitle className="flex items-center gap-2">
-              <MapPin className="h-5 w-5 text-primary" />
+            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               Twoja lokalizacja
             </DialogTitle>
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              className="h-7 w-7 sm:h-8 sm:w-8"
               onClick={handleSkip}
             >
-              <X className="h-4 w-4" />
+              <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </Button>
           </div>
-          <DialogDescription>
+          <DialogDescription className="text-xs sm:text-sm">
             Podaj swoją lokalizację, aby otrzymywać lokalne wiadomości i reklamy z Twojego regionu.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="space-y-3 sm:space-y-4 py-2 sm:py-4">
           {!showManual ? (
             <>
               <Button
-                className="w-full h-12 gap-2"
+                className="w-full h-10 sm:h-12 gap-2 text-sm sm:text-base"
                 onClick={handleAutoDetect}
                 disabled={isDetecting || loading}
               >
                 {isDetecting ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                    <div className="animate-spin rounded-full h-3.5 w-3.5 sm:h-4 sm:w-4 border-b-2 border-white" />
                     Wykrywanie...
                   </>
                 ) : (
                   <>
-                    <Navigation className="h-4 w-4" />
+                    <Navigation className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     Wykryj automatycznie
                   </>
                 )}
@@ -167,24 +167,24 @@ export function LocationPrompt({ open, onClose, onLocationSet }: LocationPromptP
 
               <Button
                 variant="outline"
-                className="w-full h-12 gap-2"
+                className="w-full h-10 sm:h-12 gap-2 text-sm sm:text-base"
                 onClick={() => setShowManual(true)}
               >
-                <MapPin className="h-4 w-4" />
+                <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 Wybierz ręcznie
               </Button>
             </>
           ) : (
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Województwo</label>
+            <div className="space-y-2.5 sm:space-y-3">
+              <div className="space-y-1.5 sm:space-y-2">
+                <label className="text-xs sm:text-sm font-medium">Województwo</label>
                 <Select value={selectedVoivodeship} onValueChange={handleVoivodeshipChange}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-9 sm:h-10 text-sm">
                     <SelectValue placeholder="Wybierz województwo" />
                   </SelectTrigger>
                   <SelectContent>
                     {voivodeships.map((v) => (
-                      <SelectItem key={v} value={v}>
+                      <SelectItem key={v} value={v} className="text-sm">
                         {voivodeshipDisplayNames[v] || v}
                       </SelectItem>
                     ))}
@@ -193,15 +193,15 @@ export function LocationPrompt({ open, onClose, onLocationSet }: LocationPromptP
               </div>
 
               {powiats.length > 0 && (
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Powiat</label>
+                <div className="space-y-1.5 sm:space-y-2">
+                  <label className="text-xs sm:text-sm font-medium">Powiat</label>
                   <Select value={selectedPowiat} onValueChange={handlePowiatChange}>
-                    <SelectTrigger>
+                    <SelectTrigger className="h-9 sm:h-10 text-sm">
                       <SelectValue placeholder="Wybierz powiat" />
                     </SelectTrigger>
                     <SelectContent>
                       {powiats.map((p) => (
-                        <SelectItem key={p} value={p}>{p}</SelectItem>
+                        <SelectItem key={p} value={p} className="text-sm">{p}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -209,31 +209,31 @@ export function LocationPrompt({ open, onClose, onLocationSet }: LocationPromptP
               )}
 
               {cities.length > 0 && (
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Miasto / Gmina</label>
+                <div className="space-y-1.5 sm:space-y-2">
+                  <label className="text-xs sm:text-sm font-medium">Miasto / Gmina</label>
                   <Select value={selectedCity} onValueChange={setSelectedCity}>
-                    <SelectTrigger>
+                    <SelectTrigger className="h-9 sm:h-10 text-sm">
                       <SelectValue placeholder="Wybierz miasto" />
                     </SelectTrigger>
                     <SelectContent>
                       {cities.map((c) => (
-                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                        <SelectItem key={c} value={c} className="text-sm">{c}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
               )}
 
-              <div className="flex gap-2 pt-2">
+              <div className="flex gap-2 pt-1 sm:pt-2">
                 <Button
                   variant="outline"
-                  className="flex-1"
+                  className="flex-1 h-9 sm:h-10 text-sm"
                   onClick={() => setShowManual(false)}
                 >
                   Wstecz
                 </Button>
                 <Button
-                  className="flex-1"
+                  className="flex-1 h-9 sm:h-10 text-sm"
                   onClick={handleManualSave}
                   disabled={!selectedVoivodeship}
                 >
@@ -244,7 +244,7 @@ export function LocationPrompt({ open, onClose, onLocationSet }: LocationPromptP
           )}
         </div>
 
-        <p className="text-xs text-muted-foreground text-center">
+        <p className="text-[10px] sm:text-xs text-muted-foreground text-center">
           Możesz zmienić lokalizację w dowolnym momencie w ustawieniach.
         </p>
       </DialogContent>

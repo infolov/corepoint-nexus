@@ -393,14 +393,9 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
 
   const currentExpandedCategory = categoriesWithSubs.find(c => c.slug === expandedCategory);
 
-  // Hide on mobile
-  if (isMobile) {
-    return null;
-  }
-
   return (
-    <div className="sticky top-16 z-40 bg-background/95 backdrop-blur-md border-b border-border/50">
-      <div className="container relative">
+    <div className="sticky top-16 z-40 bg-background/95 backdrop-blur-md border-b border-border/50 w-full overflow-hidden">
+      <div className="w-full px-2 sm:px-4 md:container relative">
         {/* Left Arrow */}
         {showLeftArrow && (
           <button
@@ -415,8 +410,8 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
         <div
           ref={scrollRef}
           onScroll={checkScroll}
-          className="flex items-center gap-1 overflow-x-auto scrollbar-hide py-2 px-8"
-          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          className="flex items-center gap-0.5 sm:gap-1 overflow-x-auto scrollbar-hide py-2 px-6 sm:px-8"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" }}
         >
           {categoriesWithSubs.map((category) => (
             <div 
@@ -428,7 +423,7 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
               <button
                 onClick={() => handleCategoryClick(category)}
                 className={cn(
-                  "flex items-center gap-1 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200",
+                  "flex items-center gap-0.5 sm:gap-1 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap",
                   "hover:bg-muted",
                   activeCategory === category.slug
                     ? "bg-[hsl(209,90%,58%)] text-white hover:bg-[hsl(209,90%,52%)]"
@@ -437,9 +432,9 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
                 )}
               >
                 {category.name}
-                {category.subcategories.length > 0 && (
+                {category.subcategories.length > 0 && !isMobile && (
                   <ChevronDown className={cn(
-                    "h-3.5 w-3.5 transition-transform duration-200",
+                    "h-3 w-3 sm:h-3.5 sm:w-3.5 transition-transform duration-200",
                     expandedCategory === category.slug && "rotate-180"
                   )} />
                 )}
@@ -460,8 +455,8 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
         )}
       </div>
 
-      {/* Subcategories panel - expands below */}
-      {currentExpandedCategory && currentExpandedCategory.subcategories.length > 0 && (
+      {/* Subcategories panel - expands below - hidden on mobile */}
+      {!isMobile && currentExpandedCategory && currentExpandedCategory.subcategories.length > 0 && (
         <div 
           className="border-t border-border/50 bg-muted/30 animate-slide-down"
           onMouseEnter={() => {
@@ -470,9 +465,9 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
           }}
           onMouseLeave={() => handleCategoryHover(null)}
         >
-          <div className="container py-6">
+          <div className="w-full px-2 sm:px-4 md:container py-4 sm:py-6">
             {/* Grid layout for thematic grouping */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-6">
               {/* All button as first column */}
               <div className="flex flex-col gap-2">
                 <button
