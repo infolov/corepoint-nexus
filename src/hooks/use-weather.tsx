@@ -431,6 +431,7 @@ function findStationByCity(cityName: string): StationCoords | null {
 interface UseWeatherOptions {
   city?: string | null;
   voivodeship?: string | null;
+  manualStationId?: string | null;
 }
 
 export function useWeather(defaultStationId: string = "12375", options?: UseWeatherOptions) {
@@ -440,9 +441,20 @@ export function useWeather(defaultStationId: string = "12375", options?: UseWeat
     error: null,
   });
   const [stationId, setStationId] = useState<string>(defaultStationId);
+  const [isManualSelection, setIsManualSelection] = useState<boolean>(false);
 
-  // Get station based on user location from options or browser geolocation
+  // Get station based on manual selection, user location from options, or browser geolocation
   useEffect(() => {
+    // If manual station is selected, use it
+    if (options?.manualStationId) {
+      console.log(`Weather: Using manually selected station ${options.manualStationId}`);
+      setStationId(options.manualStationId);
+      setIsManualSelection(true);
+      return;
+    }
+
+    setIsManualSelection(false);
+
     // First try to use city from options (user's saved location)
     if (options?.city) {
       const stationByCity = findStationByCity(options.city);
@@ -472,7 +484,7 @@ export function useWeather(defaultStationId: string = "12375", options?: UseWeat
         { timeout: 5000, maximumAge: 600000 } // 10 min cache
       );
     }
-  }, [defaultStationId, options?.city]);
+  }, [defaultStationId, options?.city, options?.manualStationId]);
 
   const fetchWeather = async () => {
     try {
@@ -511,8 +523,8 @@ export function useWeather(defaultStationId: string = "12375", options?: UseWeat
     fetchWeather();
   };
 
-  return { ...state, stationId, refetch };
+  return { ...state, stationId, isManualSelection, refetch };
 }
 
 export { STATIONS, findNearestStation };
-export type { WeatherData, StationCoords };
+export type { WeatherData, StationCoords, UseWeatherOptions };
