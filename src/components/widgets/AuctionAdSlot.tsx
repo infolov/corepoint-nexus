@@ -135,9 +135,12 @@ export function AuctionAdSlot({
   const config = variantConfig[effectiveVariant] || variantConfig.horizontal;
   const { name, icon: Icon, placementSlug } = config;
 
-  // Build user location from settings
+  // Build full user location from settings (voivodeship, powiat, city)
   const userLocation = {
     voivodeship: settings.voivodeship || undefined,
+    powiat: settings.county || undefined,
+    gmina: settings.locality || undefined,
+    city: settings.city || undefined,
   };
 
   const { 
