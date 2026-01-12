@@ -37,6 +37,11 @@ import { BookingCalendar } from "@/components/dashboard/BookingCalendar";
 import { EmissionTypeSelector, EmissionType } from "@/components/dashboard/EmissionTypeSelector";
 import { PricingPackages, PricingPackage } from "@/components/dashboard/PricingPackages";
 import { AdministrativeTargeting } from "@/components/dashboard/AdministrativeTargeting";
+import { MultiRegionSelector } from "@/components/dashboard/MultiRegionSelector";
+
+interface SelectedRegion {
+  voivodeship: string;
+}
 
 interface AdPlacement {
   id: string;
@@ -102,6 +107,7 @@ export default function DashboardCampaignCreator() {
   const [selectedVoivodeship, setSelectedVoivodeship] = useState("");
   const [selectedPowiat, setSelectedPowiat] = useState("");
   const [selectedGmina, setSelectedGmina] = useState("");
+  const [selectedRegions, setSelectedRegions] = useState<SelectedRegion[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -215,7 +221,7 @@ export default function DashboardCampaignCreator() {
     switch (currentStep) {
       case 1: return !!selectedPlacement;
       case 2: return !!emissionType && (emissionType === "exclusive" || !!selectedSlot);
-      case 3: return isGlobal || !!selectedVoivodeship; // Targeting validation - at least voivodeship required
+      case 3: return isGlobal || selectedRegions.length > 0; // Targeting validation - at least one region required
       case 4: return !!startDate && !!endDate;
       case 5: return !!campaignName && totalPrice > 0;
       case 6: return true;
@@ -266,26 +272,58 @@ export default function DashboardCampaignCreator() {
         uploadedContentUrl = publicUrl;
       }
 
-      const { error } = await supabase.from("ad_campaigns").insert({
-        user_id: user.id,
-        placement_id: selectedPlacement,
-        name: campaignName,
-        ad_type: emissionType === "exclusive" ? "exclusive" : `rotation_slot_${selectedSlot}`,
-        start_date: format(startDate, "yyyy-MM-dd"),
-        end_date: format(endDate, "yyyy-MM-dd"),
-        total_credits: isAdmin ? 0 : totalPrice,
-        target_url: targetUrl || null,
-        content_url: uploadedContentUrl,
-        status: "pending",
-        is_global: isGlobal,
-        region: isGlobal ? null : selectedVoivodeship || null,
-        target_powiat: isGlobal ? null : selectedPowiat || null,
-        target_gmina: isGlobal ? null : selectedGmina || null
-      });
+      // If global, create single campaign
+      // If regional with multiple regions, create one campaign per region
+      if (isGlobal) {
+        const { error } = await supabase.from("ad_campaigns").insert({
+          user_id: user.id,
+          placement_id: selectedPlacement,
+          name: campaignName,
+          ad_type: emissionType === "exclusive" ? "exclusive" : `rotation_slot_${selectedSlot}`,
+          start_date: format(startDate, "yyyy-MM-dd"),
+          end_date: format(endDate, "yyyy-MM-dd"),
+          total_credits: isAdmin ? 0 : totalPrice,
+          target_url: targetUrl || null,
+          content_url: uploadedContentUrl,
+          status: "pending",
+          is_global: true,
+          region: null,
+          target_powiat: null,
+          target_gmina: null
+        });
 
-      if (error) throw error;
+        if (error) throw error;
+      } else {
+        // Create a campaign for each selected region
+        const campaignsToCreate = selectedRegions.map((region, index) => ({
+          user_id: user.id,
+          placement_id: selectedPlacement,
+          name: selectedRegions.length > 1 
+            ? `${campaignName} - ${region.voivodeship.charAt(0).toUpperCase() + region.voivodeship.slice(1)}`
+            : campaignName,
+          ad_type: emissionType === "exclusive" ? "exclusive" : `rotation_slot_${selectedSlot}`,
+          start_date: format(startDate, "yyyy-MM-dd"),
+          end_date: format(endDate, "yyyy-MM-dd"),
+          total_credits: isAdmin ? 0 : Math.ceil(totalPrice / selectedRegions.length),
+          target_url: targetUrl || null,
+          content_url: uploadedContentUrl,
+          status: "pending",
+          is_global: false,
+          region: region.voivodeship,
+          target_powiat: null,
+          target_gmina: null
+        }));
 
-      toast.success("Kampania została utworzona i oczekuje na weryfikację");
+        const { error } = await supabase.from("ad_campaigns").insert(campaignsToCreate);
+
+        if (error) throw error;
+      }
+
+      const successMessage = !isGlobal && selectedRegions.length > 1
+        ? `Utworzono ${selectedRegions.length} kampanii dla wybranych regionów`
+        : "Kampania została utworzona i oczekuje na weryfikację";
+      
+      toast.success(successMessage);
       navigate("/dashboard/campaigns");
     } catch (error) {
       console.error("Error creating campaign:", error);
@@ -485,9 +523,7 @@ export default function DashboardCampaignCreator() {
                       )}
                       onClick={() => {
                         setIsGlobal(true);
-                        setSelectedVoivodeship("");
-                        setSelectedPowiat("");
-                        setSelectedGmina("");
+                        setSelectedRegions([]);
                       }}
                     >
                       <CardHeader className="pb-2">
@@ -518,7 +554,7 @@ export default function DashboardCampaignCreator() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <MapPin className="h-5 w-5 text-primary" />
-                            <CardTitle className="text-lg">Region</CardTitle>
+                            <CardTitle className="text-lg">Wybrane regiony</CardTitle>
                           </div>
                           {!isGlobal && <Check className="h-5 w-5 text-primary" />}
                         </div>
@@ -526,32 +562,29 @@ export default function DashboardCampaignCreator() {
                       </CardHeader>
                       <CardContent>
                         <p className="text-sm text-muted-foreground">
-                          Twoja reklama będzie wyświetlana tylko użytkownikom z wybranego województwa.
+                          Twoja reklama będzie wyświetlana tylko użytkownikom z wybranych województw.
                         </p>
                       </CardContent>
                     </Card>
                   </div>
 
-                {/* Poland Map Selector - only show when local is selected */}
+                {/* Multi Region Selector - only show when local is selected */}
                 {!isGlobal && (
                   <div className="mt-6">
                     <Label className="text-base font-medium mb-4 block">
-                      Określ lokalizację <span className="text-destructive">*</span>
+                      Wybierz regiony <span className="text-destructive">*</span>
                     </Label>
                     <p className="text-sm text-muted-foreground mb-4">
-                      Wybierz województwo (wymagane), opcjonalnie powiat i gminę dla dokładniejszego targetowania.
+                      Wybierz jedno lub więcej województw, w których ma być wyświetlana reklama.
+                      Dla każdego wybranego regionu zostanie utworzona osobna kampania.
                     </p>
-                    <AdministrativeTargeting
-                      voivodeship={selectedVoivodeship}
-                      powiat={selectedPowiat}
-                      gmina={selectedGmina}
-                      onVoivodeshipChange={setSelectedVoivodeship}
-                      onPowiatChange={setSelectedPowiat}
-                      onGminaChange={setSelectedGmina}
+                    <MultiRegionSelector
+                      selectedRegions={selectedRegions}
+                      onRegionsChange={setSelectedRegions}
                     />
-                    {!selectedVoivodeship && (
+                    {selectedRegions.length === 0 && (
                       <p className="text-sm text-destructive mt-2">
-                        Wybierz przynajmniej województwo, aby kontynuować
+                        Wybierz przynajmniej jedno województwo, aby kontynuować
                       </p>
                     )}
                   </div>
@@ -690,17 +723,30 @@ export default function DashboardCampaignCreator() {
                       ) : (
                         <>
                           <MapPin className="h-4 w-4" />
-                          {selectedGmina ? (
-                            `${selectedGmina}, pow. ${selectedPowiat}`
-                          ) : selectedPowiat ? (
-                            `pow. ${selectedPowiat}, woj. ${selectedVoivodeship}`
+                          {selectedRegions.length === 1 ? (
+                            `woj. ${selectedRegions[0].voivodeship.charAt(0).toUpperCase()}${selectedRegions[0].voivodeship.slice(1)}`
                           ) : (
-                            `woj. ${selectedVoivodeship?.charAt(0).toUpperCase()}${selectedVoivodeship?.slice(1)}`
+                            `${selectedRegions.length} województw`
                           )}
                         </>
                       )}
                     </span>
                   </div>
+                  {!isGlobal && selectedRegions.length > 1 && (
+                    <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-md">
+                      <p className="font-medium mb-2">Wybrane regiony:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {selectedRegions.map((r) => (
+                          <Badge key={r.voivodeship} variant="outline" className="text-xs">
+                            {r.voivodeship.charAt(0).toUpperCase() + r.voivodeship.slice(1)}
+                          </Badge>
+                        ))}
+                      </div>
+                      <p className="text-xs mt-2 text-muted-foreground/70">
+                        Zostanie utworzonych {selectedRegions.length} osobnych kampanii
+                      </p>
+                    </div>
+                  )}
                   <Separator />
                   <div className="flex justify-between text-lg font-bold">
                     <span>Do zapłaty</span>
