@@ -428,7 +428,14 @@ const cityToVoivodeship: Record<string, string> = {
   // Warmińsko-mazurskie
   'olsztyn': 'warminsko-mazurskie', 'elbląg': 'warminsko-mazurskie', 'elblag': 'warminsko-mazurskie',
   'ełk': 'warminsko-mazurskie', 'elk': 'warminsko-mazurskie', 'ostróda': 'warminsko-mazurskie',
-  'ostroda': 'warminsko-mazurskie',
+  'ostroda': 'warminsko-mazurskie', 'pasłęk': 'warminsko-mazurskie', 'paslek': 'warminsko-mazurskie',
+  'iława': 'warminsko-mazurskie', 'ilawa': 'warminsko-mazurskie', 'giżycko': 'warminsko-mazurskie',
+  'gizycko': 'warminsko-mazurskie', 'mrągowo': 'warminsko-mazurskie', 'mragowo': 'warminsko-mazurskie',
+  'kętrzyn': 'warminsko-mazurskie', 'ketrzyn': 'warminsko-mazurskie', 'bartoszyce': 'warminsko-mazurskie',
+  'braniewo': 'warminsko-mazurskie', 'szczytno': 'warminsko-mazurskie', 'pisz': 'warminsko-mazurskie',
+  'nidzica': 'warminsko-mazurskie', 'działdowo': 'warminsko-mazurskie', 'dzialdowo': 'warminsko-mazurskie',
+  'lidzbark': 'warminsko-mazurskie', 'morąg': 'warminsko-mazurskie', 'morag': 'warminsko-mazurskie',
+  'tolkmicko': 'warminsko-mazurskie', 'młynary': 'warminsko-mazurskie', 'mlynary': 'warminsko-mazurskie',
   
   // Lubuskie
   'zielona gora': 'lubuskie', 'zielona góra': 'lubuskie', 'gorzow': 'lubuskie',
