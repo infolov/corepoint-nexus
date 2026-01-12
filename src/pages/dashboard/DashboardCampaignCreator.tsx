@@ -37,11 +37,7 @@ import { BookingCalendar } from "@/components/dashboard/BookingCalendar";
 import { EmissionTypeSelector, EmissionType } from "@/components/dashboard/EmissionTypeSelector";
 import { PricingPackages, PricingPackage } from "@/components/dashboard/PricingPackages";
 import { AdministrativeTargeting } from "@/components/dashboard/AdministrativeTargeting";
-import { MultiRegionSelector } from "@/components/dashboard/MultiRegionSelector";
-
-interface SelectedRegion {
-  voivodeship: string;
-}
+import { MultiRegionSelector, SelectedRegion } from "@/components/dashboard/MultiRegionSelector";
 
 interface AdPlacement {
   id: string;
@@ -295,11 +291,17 @@ export default function DashboardCampaignCreator() {
         if (error) throw error;
       } else {
         // Create a campaign for each selected region
-        const campaignsToCreate = selectedRegions.map((region, index) => ({
+        const formatRegionName = (region: SelectedRegion) => {
+          if (region.gmina) return region.gmina;
+          if (region.powiat) return region.powiat;
+          return region.voivodeship.charAt(0).toUpperCase() + region.voivodeship.slice(1);
+        };
+
+        const campaignsToCreate = selectedRegions.map((region) => ({
           user_id: user.id,
           placement_id: selectedPlacement,
           name: selectedRegions.length > 1 
-            ? `${campaignName} - ${region.voivodeship.charAt(0).toUpperCase() + region.voivodeship.slice(1)}`
+            ? `${campaignName} - ${formatRegionName(region)}`
             : campaignName,
           ad_type: emissionType === "exclusive" ? "exclusive" : `rotation_slot_${selectedSlot}`,
           start_date: format(startDate, "yyyy-MM-dd"),
@@ -310,8 +312,8 @@ export default function DashboardCampaignCreator() {
           status: "pending",
           is_global: false,
           region: region.voivodeship,
-          target_powiat: null,
-          target_gmina: null
+          target_powiat: region.powiat || null,
+          target_gmina: region.gmina || null
         }));
 
         const { error } = await supabase.from("ad_campaigns").insert(campaignsToCreate);
@@ -724,27 +726,45 @@ export default function DashboardCampaignCreator() {
                         <>
                           <MapPin className="h-4 w-4" />
                           {selectedRegions.length === 1 ? (
-                            `woj. ${selectedRegions[0].voivodeship.charAt(0).toUpperCase()}${selectedRegions[0].voivodeship.slice(1)}`
+                            selectedRegions[0].gmina ? (
+                              `${selectedRegions[0].gmina}, ${selectedRegions[0].powiat}`
+                            ) : selectedRegions[0].powiat ? (
+                              `pow. ${selectedRegions[0].powiat}`
+                            ) : (
+                              `woj. ${selectedRegions[0].voivodeship.charAt(0).toUpperCase()}${selectedRegions[0].voivodeship.slice(1)}`
+                            )
                           ) : (
-                            `${selectedRegions.length} województw`
+                            `${selectedRegions.length} lokalizacji`
                           )}
                         </>
                       )}
                     </span>
                   </div>
-                  {!isGlobal && selectedRegions.length > 1 && (
+                  {!isGlobal && selectedRegions.length > 0 && (
                     <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-md">
                       <p className="font-medium mb-2">Wybrane regiony:</p>
                       <div className="flex flex-wrap gap-1">
-                        {selectedRegions.map((r) => (
-                          <Badge key={r.voivodeship} variant="outline" className="text-xs">
-                            {r.voivodeship.charAt(0).toUpperCase() + r.voivodeship.slice(1)}
+                        {selectedRegions.map((r, idx) => (
+                          <Badge 
+                            key={`${r.voivodeship}-${r.powiat || ''}-${r.gmina || ''}-${idx}`} 
+                            variant="outline" 
+                            className="text-xs"
+                          >
+                            {r.gmina ? (
+                              `${r.gmina}`
+                            ) : r.powiat ? (
+                              `pow. ${r.powiat}`
+                            ) : (
+                              `woj. ${r.voivodeship.charAt(0).toUpperCase() + r.voivodeship.slice(1)}`
+                            )}
                           </Badge>
                         ))}
                       </div>
-                      <p className="text-xs mt-2 text-muted-foreground/70">
-                        Zostanie utworzonych {selectedRegions.length} osobnych kampanii
-                      </p>
+                      {selectedRegions.length > 1 && (
+                        <p className="text-xs mt-2 text-muted-foreground/70">
+                          Zostanie utworzonych {selectedRegions.length} osobnych kampanii
+                        </p>
+                      )}
                     </div>
                   )}
                   <Separator />
