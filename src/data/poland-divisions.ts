@@ -84,9 +84,25 @@ export const polandDivisions: PolandDivisions = {
   },
   "warmińsko-mazurskie": {
     "m. Olsztyn": ["Śródmieście", "Zatorze", "Jaroty", "Dajtki", "Kortowo"],
-    "olsztyński": ["Barczewo", "Dywity", "Gietrzwałd", "Jonkowo"],
+    "m. Elbląg": ["Śródmieście", "Zatorze", "Zawada", "Dąbrowa"],
+    "olsztyński": ["Barczewo", "Dywity", "Gietrzwałd", "Jonkowo", "Stawiguda", "Purda"],
+    "elbląski": ["Pasłęk", "Tolkmicko", "Młynary", "Godkowo", "Gronowo Elbląskie", "Markusy", "Rychliki", "Milejewo"],
     "ełcki": ["Ełk", "Stare Juchy", "Kalinowo", "Prostki"],
-    "giżycki": ["Giżycko", "Miłki", "Ryn", "Wydminy"]
+    "giżycki": ["Giżycko", "Miłki", "Ryn", "Wydminy"],
+    "ostródzki": ["Ostróda", "Morąg", "Miłakowo", "Małdyty", "Dąbrówno"],
+    "iławski": ["Iława", "Lubawa", "Zalewo", "Susz", "Kisielice"],
+    "braniewski": ["Braniewo", "Frombork", "Pieniężno", "Wilczęta", "Lelkowo"],
+    "bartoszycki": ["Bartoszyce", "Górowo Iławeckie", "Bisztynek", "Sępopol"],
+    "kętrzyński": ["Kętrzyn", "Reszel", "Korsze", "Srokowo", "Barciany"],
+    "mrągowski": ["Mrągowo", "Mikołajki", "Piecki", "Sorkwity"],
+    "nidzicki": ["Nidzica", "Kozłowo", "Janowiec Kościelny", "Janowo"],
+    "nowomiejski": ["Nowe Miasto Lubawskie", "Kurzętnik", "Grodziczno", "Biskupiec"],
+    "działdowski": ["Działdowo", "Lidzbark", "Płośnica", "Iłowo-Osada", "Rybno"],
+    "szczycieński": ["Szczytno", "Pasym", "Wielbark", "Świętajno", "Dźwierzuty"],
+    "piski": ["Pisz", "Ruciane-Nida", "Orzysz", "Biała Piska"],
+    "gołdapski": ["Gołdap", "Banie Mazurskie", "Dubeninki"],
+    "olecki": ["Olecko", "Kowale Oleckie", "Świętajno", "Wieliczki"],
+    "węgorzewski": ["Węgorzewo", "Pozezdrze", "Budry"]
   },
   "lubuskie": {
     "m. Zielona Góra": ["Centrum", "Przylepska", "Jędrzychów", "Łężyca"],

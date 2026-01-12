@@ -31,14 +31,18 @@ export function useUserSettings() {
     // First try localStorage
     const localSettings = localStorage.getItem("userSettings");
     if (localSettings) {
-      const parsed = JSON.parse(localSettings);
-      setSettings({
-        language: parsed.language || "pl",
-        voivodeship: parsed.voivodeship || null,
-        county: parsed.county || null,
-        city: parsed.city || null,
-        locality: parsed.locality || null,
-      });
+      try {
+        const parsed = JSON.parse(localSettings);
+        setSettings({
+          language: parsed.language || "pl",
+          voivodeship: parsed.voivodeship || null,
+          county: parsed.county || null,
+          city: parsed.city || null,
+          locality: parsed.locality || null,
+        });
+      } catch (e) {
+        console.error("Error parsing local settings:", e);
+      }
     }
 
     // If logged in, fetch from database (overrides localStorage)
@@ -51,13 +55,16 @@ export function useUserSettings() {
           .maybeSingle();
 
         if (!error && data) {
-          setSettings({
+          const dbSettings = {
             language: data.language || "pl",
             voivodeship: data.voivodeship || null,
             county: data.county || null,
             city: data.city || null,
             locality: data.locality || null,
-          });
+          };
+          setSettings(dbSettings);
+          // Sync to localStorage
+          localStorage.setItem("userSettings", JSON.stringify(dbSettings));
         }
       } catch (error) {
         console.error("Error loading settings:", error);

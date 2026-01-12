@@ -2,13 +2,15 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
-import { Loader2, User, Sun, Moon, Monitor, Bell, MapPin, Check, Cloud, Camera, X, ImageIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader2, User, Sun, Moon, Monitor, Bell, MapPin, Check, Cloud, Camera, X, ImageIcon, LocateFixed } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useDisplayMode } from "@/hooks/use-display-mode";
 import { cn } from "@/lib/utils";
 import { ImageCropDialog } from "./ImageCropDialog";
+import { polandDivisions, getVoivodeships, getPowiats, getGminas } from "@/data/poland-divisions";
 import {
   Sheet,
   SheetContent,
@@ -29,24 +31,25 @@ interface SettingsPanelProps {
   onSettingsSaved?: () => void;
 }
 
-const regions = [
-  { id: "mazowieckie", label: "Mazowieckie" },
-  { id: "malopolskie", label: "Małopolskie" },
-  { id: "slaskie", label: "Śląskie" },
-  { id: "wielkopolskie", label: "Wielkopolskie" },
-  { id: "pomorskie", label: "Pomorskie" },
-  { id: "dolnoslaskie", label: "Dolnośląskie" },
-  { id: "lodzkie", label: "Łódzkie" },
-  { id: "kujawsko-pomorskie", label: "Kujawsko-Pomorskie" },
-  { id: "podkarpackie", label: "Podkarpackie" },
-  { id: "lubelskie", label: "Lubelskie" },
-  { id: "warminsko-mazurskie", label: "Warmińsko-Mazurskie" },
-  { id: "zachodniopomorskie", label: "Zachodniopomorskie" },
-  { id: "podlaskie", label: "Podlaskie" },
-  { id: "swietokrzyskie", label: "Świętokrzyskie" },
-  { id: "opolskie", label: "Opolskie" },
-  { id: "lubuskie", label: "Lubuskie" },
-];
+// Voivodeship display names mapping
+const voivodeshipDisplayNames: Record<string, string> = {
+  "mazowieckie": "Mazowieckie",
+  "małopolskie": "Małopolskie",
+  "śląskie": "Śląskie",
+  "wielkopolskie": "Wielkopolskie",
+  "pomorskie": "Pomorskie",
+  "dolnośląskie": "Dolnośląskie",
+  "łódzkie": "Łódzkie",
+  "kujawsko-pomorskie": "Kujawsko-Pomorskie",
+  "podkarpackie": "Podkarpackie",
+  "lubelskie": "Lubelskie",
+  "warmińsko-mazurskie": "Warmińsko-Mazurskie",
+  "zachodniopomorskie": "Zachodniopomorskie",
+  "podlaskie": "Podlaskie",
+  "świętokrzyskie": "Świętokrzyskie",
+  "opolskie": "Opolskie",
+  "lubuskie": "Lubuskie",
+};
 
 type ThemeMode = "light" | "dark" | "system";
 type FontSize = "normal" | "large" | "extra-large";
@@ -67,8 +70,11 @@ const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPanelProps) {
   const { user } = useAuth();
   const { settings: displaySettings, setFontSize } = useDisplayMode();
-  const [selectedRegion, setSelectedRegion] = useState("mazowieckie");
+  const [selectedVoivodeship, setSelectedVoivodeship] = useState<string>("");
+  const [selectedPowiat, setSelectedPowiat] = useState<string>("");
+  const [selectedCity, setSelectedCity] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [theme, setTheme] = useState<ThemeMode>("system");
   const [notifications, setNotifications] = useState<NotificationSettings>({
@@ -84,6 +90,11 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
   
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const initialLoadRef = useRef(true);
+
+  // Get available options based on selections
+  const voivodeships = getVoivodeships();
+  const powiats = selectedVoivodeship ? getPowiats(selectedVoivodeship) : [];
+  const cities = selectedVoivodeship && selectedPowiat ? getGminas(selectedVoivodeship, selectedPowiat) : [];
 
   const fontSizeToSlider: Record<FontSize, number> = {
     "normal": 0,
@@ -104,11 +115,13 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
     saveTimeoutRef.current = setTimeout(() => {
       saveSettings();
     }, 800);
-  }, [user, selectedRegion, theme, notifications, displaySettings.fontSize]);
+  }, [user, selectedVoivodeship, selectedPowiat, selectedCity, theme, notifications, displaySettings.fontSize]);
 
   const saveSettings = async () => {
     localStorage.setItem("userSettings", JSON.stringify({
-      voivodeship: selectedRegion,
+      voivodeship: selectedVoivodeship,
+      county: selectedPowiat,
+      city: selectedCity,
     }));
     localStorage.setItem("theme", theme);
 
@@ -120,15 +133,21 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
           .eq("user_id", user.id)
           .maybeSingle();
 
+        const siteData = { 
+          voivodeship: selectedVoivodeship || null, 
+          county: selectedPowiat || null,
+          city: selectedCity || null,
+        };
+
         if (existingSite) {
           await supabase
             .from("user_site_settings")
-            .update({ voivodeship: selectedRegion })
+            .update(siteData)
             .eq("user_id", user.id);
         } else {
           await supabase
             .from("user_site_settings")
-            .insert({ user_id: user.id, voivodeship: selectedRegion });
+            .insert({ user_id: user.id, ...siteData });
         }
 
         const { data: existingNotif } = await supabase
@@ -176,7 +195,7 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
   useEffect(() => {
     if (initialLoadRef.current) return;
     debouncedSave();
-  }, [selectedRegion, theme, notifications, displaySettings.fontSize]);
+  }, [selectedVoivodeship, selectedPowiat, selectedCity, theme, notifications, displaySettings.fontSize]);
 
   useEffect(() => {
     if (isOpen) {
@@ -191,11 +210,122 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
     };
   }, [isOpen, user]);
 
+  // Handle voivodeship change - reset dependent fields
+  const handleVoivodeshipChange = (value: string) => {
+    setSelectedVoivodeship(value);
+    setSelectedPowiat("");
+    setSelectedCity("");
+  };
+
+  // Handle powiat change - reset dependent fields
+  const handlePowiatChange = (value: string) => {
+    setSelectedPowiat(value);
+    setSelectedCity("");
+  };
+
+  // Auto-detect location using IP geolocation
+  const detectLocation = async () => {
+    setIsDetectingLocation(true);
+    try {
+      // Get client IP
+      const ipResponse = await fetch('https://api.ipify.org?format=json');
+      const ipData = await ipResponse.json();
+      const clientIP = ipData.ip;
+
+      // Call geolocation API
+      const geoResponse = await fetch(`https://ipwho.is/${clientIP}`);
+      const geoData = await geoResponse.json();
+      
+      if (geoData.success && geoData.country === 'Poland') {
+        const city = geoData.city?.toLowerCase().trim() || '';
+        const region = geoData.region?.toLowerCase().trim() || '';
+        
+        // Try to find matching voivodeship
+        let detectedVoivodeship = '';
+        
+        // Check region mapping
+        const regionMappings: Record<string, string> = {
+          'warmia-masuria': 'warmińsko-mazurskie',
+          'warmian-masurian': 'warmińsko-mazurskie',
+          'pomeranian': 'pomorskie',
+          'masovian': 'mazowieckie',
+          'lesser poland': 'małopolskie',
+          'silesian': 'śląskie',
+          'greater poland': 'wielkopolskie',
+          'lower silesian': 'dolnośląskie',
+          'łódź': 'łódzkie',
+          'lodz': 'łódzkie',
+          'kuyavian-pomeranian': 'kujawsko-pomorskie',
+          'subcarpathian': 'podkarpackie',
+          'lublin': 'lubelskie',
+          'west pomeranian': 'zachodniopomorskie',
+          'podlaskie': 'podlaskie',
+          'holy cross': 'świętokrzyskie',
+          'opole': 'opolskie',
+          'lubusz': 'lubuskie',
+        };
+
+        for (const [key, value] of Object.entries(regionMappings)) {
+          if (region.includes(key) || key.includes(region)) {
+            detectedVoivodeship = value;
+            break;
+          }
+        }
+
+        // Also check direct voivodeship name
+        if (!detectedVoivodeship) {
+          for (const v of voivodeships) {
+            if (region.includes(v) || v.includes(region)) {
+              detectedVoivodeship = v;
+              break;
+            }
+          }
+        }
+
+        if (detectedVoivodeship) {
+          setSelectedVoivodeship(detectedVoivodeship);
+          
+          // Try to find matching powiat/city
+          const powiatsList = getPowiats(detectedVoivodeship);
+          for (const powiat of powiatsList) {
+            const cities = getGminas(detectedVoivodeship, powiat);
+            const matchedCity = cities.find(c => 
+              c.toLowerCase() === city || 
+              city.includes(c.toLowerCase()) ||
+              c.toLowerCase().includes(city)
+            );
+            if (matchedCity) {
+              setSelectedPowiat(powiat);
+              setSelectedCity(matchedCity);
+              toast.success(`Wykryto lokalizację: ${matchedCity}, ${powiat}`);
+              break;
+            }
+          }
+          
+          if (!selectedCity) {
+            toast.success(`Wykryto województwo: ${voivodeshipDisplayNames[detectedVoivodeship] || detectedVoivodeship}`);
+          }
+        } else {
+          toast.error("Nie udało się określić województwa. Wybierz ręcznie.");
+        }
+      } else {
+        toast.error("Nie wykryto lokalizacji w Polsce");
+      }
+    } catch (error) {
+      console.error("Location detection error:", error);
+      toast.error("Błąd podczas wykrywania lokalizacji");
+    } finally {
+      setIsDetectingLocation(false);
+    }
+  };
+
   const loadSettings = async () => {
     const localSettings = localStorage.getItem("userSettings");
     if (localSettings) {
       const parsed = JSON.parse(localSettings);
-      setSelectedRegion(parsed.voivodeship || "mazowieckie");
+      setSelectedVoivodeship(parsed.voivodeship || "");
+      setSelectedPowiat(parsed.county || "");
+      setSelectedCity(parsed.city || "");
     }
 
     const storedTheme = localStorage.getItem("theme") as ThemeMode | null;
@@ -226,7 +356,9 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
           .maybeSingle();
 
         if (siteSettings) {
-          setSelectedRegion(siteSettings.voivodeship || "mazowieckie");
+          setSelectedVoivodeship(siteSettings.voivodeship || "");
+          setSelectedPowiat(siteSettings.county || "");
+          setSelectedCity(siteSettings.city || "");
         }
 
         const { data: notifPrefs } = await supabase
@@ -567,24 +699,102 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
                   </div>
                 </div>
 
-                {/* Region Selector */}
-                <div className="space-y-3">
-                  <Label className="text-sm text-muted-foreground font-medium flex items-center gap-2">
-                    <MapPin className="h-4 w-4" strokeWidth={1.5} />
-                    Województwo
-                  </Label>
-                  <Select value={selectedRegion} onValueChange={setSelectedRegion}>
-                    <SelectTrigger className="w-full bg-muted/30 border-0 h-11">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {regions.map((region) => (
-                        <SelectItem key={region.id} value={region.id}>
-                          {region.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                {/* Location Selector */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm text-muted-foreground font-medium flex items-center gap-2">
+                      <MapPin className="h-4 w-4" strokeWidth={1.5} />
+                      Lokalizacja
+                    </Label>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={detectLocation}
+                      disabled={isDetectingLocation}
+                      className="gap-2 h-8"
+                    >
+                      {isDetectingLocation ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <LocateFixed className="h-3 w-3" />
+                      )}
+                      {isDetectingLocation ? "Wykrywanie..." : "Wykryj automatycznie"}
+                    </Button>
+                  </div>
+
+                  {/* Voivodeship */}
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">Województwo</Label>
+                    <Select value={selectedVoivodeship} onValueChange={handleVoivodeshipChange}>
+                      <SelectTrigger className="w-full bg-muted/30 border-0 h-11">
+                        <SelectValue placeholder="Wybierz województwo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {voivodeships.map((v) => (
+                          <SelectItem key={v} value={v}>
+                            {voivodeshipDisplayNames[v] || v}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Powiat */}
+                  {selectedVoivodeship && powiats.length > 0 && (
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground">Powiat</Label>
+                      <Select value={selectedPowiat} onValueChange={handlePowiatChange}>
+                        <SelectTrigger className="w-full bg-muted/30 border-0 h-11">
+                          <SelectValue placeholder="Wybierz powiat (opcjonalnie)" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Wszystkie powiaty</SelectItem>
+                          {powiats.map((p) => (
+                            <SelectItem key={p} value={p}>
+                              {p}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {/* City/Gmina */}
+                  {selectedPowiat && cities.length > 0 && (
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground">Miasto / Gmina</Label>
+                      <Select value={selectedCity} onValueChange={setSelectedCity}>
+                        <SelectTrigger className="w-full bg-muted/30 border-0 h-11">
+                          <SelectValue placeholder="Wybierz miasto (opcjonalnie)" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Wszystkie miasta</SelectItem>
+                          {cities.map((c) => (
+                            <SelectItem key={c} value={c}>
+                              {c}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {/* Current location display */}
+                  {(selectedVoivodeship || selectedPowiat || selectedCity) && (
+                    <div className="p-3 rounded-lg bg-primary/5 border border-primary/10">
+                      <p className="text-sm text-foreground">
+                        <span className="font-medium">Twoja lokalizacja:</span>{" "}
+                        {[
+                          selectedCity,
+                          selectedPowiat,
+                          voivodeshipDisplayNames[selectedVoivodeship] || selectedVoivodeship
+                        ].filter(Boolean).join(", ")}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Wiadomości i reklamy będą dopasowane do tej lokalizacji
+                      </p>
+                    </div>
+                  )}
                 </div>
               </section>
 
