@@ -431,26 +431,21 @@ export function NewsCard({
     );
   }
 
-  // MSN-style default card (grid item) - mobile: title below image, desktop: overlay
+  // MSN-style default card (grid item) - title below image on all devices
   return renderWithContextMenu(
     <a href={articleUrl} target="_blank" rel="noopener noreferrer" className="block" onClick={handleArticleClick}>
       <article className={cn(
         "group rounded-xl overflow-hidden bg-card",
-        // Mobile: flex column layout, Desktop: relative overlay layout
-        "flex flex-col md:block md:relative",
-        "md:aspect-[16/9] md:min-h-[180px] md:max-h-[250px]",
+        "flex flex-col",
         className
       )}>
         {/* Image container */}
-        <div className="relative aspect-[16/9] md:w-full md:h-full overflow-hidden bg-muted">
+        <div className="relative aspect-[16/9] overflow-hidden bg-muted">
           <CardImage
             src={image}
             alt={title}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
-          
-          {/* Desktop only: gradient overlay */}
-          <div className="hidden md:block absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
           
           {hasVideo && (
             <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
@@ -477,26 +472,15 @@ export function NewsCard({
               </div>
             </div>
           )}
-
-          {/* Desktop only: overlay content */}
-          <div className="hidden md:block absolute inset-x-0 bottom-0 p-3 sm:p-4">
-            <div className="flex items-center gap-1.5 sm:gap-2 mb-2 flex-wrap">
-              <span className="text-[11px] sm:text-xs text-white font-light">{source}</span>
-              <span className="text-[11px] sm:text-xs text-white/80 font-light">· {timestamp}</span>
-            </div>
-            <h3 className="font-bold text-lg sm:text-xl text-white line-clamp-2 leading-tight">
-              {title}
-            </h3>
-          </div>
         </div>
 
-        {/* Mobile only: content below image */}
-        <div className="md:hidden p-3 bg-card">
+        {/* Content below image - all devices */}
+        <div className="p-3 bg-card">
           <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
             <span className="text-[11px] text-muted-foreground font-medium">{source}</span>
             <span className="text-[11px] text-muted-foreground">· {timestamp}</span>
           </div>
-          <h3 className="font-bold text-base text-foreground line-clamp-2 leading-tight group-hover:text-primary transition-colors">
+          <h3 className="font-bold text-base md:text-lg text-foreground line-clamp-2 leading-tight group-hover:text-primary transition-colors">
             {title}
           </h3>
         </div>
