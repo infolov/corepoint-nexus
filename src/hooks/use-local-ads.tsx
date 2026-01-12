@@ -72,7 +72,7 @@ export function useLocalAds() {
     }
   };
 
-  // Filter ads based on user's region
+  // Filter ads based on user's full location (voivodeship, county, city)
   const filteredAds = useMemo(() => {
     if (!settings.voivodeship) {
       // Show national ads or all ads if no voivodeship set
@@ -83,23 +83,43 @@ export function useLocalAds() {
     }
 
     // Normalize voivodeship to slug format
-    const userVoivodeshipSlug = settings.voivodeship
+    const normalizeString = (str: string) => str
       .toLowerCase()
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
       .replace(/ł/g, "l")
       .replace(/\s+/g, "-");
 
+    const userVoivodeshipSlug = normalizeString(settings.voivodeship);
+    const userCountySlug = settings.county ? normalizeString(settings.county) : null;
+    const userCitySlug = settings.city ? normalizeString(settings.city) : null;
+
     return ads.filter(ad => {
+      // National ads (no targeting) always match
       if (ad.target_regions.length === 0 || ad.target_regions.includes("wszystkie")) {
         return true;
       }
+      
+      // Check if any target region matches user's location hierarchy
       return ad.target_regions.some(region => {
-        const regionSlug = region.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ł/g, "l").replace(/\s+/g, "-");
-        return regionSlug === userVoivodeshipSlug || region.toLowerCase().includes(settings.voivodeship?.toLowerCase() || "");
+        const regionSlug = normalizeString(region);
+        
+        // Check voivodeship match
+        if (regionSlug === userVoivodeshipSlug) return true;
+        if (region.toLowerCase().includes(settings.voivodeship?.toLowerCase() || "")) return true;
+        
+        // Check county match (if user has county set)
+        if (userCountySlug && regionSlug === userCountySlug) return true;
+        if (settings.county && region.toLowerCase().includes(settings.county.toLowerCase())) return true;
+        
+        // Check city match (if user has city set)
+        if (userCitySlug && regionSlug === userCitySlug) return true;
+        if (settings.city && region.toLowerCase().includes(settings.city.toLowerCase())) return true;
+        
+        return false;
       });
     });
-  }, [ads, settings.voivodeship]);
+  }, [ads, settings.voivodeship, settings.county, settings.city]);
 
   // Get ads by placement type
   const getAdsByType = (placementType: string) => {
