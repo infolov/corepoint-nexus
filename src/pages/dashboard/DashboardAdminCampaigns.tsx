@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useAdmin } from "@/hooks/use-admin";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,6 +15,10 @@ import {
   Trash2,
   Save,
   X,
+  Filter,
+  Target,
+  BarChart3,
+  MousePointerClick,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,7 +52,21 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+
+interface Placement {
+  id: string;
+  name: string;
+  slug: string;
+  is_active: boolean;
+}
 
 interface Campaign {
   id: string;
@@ -66,8 +84,17 @@ interface Campaign {
   placement_id: string;
   rejection_reason: string | null;
   placement_name?: string;
+  placement_slug?: string;
   user_email?: string;
   user_name?: string;
+}
+
+interface PlacementStats {
+  total: number;
+  active: number;
+  pending: number;
+  impressions: number;
+  clicks: number;
 }
 
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon: React.ReactNode }> = {
@@ -81,8 +108,11 @@ export default function DashboardAdminCampaigns() {
   const { user } = useAuth();
   const { isAdmin, loading: adminLoading } = useAdmin();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [placements, setPlacements] = useState<Placement[]>([]);
+  const [placementStats, setPlacementStats] = useState<Record<string, PlacementStats>>({});
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("pending");
+  const [selectedPlacementFilter, setSelectedPlacementFilter] = useState<string>("all");
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
@@ -100,6 +130,7 @@ export default function DashboardAdminCampaigns() {
     start_date: "",
     end_date: "",
     total_credits: 0,
+    placement_id: "",
   });
   
   // Delete state
@@ -108,18 +139,31 @@ export default function DashboardAdminCampaigns() {
 
   useEffect(() => {
     if (user && isAdmin) {
+      fetchPlacements();
       fetchCampaigns();
     }
   }, [user, isAdmin]);
 
+  const fetchPlacements = async () => {
+    const { data, error } = await supabase
+      .from("ad_placements")
+      .select("id, name, slug, is_active")
+      .order("name");
+
+    if (!error && data) {
+      setPlacements(data);
+    }
+  };
+
   const fetchCampaigns = async () => {
     setLoading(true);
     
+    // Fetch campaigns with placements
     const { data: campaignsData, error: campaignsError } = await supabase
       .from("ad_campaigns")
       .select(`
         *,
-        ad_placements (name)
+        ad_placements (id, name, slug)
       `)
       .order("created_at", { ascending: false });
 
@@ -130,6 +174,7 @@ export default function DashboardAdminCampaigns() {
       return;
     }
 
+    // Fetch user profiles
     const userIds = [...new Set((campaignsData || []).map(c => c.user_id))];
     const { data: profilesData } = await supabase
       .from("profiles")
@@ -140,14 +185,55 @@ export default function DashboardAdminCampaigns() {
       (profilesData || []).map(p => [p.user_id, p])
     );
 
+    // Fetch campaign stats for all campaigns
+    const campaignIds = (campaignsData || []).map(c => c.id);
+    const { data: statsData } = await supabase
+      .from("campaign_stats")
+      .select("campaign_id, impressions, clicks")
+      .in("campaign_id", campaignIds);
+
+    // Aggregate stats by campaign
+    const statsMap = new Map<string, { impressions: number; clicks: number }>();
+    (statsData || []).forEach(stat => {
+      const existing = statsMap.get(stat.campaign_id) || { impressions: 0, clicks: 0 };
+      statsMap.set(stat.campaign_id, {
+        impressions: existing.impressions + (stat.impressions || 0),
+        clicks: existing.clicks + (stat.clicks || 0),
+      });
+    });
+
     const formattedCampaigns: Campaign[] = (campaignsData || []).map(campaign => ({
       ...campaign,
       placement_name: campaign.ad_placements?.name || "Nieznane",
+      placement_slug: campaign.ad_placements?.slug || "",
       user_email: profilesMap.get(campaign.user_id)?.email || "Brak",
       user_name: profilesMap.get(campaign.user_id)?.full_name || "Nieznany",
     }));
 
     setCampaigns(formattedCampaigns);
+
+    // Calculate stats per placement
+    const newPlacementStats: Record<string, PlacementStats> = {};
+    formattedCampaigns.forEach(campaign => {
+      const placementId = campaign.placement_id;
+      if (!newPlacementStats[placementId]) {
+        newPlacementStats[placementId] = { total: 0, active: 0, pending: 0, impressions: 0, clicks: 0 };
+      }
+      newPlacementStats[placementId].total++;
+      if (campaign.status === "active" || campaign.status === "approved") {
+        newPlacementStats[placementId].active++;
+      }
+      if (campaign.status === "pending") {
+        newPlacementStats[placementId].pending++;
+      }
+      const stats = statsMap.get(campaign.id);
+      if (stats) {
+        newPlacementStats[placementId].impressions += stats.impressions;
+        newPlacementStats[placementId].clicks += stats.clicks;
+      }
+    });
+    setPlacementStats(newPlacementStats);
+
     setLoading(false);
   };
 
@@ -217,6 +303,7 @@ export default function DashboardAdminCampaigns() {
       start_date: campaign.start_date,
       end_date: campaign.end_date,
       total_credits: campaign.total_credits,
+      placement_id: campaign.placement_id,
     });
     setEditDialogOpen(true);
   };
@@ -235,6 +322,7 @@ export default function DashboardAdminCampaigns() {
         start_date: editForm.start_date,
         end_date: editForm.end_date,
         total_credits: editForm.total_credits,
+        placement_id: editForm.placement_id,
       })
       .eq("id", editCampaign.id);
 
@@ -286,18 +374,33 @@ export default function DashboardAdminCampaigns() {
     setProcessing(false);
   };
 
-  const filteredCampaigns = campaigns.filter(campaign => {
-    if (activeTab === "all") return true;
-    if (activeTab === "approved") return campaign.status === "approved" || campaign.status === "active";
-    return campaign.status === activeTab;
-  });
+  // Filter by status and placement
+  const filteredCampaigns = useMemo(() => {
+    return campaigns.filter(campaign => {
+      // Status filter
+      const statusMatch = activeTab === "all" ? true :
+        activeTab === "approved" ? (campaign.status === "approved" || campaign.status === "active") :
+        campaign.status === activeTab;
+      
+      // Placement filter
+      const placementMatch = selectedPlacementFilter === "all" || 
+        campaign.placement_id === selectedPlacementFilter;
+      
+      return statusMatch && placementMatch;
+    });
+  }, [campaigns, activeTab, selectedPlacementFilter]);
 
-  const getCounts = () => ({
-    pending: campaigns.filter(c => c.status === "pending").length,
-    approved: campaigns.filter(c => c.status === "approved" || c.status === "active").length,
-    rejected: campaigns.filter(c => c.status === "rejected").length,
-    all: campaigns.length,
-  });
+  const getCounts = () => {
+    const filtered = selectedPlacementFilter === "all" ? campaigns :
+      campaigns.filter(c => c.placement_id === selectedPlacementFilter);
+    
+    return {
+      pending: filtered.filter(c => c.status === "pending").length,
+      approved: filtered.filter(c => c.status === "approved" || c.status === "active").length,
+      rejected: filtered.filter(c => c.status === "rejected").length,
+      all: filtered.length,
+    };
+  };
 
   if (adminLoading || loading) {
     return (
@@ -323,29 +426,130 @@ export default function DashboardAdminCampaigns() {
 
   return (
     <div className="space-y-6">
+      {/* Placement Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        <Card 
+          className={`cursor-pointer transition-all ${selectedPlacementFilter === "all" ? "ring-2 ring-primary" : "hover:border-primary/50"}`}
+          onClick={() => setSelectedPlacementFilter("all")}
+        >
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Target className="h-4 w-4 text-primary" />
+              <span className="font-medium text-sm">Wszystkie</span>
+            </div>
+            <div className="text-2xl font-bold">{campaigns.length}</div>
+            <div className="text-xs text-muted-foreground">kampanii</div>
+          </CardContent>
+        </Card>
+        
+        {placements.map(placement => {
+          const stats = placementStats[placement.id] || { total: 0, active: 0, pending: 0, impressions: 0, clicks: 0 };
+          const isSelected = selectedPlacementFilter === placement.id;
+          
+          return (
+            <Card 
+              key={placement.id}
+              className={`cursor-pointer transition-all ${isSelected ? "ring-2 ring-primary" : "hover:border-primary/50"} ${!placement.is_active ? "opacity-60" : ""}`}
+              onClick={() => setSelectedPlacementFilter(placement.id)}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Target className="h-4 w-4 text-primary" />
+                  <span className="font-medium text-sm truncate" title={placement.name}>
+                    {placement.name}
+                  </span>
+                </div>
+                <div className="text-2xl font-bold">{stats.total}</div>
+                <div className="flex items-center gap-2 mt-1">
+                  {stats.pending > 0 && (
+                    <Badge variant="secondary" className="text-xs gap-1">
+                      <Clock className="h-3 w-3" />
+                      {stats.pending}
+                    </Badge>
+                  )}
+                  {stats.active > 0 && (
+                    <Badge variant="default" className="text-xs gap-1">
+                      <CheckCircle className="h-3 w-3" />
+                      {stats.active}
+                    </Badge>
+                  )}
+                </div>
+                {(stats.impressions > 0 || stats.clicks > 0) && (
+                  <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <BarChart3 className="h-3 w-3" />
+                      {stats.impressions.toLocaleString()}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <MousePointerClick className="h-3 w-3" />
+                      {stats.clicks.toLocaleString()}
+                    </span>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
       <Card>
-        <CardHeader>
-          <CardTitle>Zarządzanie kampaniami reklamowymi</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>
+            {selectedPlacementFilter === "all" 
+              ? "Wszystkie kampanie reklamowe" 
+              : `Kampanie: ${placements.find(p => p.id === selectedPlacementFilter)?.name || ""}`
+            }
+          </CardTitle>
+          {selectedPlacementFilter !== "all" && (
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => setSelectedPlacementFilter("all")}
+              className="gap-2"
+            >
+              <X className="h-4 w-4" />
+              Wyczyść filtr
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="mb-4">
-              <TabsTrigger value="pending" className="gap-2">
-                <Clock className="h-4 w-4" />
-                Oczekujące ({counts.pending})
-              </TabsTrigger>
-              <TabsTrigger value="approved" className="gap-2">
-                <CheckCircle className="h-4 w-4" />
-                Zatwierdzone ({counts.approved})
-              </TabsTrigger>
-              <TabsTrigger value="rejected" className="gap-2">
-                <XCircle className="h-4 w-4" />
-                Odrzucone ({counts.rejected})
-              </TabsTrigger>
-              <TabsTrigger value="all">
-                Wszystkie ({counts.all})
-              </TabsTrigger>
-            </TabsList>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+              <TabsList>
+                <TabsTrigger value="pending" className="gap-2">
+                  <Clock className="h-4 w-4" />
+                  Oczekujące ({counts.pending})
+                </TabsTrigger>
+                <TabsTrigger value="approved" className="gap-2">
+                  <CheckCircle className="h-4 w-4" />
+                  Aktywne ({counts.approved})
+                </TabsTrigger>
+                <TabsTrigger value="rejected" className="gap-2">
+                  <XCircle className="h-4 w-4" />
+                  Odrzucone ({counts.rejected})
+                </TabsTrigger>
+                <TabsTrigger value="all">
+                  Wszystkie ({counts.all})
+                </TabsTrigger>
+              </TabsList>
+              
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-muted-foreground" />
+                <Select value={selectedPlacementFilter} onValueChange={setSelectedPlacementFilter}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Filtruj po placemencie" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Wszystkie placementy</SelectItem>
+                    {placements.map(placement => (
+                      <SelectItem key={placement.id} value={placement.id}>
+                        {placement.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
             <TabsContent value={activeTab}>
               {filteredCampaigns.length === 0 ? (
@@ -679,6 +883,24 @@ export default function DashboardAdminCampaigns() {
                   onChange={(e) => setEditForm({ ...editForm, end_date: e.target.value })}
                 />
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-placement">Miejsce reklamowe</Label>
+              <Select 
+                value={editForm.placement_id} 
+                onValueChange={(value) => setEditForm({ ...editForm, placement_id: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Wybierz placement" />
+                </SelectTrigger>
+                <SelectContent>
+                  {placements.map(placement => (
+                    <SelectItem key={placement.id} value={placement.id}>
+                      {placement.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-credits">Kredyty</Label>
