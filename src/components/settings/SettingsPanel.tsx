@@ -69,14 +69,13 @@ const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPanelProps) {
   const { user } = useAuth();
-  const { settings: displaySettings, setFontSize } = useDisplayMode();
+  const { settings: displaySettings, setFontSize, setTheme: setGlobalTheme } = useDisplayMode();
   const [selectedVoivodeship, setSelectedVoivodeship] = useState<string>("");
   const [selectedPowiat, setSelectedPowiat] = useState<string>("");
   const [selectedCity, setSelectedCity] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
-  const [theme, setTheme] = useState<ThemeMode>("system");
   const [notifications, setNotifications] = useState<NotificationSettings>({
     breaking: true,
     daily: false,
@@ -115,7 +114,7 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
     saveTimeoutRef.current = setTimeout(() => {
       saveSettings();
     }, 800);
-  }, [user, selectedVoivodeship, selectedPowiat, selectedCity, theme, notifications, displaySettings.fontSize]);
+  }, [user, selectedVoivodeship, selectedPowiat, selectedCity, displaySettings.theme, notifications, displaySettings.fontSize]);
 
   const saveSettings = async () => {
     localStorage.setItem("userSettings", JSON.stringify({
@@ -123,7 +122,7 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
       county: selectedPowiat,
       city: selectedCity,
     }));
-    localStorage.setItem("theme", theme);
+    // Theme is saved by useDisplayMode hook automatically
 
     if (user) {
       try {
@@ -160,7 +159,7 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
           breaking_news: notifications.breaking,
           daily_digest: notifications.daily,
           personalized: notifications.personalized,
-          theme_preference: theme,
+          theme_preference: displaySettings.theme,
           font_size: displaySettings.fontSize,
         };
 
@@ -195,7 +194,7 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
   useEffect(() => {
     if (initialLoadRef.current) return;
     debouncedSave();
-  }, [selectedVoivodeship, selectedPowiat, selectedCity, theme, notifications, displaySettings.fontSize]);
+  }, [selectedVoivodeship, selectedPowiat, selectedCity, displaySettings.theme, notifications, displaySettings.fontSize]);
 
   useEffect(() => {
     if (isOpen) {
@@ -335,12 +334,7 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
       setSelectedCity(parsed.city || "");
     }
 
-    const storedTheme = localStorage.getItem("theme") as ThemeMode | null;
-    if (storedTheme) {
-      setTheme(storedTheme);
-    } else {
-      setTheme("system");
-    }
+    // Theme is now managed by useDisplayMode hook globally
 
     if (user) {
       setIsLoading(true);
@@ -381,8 +375,7 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
             personalized: notifPrefs.personalized ?? true,
           });
           if (notifPrefs.theme_preference) {
-            setTheme(notifPrefs.theme_preference as ThemeMode);
-            applyTheme(notifPrefs.theme_preference as ThemeMode);
+            setGlobalTheme(notifPrefs.theme_preference as ThemeMode);
           }
           if (notifPrefs.font_size) {
             setFontSize(notifPrefs.font_size as FontSize);
@@ -403,19 +396,8 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
     }
   };
 
-  const applyTheme = (newTheme: ThemeMode) => {
-    localStorage.setItem("theme", newTheme);
-    if (newTheme === "system") {
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      document.documentElement.classList.toggle("dark", prefersDark);
-    } else {
-      document.documentElement.classList.toggle("dark", newTheme === "dark");
-    }
-  };
-
   const handleThemeChange = (newTheme: ThemeMode) => {
-    setTheme(newTheme);
-    applyTheme(newTheme);
+    setGlobalTheme(newTheme);
   };
 
   const handleFontSizeChange = (value: number[]) => {
@@ -662,19 +644,19 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
                     <ThemeButton
                       icon={<Sun className="h-4 w-4" strokeWidth={1.5} />}
                       label="Jasny"
-                      active={theme === "light"}
+                      active={displaySettings.theme === "light"}
                       onClick={() => handleThemeChange("light")}
                     />
                     <ThemeButton
                       icon={<Moon className="h-4 w-4" strokeWidth={1.5} />}
                       label="Ciemny"
-                      active={theme === "dark"}
+                      active={displaySettings.theme === "dark"}
                       onClick={() => handleThemeChange("dark")}
                     />
                     <ThemeButton
                       icon={<Monitor className="h-4 w-4" strokeWidth={1.5} />}
                       label="System"
-                      active={theme === "system"}
+                      active={displaySettings.theme === "system"}
                       onClick={() => handleThemeChange("system")}
                     />
                   </div>
