@@ -219,8 +219,15 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
 
   // Handle powiat change - reset dependent fields
   const handlePowiatChange = (value: string) => {
-    setSelectedPowiat(value);
+    // "__all__" means "all powiats" = no specific powiat selected
+    setSelectedPowiat(value === "__all__" ? "" : value);
     setSelectedCity("");
+  };
+
+  // Handle city change
+  const handleCityChange = (value: string) => {
+    // "__all__" means "all cities" = no specific city selected
+    setSelectedCity(value === "__all__" ? "" : value);
   };
 
   // Auto-detect location using IP geolocation
@@ -743,12 +750,12 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
                   {selectedVoivodeship && powiats.length > 0 && (
                     <div className="space-y-2">
                       <Label className="text-xs text-muted-foreground">Powiat</Label>
-                      <Select value={selectedPowiat} onValueChange={handlePowiatChange}>
+                      <Select value={selectedPowiat || "__all__"} onValueChange={handlePowiatChange}>
                         <SelectTrigger className="w-full bg-muted/30 border-0 h-11">
                           <SelectValue placeholder="Wybierz powiat (opcjonalnie)" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Wszystkie powiaty</SelectItem>
+                          <SelectItem value="__all__">Wszystkie powiaty</SelectItem>
                           {powiats.map((p) => (
                             <SelectItem key={p} value={p}>
                               {p}
@@ -763,12 +770,12 @@ export function SettingsPanel({ isOpen, onClose, onSettingsSaved }: SettingsPane
                   {selectedPowiat && cities.length > 0 && (
                     <div className="space-y-2">
                       <Label className="text-xs text-muted-foreground">Miasto / Gmina</Label>
-                      <Select value={selectedCity} onValueChange={setSelectedCity}>
+                      <Select value={selectedCity || "__all__"} onValueChange={handleCityChange}>
                         <SelectTrigger className="w-full bg-muted/30 border-0 h-11">
                           <SelectValue placeholder="Wybierz miasto (opcjonalnie)" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Wszystkie miasta</SelectItem>
+                          <SelectItem value="__all__">Wszystkie miasta</SelectItem>
                           {cities.map((c) => (
                             <SelectItem key={c} value={c}>
                               {c}
