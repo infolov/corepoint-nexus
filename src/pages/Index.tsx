@@ -5,6 +5,7 @@ import { CategoryBar } from "@/components/navigation/CategoryBar";
 import { NewsCard } from "@/components/news/NewsCard";
 import { AuctionAdSlot } from "@/components/widgets/AuctionAdSlot";
 import { FeedBannerCarousel, formatBannersForCarousel } from "@/components/widgets/FeedBannerCarousel";
+import { DailySummaryCard } from "@/components/news/DailySummaryCard";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import { useDisplayMode } from "@/hooks/use-display-mode";
 import { useAuth } from "@/hooks/use-auth";
@@ -12,7 +13,6 @@ import { useCarouselBanners } from "@/hooks/use-carousel-banners";
 import { Loader2 } from "lucide-react";
 import { useArticles, formatArticleForCard } from "@/hooks/use-articles";
 import { useRSSArticles, formatRSSArticleForCard } from "@/hooks/use-rss-articles";
-
 
 import { supabase } from "@/integrations/supabase/client";
 import { newsArticles, businessArticles, sportArticles, techArticles, lifestyleArticles } from "@/data/mockNews";
@@ -367,6 +367,11 @@ const Index = () => {
 
 
       <main className="container py-4 sm:py-6">
+        {/* Daily Summary Card */}
+        <div className="mb-6">
+          <DailySummaryCard />
+        </div>
+
         {/* Top Ad Banner - Using Auction Engine */}
         <div className="mb-6">
           <AuctionAdSlot variant="horizontal" className="w-full" slotIndex={0} />
