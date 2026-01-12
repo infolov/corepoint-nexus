@@ -114,8 +114,15 @@ export function WeatherWidget() {
       <div className="relative z-10">
         {/* Header with location */}
         <div className="flex items-center gap-2 mb-4">
-          <MapPin className="h-4 w-4 text-primary" />
-          <span className="text-sm font-medium truncate">{data.stacja}</span>
+          <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
+          <div className="flex flex-col min-w-0">
+            {location.city && location.city !== data.stacja && (
+              <span className="text-sm font-medium truncate">{location.city}</span>
+            )}
+            <span className={`text-xs truncate ${location.city && location.city !== data.stacja ? 'text-muted-foreground' : 'text-sm font-medium'}`}>
+              {location.city && location.city !== data.stacja ? `Stacja: ${data.stacja}` : data.stacja}
+            </span>
+          </div>
         </div>
         
         {/* Main weather display */}
