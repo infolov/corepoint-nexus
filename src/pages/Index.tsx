@@ -359,14 +359,14 @@ const Index = () => {
       articleGrids.push(gridArticles);
     }
   }
-  return <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background w-full overflow-x-hidden">
       <Header />
       
       {/* Floating Category Bar */}
       <CategoryBar activeCategory={activeCategory} onCategoryChange={setActiveCategory} />
 
 
-      <main className="container py-4 sm:py-6">
+      <main className="w-full px-2 sm:px-4 md:container py-3 sm:py-4 md:py-6">
         {/* Daily Summary Card */}
         <div className="mb-6">
           <DailySummaryCard />

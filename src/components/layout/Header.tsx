@@ -197,35 +197,37 @@ export function Header() {
       setSearchQuery("");
     }
   };
-  return <header className="sticky top-0 z-50 w-full">
+  return <header className="sticky top-0 z-50 w-full overflow-hidden">
       {/* Top Bar */}
-      <div className="bg-nav text-nav-foreground">
-        <div className="container flex h-16 items-center justify-between">
+      <div className="bg-nav text-nav-foreground w-full">
+        <div className="w-full px-2 sm:px-4 md:container flex h-12 sm:h-14 md:h-16 items-center justify-between">
           {/* Left: Logo + Partner Space */}
-          <div className="flex items-center gap-4 md:gap-6">
-            <Link to="/" className="flex items-center gap-2">
-              <span className="text-lg font-bold tracking-tight md:text-4xl">
+          <div className="flex items-center gap-2 sm:gap-4 md:gap-6 min-w-0 flex-shrink">
+            <Link to="/" className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+              <span className="text-base sm:text-lg md:text-2xl lg:text-4xl font-bold tracking-tight">
                 informacje<span className="text-primary">.pl</span>
               </span>
             </Link>
 
-            {/* Partner Branding - Dynamic with rotation on category pages */}
-            <DynamicHeaderBranding />
+            {/* Partner Branding - Dynamic with rotation on category pages - hidden on mobile */}
+            <div className="hidden sm:block">
+              <DynamicHeaderBranding />
+            </div>
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
             {/* Search Icon with expandable input */}
             <div className="relative flex items-center">
               {isSearchOpen ? <form onSubmit={handleSearch} className="flex items-center animate-fade-in">
-                  <Input ref={searchInputRef} type="text" placeholder="Szukaj..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} onKeyDown={handleSearchKeyDown} className="w-40 sm:w-56 h-8 text-sm bg-background/90 border-border/50 text-foreground placeholder:text-muted-foreground rounded-full pr-8" />
-                  <Button type="button" variant="ghost" size="icon" className="absolute right-0 h-8 w-8 hover:bg-transparent" onClick={() => {
+                  <Input ref={searchInputRef} type="text" placeholder="Szukaj..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} onKeyDown={handleSearchKeyDown} className="w-28 sm:w-40 md:w-56 h-7 sm:h-8 text-xs sm:text-sm bg-background/90 border-border/50 text-foreground placeholder:text-muted-foreground rounded-full pr-7 sm:pr-8" />
+                  <Button type="button" variant="ghost" size="icon" className="absolute right-0 h-7 w-7 sm:h-8 sm:w-8 hover:bg-transparent" onClick={() => {
                 setIsSearchOpen(false);
                 setSearchQuery("");
               }}>
-                    <X className="h-4 w-4 text-muted-foreground" />
+                    <X className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
                   </Button>
-                </form> : <Button variant="nav" size="icon" onClick={() => setIsSearchOpen(true)} title="Szukaj">
+                </form> : <Button variant="nav" size="icon" className="h-8 w-8 sm:h-9 sm:w-9" onClick={() => setIsSearchOpen(true)} title="Szukaj">
                   <Search className="h-4 w-4" />
                 </Button>}
             </div>
