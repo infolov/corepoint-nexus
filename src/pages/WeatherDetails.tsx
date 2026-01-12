@@ -192,7 +192,12 @@ export default function WeatherDetails() {
                   <MapPin className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                  <h1 className="text-2xl md:text-3xl font-bold">{data.stacja}</h1>
+                  {location.city && location.city !== data.stacja && (
+                    <p className="text-lg font-semibold text-primary">{location.city}</p>
+                  )}
+                  <h1 className={`font-bold ${location.city && location.city !== data.stacja ? 'text-xl md:text-2xl' : 'text-2xl md:text-3xl'}`}>
+                    {location.city && location.city !== data.stacja ? `Stacja: ${data.stacja}` : data.stacja}
+                  </h1>
                   <p className="text-sm text-muted-foreground">
                     Stacja IMGW • ID: {data.id_stacji}
                   </p>
