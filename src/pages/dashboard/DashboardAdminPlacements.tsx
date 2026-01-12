@@ -308,7 +308,12 @@ export default function DashboardAdminPlacements() {
                         </code>
                       </TableCell>
                       <TableCell>{placement.dimensions || "-"}</TableCell>
-                      <TableCell>{placement.credit_cost}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-primary">{placement.credit_cost}</span>
+                          <span className="text-xs text-muted-foreground">kr./dzień</span>
+                        </div>
+                      </TableCell>
                       <TableCell>
                         <Badge variant={placement.is_active ? "default" : "secondary"} className="gap-1">
                           {placement.is_active ? (
@@ -418,27 +423,37 @@ export default function DashboardAdminPlacements() {
               />
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="dimensions">Wymiary</Label>
-                <Input
-                  id="dimensions"
-                  value={formData.dimensions}
-                  onChange={(e) => setFormData(prev => ({ ...prev, dimensions: e.target.value }))}
-                  placeholder="np. 728x90"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="credit_cost">Koszt (kredyty)</Label>
+            <div className="space-y-2">
+              <Label htmlFor="dimensions">Wymiary</Label>
+              <Input
+                id="dimensions"
+                value={formData.dimensions}
+                onChange={(e) => setFormData(prev => ({ ...prev, dimensions: e.target.value }))}
+                placeholder="np. 728x90"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="credit_cost" className="flex items-center gap-2">
+                Koszt dzienny (kredyty)
+                <Badge variant="outline" className="text-xs font-normal">Cena</Badge>
+              </Label>
+              <div className="relative">
                 <Input
                   id="credit_cost"
                   type="number"
                   min="1"
                   value={formData.credit_cost}
                   onChange={(e) => setFormData(prev => ({ ...prev, credit_cost: parseInt(e.target.value) || 1 }))}
+                  className="pr-16"
                 />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                  kr./dzień
+                </span>
               </div>
+              <p className="text-xs text-muted-foreground">
+                Określ ile kredytów kosztuje 1 dzień emisji reklamy w tym miejscu
+              </p>
             </div>
             
             <div className="flex items-center justify-between">
