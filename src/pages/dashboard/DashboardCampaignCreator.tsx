@@ -38,7 +38,7 @@ import { EmissionTypeSelector, EmissionType } from "@/components/dashboard/Emiss
 import { PricingPackages, PricingPackage } from "@/components/dashboard/PricingPackages";
 import { AdministrativeTargeting } from "@/components/dashboard/AdministrativeTargeting";
 import { MultiRegionSelector, SelectedRegion } from "@/components/dashboard/MultiRegionSelector";
-
+import { AdImageCropDialog } from "@/components/dashboard/AdImageCropDialog";
 interface AdPlacement {
   id: string;
   name: string;
@@ -96,6 +96,9 @@ export default function DashboardCampaignCreator() {
   const [walletBalance, setWalletBalance] = useState(0);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(null);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [pendingFilePreview, setPendingFilePreview] = useState<string | null>(null);
+  const [showCropDialog, setShowCropDialog] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Targeting state
@@ -193,20 +196,54 @@ export default function DashboardCampaignCreator() {
         return;
       }
 
-      setSelectedFile(file);
+      // For images (not GIF/WebP animations), show crop dialog
+      const isStaticImage = ['image/jpeg', 'image/png'].includes(file.type);
       
-      // Create preview for images
-      if (file.type.startsWith('image/')) {
+      if (isStaticImage) {
+        // Store file temporarily and show crop dialog
+        setPendingFile(file);
         const reader = new FileReader();
         reader.onload = (e) => {
-          setFilePreview(e.target?.result as string);
+          setPendingFilePreview(e.target?.result as string);
+          setShowCropDialog(true);
         };
         reader.readAsDataURL(file);
       } else {
-        setFilePreview(null);
+        // For videos and animated images, use directly
+        setSelectedFile(file);
+        
+        if (file.type.startsWith('image/')) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            setFilePreview(e.target?.result as string);
+          };
+          reader.readAsDataURL(file);
+        } else {
+          setFilePreview(null);
+        }
+        
+        toast.success("Plik został wybrany");
       }
-      
-      toast.success("Plik został wybrany");
+    }
+  };
+
+  // Handle crop complete
+  const handleCropComplete = (croppedFile: File, previewUrl: string) => {
+    setSelectedFile(croppedFile);
+    setFilePreview(previewUrl);
+    setPendingFile(null);
+    setPendingFilePreview(null);
+    setShowCropDialog(false);
+    toast.success("Obraz został przycięty i zoptymalizowany");
+  };
+
+  // Handle crop dialog close
+  const handleCropDialogClose = () => {
+    setPendingFile(null);
+    setPendingFilePreview(null);
+    setShowCropDialog(false);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -958,6 +995,25 @@ export default function DashboardCampaignCreator() {
           </Button>
         )}
       </div>
+
+      {/* Image Crop Dialog */}
+      {pendingFile && pendingFilePreview && (
+        <AdImageCropDialog
+          isOpen={showCropDialog}
+          onClose={handleCropDialogClose}
+          imageSrc={pendingFilePreview}
+          originalFile={pendingFile}
+          onCropComplete={handleCropComplete}
+          recommendedDimensions={
+            selectedPlacementData?.dimensions
+              ? (() => {
+                  const match = selectedPlacementData.dimensions.match(/(\d+)\s*[x×]\s*(\d+)/i);
+                  return match ? { width: parseInt(match[1]), height: parseInt(match[2]) } : undefined;
+                })()
+              : undefined
+          }
+        />
+      )}
     </div>
   );
 }
