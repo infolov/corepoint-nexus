@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { AuctionAdSlot } from "@/components/widgets/AuctionAdSlot";
+import { AuctionAdSlot, type AdPlacementSlug } from "@/components/widgets/AuctionAdSlot";
 import { cn } from "@/lib/utils";
 import { type AdVariant, type AdPlacement } from "@/hooks/use-window-size";
 
@@ -12,6 +12,8 @@ interface FeedAdInjectorProps {
   showDevOverlay?: boolean;
   /** Placement context for responsive sizing */
   placement?: AdPlacement;
+  /** Direct placement slug override - specifies exact ad placement from database */
+  placementSlug?: AdPlacementSlug;
   /** When true, automatically selects the best ad size for the current viewport */
   auto?: boolean;
 }
@@ -29,6 +31,7 @@ export function FeedAdInjector({
   adClassName,
   showDevOverlay = true,
   placement = "feed",
+  placementSlug = "feed-tile",
   auto = false,
 }: FeedAdInjectorProps) {
   // Build the feed with ads injected
@@ -52,6 +55,7 @@ export function FeedAdInjector({
               showDevOverlay={showDevOverlay}
               className="w-full"
               placement={placement}
+              placementSlug={placementSlug}
               auto={auto}
             />
           </div>
@@ -60,7 +64,7 @@ export function FeedAdInjector({
     });
 
     return result;
-  }, [items, adEveryN, placementVariant, adClassName, showDevOverlay, placement, auto]);
+  }, [items, adEveryN, placementVariant, adClassName, showDevOverlay, placement, placementSlug, auto]);
 
   return <div className={className}>{feedWithAds}</div>;
 }

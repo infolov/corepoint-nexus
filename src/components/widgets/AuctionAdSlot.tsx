@@ -17,6 +17,17 @@ import {
   type Breakpoint
 } from "@/hooks/use-window-size";
 
+// Available placement slugs in the database
+export type AdPlacementSlug = 
+  | "top-banner"           // Baner Górny (Strona Główna)
+  | "article-top"          // Baner Górny (Artykuł)
+  | "article-middle"       // Baner Środkowy (Artykuł)
+  | "article-bottom"       // Baner Dolny (Artykuł)
+  | "feed-tile"            // Kafelek w Feedzie
+  | "feed-carousel"        // Karuzela w Feedzie
+  | "footer"               // Stopka
+  | "sponsored-article";   // Artykuł Sponsorowany
+
 interface AuctionAdSlotProps {
   variant?: AdVariant;
   className?: string;
@@ -24,6 +35,11 @@ interface AuctionAdSlotProps {
   showDevOverlay?: boolean;
   /** Placement context for responsive sizing */
   placement?: AdPlacement;
+  /** 
+   * Direct placement slug override - use this to specify exact placement from database.
+   * When provided, overrides the default mapping from variant.
+   */
+  placementSlug?: AdPlacementSlug;
   /** When true, automatically selects the best ad size for the current viewport */
   auto?: boolean;
   /** Enable lazy loading - only load ad when near viewport */
@@ -32,30 +48,31 @@ interface AuctionAdSlotProps {
   lazyRootMargin?: string;
 }
 
+// Visual variant configuration (for display purposes only)
 const variantConfig: Record<string, { 
   name: string; 
   icon: typeof Monitor; 
-  placementSlug: string;
+  defaultPlacementSlug: AdPlacementSlug;
 }> = {
   horizontal: { 
-    name: "Baner - Strona Główna", 
+    name: "Baner poziomy", 
     icon: Monitor, 
-    placementSlug: "top-banner",
+    defaultPlacementSlug: "top-banner",
   },
   square: { 
     name: "Baner boczny", 
     icon: Square, 
-    placementSlug: "sidebar-square",
+    defaultPlacementSlug: "feed-tile",
   },
   vertical: { 
     name: "Baner pionowy", 
     icon: Smartphone, 
-    placementSlug: "mobile-banner",
+    defaultPlacementSlug: "article-middle",
   },
   auto: {
     name: "Baner responsywny",
     icon: Maximize2,
-    placementSlug: "top-banner",
+    defaultPlacementSlug: "top-banner",
   },
 };
 
@@ -86,6 +103,7 @@ export function AuctionAdSlot({
   slotIndex = 1,
   showDevOverlay = true,
   placement = "main",
+  placementSlug: placementSlugProp,
   auto = false,
   lazyLoad = true,
   lazyRootMargin = "200px",
@@ -133,7 +151,10 @@ export function AuctionAdSlot({
   }, [responsiveSize, prevSizeRef]);
 
   const config = variantConfig[effectiveVariant] || variantConfig.horizontal;
-  const { name, icon: Icon, placementSlug } = config;
+  const { name, icon: Icon, defaultPlacementSlug } = config;
+  
+  // Use prop placementSlug if provided, otherwise fall back to default from variant config
+  const placementSlug = placementSlugProp || defaultPlacementSlug;
 
   // Build full user location from settings (voivodeship, powiat, city)
   const userLocation = {
