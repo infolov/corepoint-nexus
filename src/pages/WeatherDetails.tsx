@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   ArrowLeft, 
@@ -16,13 +17,22 @@ import {
   CloudMoon,
   Snowflake,
   Loader2,
-  RefreshCw
+  RefreshCw,
+  ChevronDown,
+  Navigation
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useWeather } from "@/hooks/use-weather";
+import { useWeather, STATIONS } from "@/hooks/use-weather";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { useLocationContext } from "@/components/geolocation/LocationProvider";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Get wind direction arrow rotation
 const getWindRotation = (degrees: string): number => {
@@ -116,13 +126,40 @@ const getWeatherCondition = (
   };
 };
 
+// Local storage key for manual station selection
+const MANUAL_STATION_KEY = "weather_manual_station";
+
 export default function WeatherDetails() {
   const navigate = useNavigate();
   const { location } = useLocationContext();
-  const { data, isLoading, error, stationId, refetch } = useWeather("12375", {
-    city: location.city,
-    voivodeship: location.voivodeship
+  
+  // Get manual station from localStorage
+  const [manualStationId, setManualStationId] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem(MANUAL_STATION_KEY);
+    }
+    return null;
   });
+
+  const { data, isLoading, error, stationId, isManualSelection, refetch } = useWeather("12375", {
+    city: location.city,
+    voivodeship: location.voivodeship,
+    manualStationId
+  });
+
+  // Handle station change
+  const handleStationChange = (newStationId: string) => {
+    if (newStationId === "auto") {
+      localStorage.removeItem(MANUAL_STATION_KEY);
+      setManualStationId(null);
+    } else {
+      localStorage.setItem(MANUAL_STATION_KEY, newStationId);
+      setManualStationId(newStationId);
+    }
+  };
+
+  // Get sorted stations alphabetically
+  const sortedStations = [...STATIONS].sort((a, b) => a.name.localeCompare(b.name, 'pl'));
 
   if (isLoading) {
     return (
@@ -168,15 +205,45 @@ export default function WeatherDetails() {
       <Header />
       
       <main className="container py-8">
-        {/* Back button */}
-        <Button 
-          variant="ghost" 
-          onClick={() => navigate("/")}
-          className="mb-6 -ml-2"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Powrót do strony głównej
-        </Button>
+        {/* Back button and station selector */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate("/")}
+            className="-ml-2"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Powrót do strony głównej
+          </Button>
+
+          {/* Station selector */}
+          <div className="flex items-center gap-2">
+            <Select 
+              value={manualStationId || "auto"} 
+              onValueChange={handleStationChange}
+            >
+              <SelectTrigger className="w-[220px] backdrop-blur-sm bg-background/80">
+                <div className="flex items-center gap-2">
+                  <Navigation className="h-4 w-4 text-primary" />
+                  <SelectValue placeholder="Wybierz stację" />
+                </div>
+              </SelectTrigger>
+              <SelectContent className="max-h-[300px]">
+                <SelectItem value="auto">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-primary" />
+                    <span>Automatyczna (wg lokalizacji)</span>
+                  </div>
+                </SelectItem>
+                {sortedStations.map((station) => (
+                  <SelectItem key={station.id} value={station.id}>
+                    {station.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
 
         {/* Main weather card with glassmorphism */}
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/20 via-primary/10 to-transparent backdrop-blur-xl border border-white/20 shadow-2xl p-8 mb-8">
@@ -192,14 +259,17 @@ export default function WeatherDetails() {
                   <MapPin className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                  {location.city && location.city !== data.stacja && (
+                  {!isManualSelection && location.city && location.city !== data.stacja && (
                     <p className="text-lg font-semibold text-primary">{location.city}</p>
                   )}
-                  <h1 className={`font-bold ${location.city && location.city !== data.stacja ? 'text-xl md:text-2xl' : 'text-2xl md:text-3xl'}`}>
-                    {location.city && location.city !== data.stacja ? `Stacja: ${data.stacja}` : data.stacja}
-                  </h1>
-                  <p className="text-sm text-muted-foreground">
-                    Stacja IMGW • ID: {data.id_stacji}
+                  <h1 className="text-2xl md:text-3xl font-bold">{data.stacja}</h1>
+                  <p className="text-sm text-muted-foreground flex items-center gap-2">
+                    <span>Stacja IMGW • ID: {data.id_stacji}</span>
+                    {isManualSelection && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-primary/10 text-primary">
+                        Wybrano ręcznie
+                      </span>
+                    )}
                   </p>
                 </div>
               </div>
