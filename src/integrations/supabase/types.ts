@@ -450,6 +450,42 @@ export type Database = {
           },
         ]
       }
+      daily_summaries: {
+        Row: {
+          article_ids: string[]
+          audio_url: string | null
+          created_at: string
+          id: string
+          region: string | null
+          summary_date: string
+          summary_text: string
+          updated_at: string
+          view_count_total: number | null
+        }
+        Insert: {
+          article_ids?: string[]
+          audio_url?: string | null
+          created_at?: string
+          id?: string
+          region?: string | null
+          summary_date: string
+          summary_text: string
+          updated_at?: string
+          view_count_total?: number | null
+        }
+        Update: {
+          article_ids?: string[]
+          audio_url?: string | null
+          created_at?: string
+          id?: string
+          region?: string | null
+          summary_date?: string
+          summary_text?: string
+          updated_at?: string
+          view_count_total?: number | null
+        }
+        Relationships: []
+      }
       local_ad_campaigns: {
         Row: {
           ad_type: string
