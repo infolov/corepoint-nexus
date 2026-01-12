@@ -35,7 +35,6 @@ const categories = [{
 }];
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isDark, setIsDark] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -45,7 +44,7 @@ export function Header() {
     user,
     signOut
   } = useAuth();
-  const { settings: displaySettings } = useDisplayMode();
+  const { settings: displaySettings, toggleTheme, isDark } = useDisplayMode();
   const { settings: userSettings } = useUserSettings();
   const {
     data: weatherData,
@@ -176,10 +175,7 @@ export function Header() {
     await signOut();
     navigate("/");
   };
-  const toggleTheme = () => {
-    setIsDark(!isDark);
-    document.documentElement.classList.toggle("dark");
-  };
+  // toggleTheme is now provided by useDisplayMode hook
   useEffect(() => {
     if (isSearchOpen && searchInputRef.current) {
       searchInputRef.current.focus();
