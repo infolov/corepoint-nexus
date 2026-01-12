@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -21,11 +21,7 @@ export function useUserSettings() {
   });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadSettings();
-  }, [user]);
-
-  const loadSettings = async () => {
+  const loadSettings = useCallback(async () => {
     setLoading(true);
 
     // First try localStorage
@@ -72,7 +68,34 @@ export function useUserSettings() {
     }
 
     setLoading(false);
-  };
+  }, [user]);
+
+  useEffect(() => {
+    loadSettings();
+  }, [loadSettings]);
+
+  // Listen for localStorage changes (from geolocation updates)
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "userSettings" && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          setSettings(prev => ({
+            ...prev,
+            voivodeship: parsed.voivodeship || null,
+            county: parsed.county || null,
+            city: parsed.city || null,
+            locality: parsed.locality || null,
+          }));
+        } catch (err) {
+          console.error("Error parsing updated settings:", err);
+        }
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
 
   const refreshSettings = () => {
     loadSettings();
