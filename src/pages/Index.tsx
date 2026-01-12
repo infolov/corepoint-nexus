@@ -374,7 +374,7 @@ const Index = () => {
 
         {/* Top Ad Banner - Using Auction Engine */}
         <div className="mb-6">
-          <AuctionAdSlot variant="horizontal" className="w-full" slotIndex={0} />
+          <AuctionAdSlot variant="horizontal" placementSlug="top-banner" className="w-full" slotIndex={0} />
         </div>
 
         {/* Main Content - Ad + 4x3 Grid pattern */}
@@ -406,6 +406,7 @@ const Index = () => {
                   return (
                     <AuctionAdSlot 
                       variant="horizontal" 
+                      placementSlug="feed-carousel"
                       className="w-full" 
                       slotIndex={gridIndex + 1}
                     />

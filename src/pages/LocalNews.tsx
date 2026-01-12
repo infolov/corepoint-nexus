@@ -124,7 +124,7 @@ export default function LocalNews() {
 
         {/* Ad Banner */}
         <div className="mb-6">
-          <AuctionAdSlot variant="horizontal" className="w-full" slotIndex={0} />
+          <AuctionAdSlot variant="horizontal" placementSlug="top-banner" className="w-full" slotIndex={0} />
         </div>
 
         {/* Loading State */}
@@ -179,6 +179,7 @@ export default function LocalNews() {
                   <div className="mt-6">
                     <AuctionAdSlot 
                       variant="horizontal" 
+                      placementSlug="feed-tile"
                       className="w-full" 
                       slotIndex={Math.floor((index + 1) / 6)} 
                     />
@@ -191,7 +192,7 @@ export default function LocalNews() {
 
         {/* Bottom Ad */}
         <div className="mt-8">
-          <AuctionAdSlot variant="horizontal" className="w-full" slotIndex={3} />
+          <AuctionAdSlot variant="horizontal" placementSlug="footer" className="w-full" slotIndex={3} />
         </div>
       </main>
       

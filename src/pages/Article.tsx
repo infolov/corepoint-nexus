@@ -147,7 +147,7 @@ const Article = () => {
       <main className="container py-4 md:py-6">
         {/* Top Ad Banner */}
         <div className="mb-6">
-          <AuctionAdSlot variant="horizontal" className="w-full" slotIndex={0} />
+          <AuctionAdSlot variant="horizontal" placementSlug="article-top" className="w-full" slotIndex={0} />
         </div>
 
         {/* Navigation Breadcrumbs */}
@@ -192,7 +192,7 @@ const Article = () => {
 
             {/* Ad Banner between image and AI Summary */}
             <div className="mb-6">
-              <AuctionAdSlot variant="horizontal" className="w-full" slotIndex={2} />
+              <AuctionAdSlot variant="horizontal" placementSlug="article-middle" className="w-full" slotIndex={2} />
             </div>
 
             {/* AI Summary */}
@@ -237,7 +237,7 @@ const Article = () => {
 
             {/* Middle Ad Banner */}
             <div className="mb-6">
-              <AuctionAdSlot variant="horizontal" className="w-full" slotIndex={1} />
+              <AuctionAdSlot variant="horizontal" placementSlug="article-bottom" className="w-full" slotIndex={1} />
             </div>
 
             {/* Source Link */}
