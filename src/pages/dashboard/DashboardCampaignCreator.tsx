@@ -219,18 +219,12 @@ export default function DashboardCampaignCreator() {
         };
         reader.readAsDataURL(file);
       } else {
-        // For videos and animated images, use directly
+        // For videos and animated images, use directly with preview
         setSelectedFile(file);
         
-        if (file.type.startsWith('image/')) {
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            setFilePreview(e.target?.result as string);
-          };
-          reader.readAsDataURL(file);
-        } else {
-          setFilePreview(null);
-        }
+        // Create preview URL for both images and videos
+        const previewUrl = URL.createObjectURL(file);
+        setFilePreview(previewUrl);
         
         toast.success("Plik został wybrany");
       }
@@ -259,6 +253,10 @@ export default function DashboardCampaignCreator() {
 
   // Remove selected file
   const handleRemoveFile = () => {
+    // Revoke object URL to free memory
+    if (filePreview && filePreview.startsWith('blob:')) {
+      URL.revokeObjectURL(filePreview);
+    }
     setSelectedFile(null);
     setFilePreview(null);
     if (fileInputRef.current) {
@@ -956,37 +954,96 @@ export default function DashboardCampaignCreator() {
                   </div>
                 </>
               ) : (
-                /* File Preview */
+                /* File Preview - supports images, videos and animations */
                 <Card className="overflow-hidden">
                   <CardContent className="p-4">
-                    <div className="flex items-start gap-4">
-                      {filePreview ? (
-                        <img 
-                          src={filePreview} 
-                          alt="Podgląd kreacji" 
-                          className="w-32 h-32 object-cover rounded-lg"
-                        />
-                      ) : (
-                        <div className="w-32 h-32 bg-muted rounded-lg flex items-center justify-center">
-                          <ImageIcon className="h-12 w-12 text-muted-foreground" />
+                    <div className="space-y-4">
+                      {/* Media Preview */}
+                      <div className="relative rounded-lg overflow-hidden bg-muted">
+                        {selectedFile.type.startsWith('video/') ? (
+                          /* Video Preview */
+                          <div className="relative">
+                            <video
+                              src={filePreview || URL.createObjectURL(selectedFile)}
+                              controls
+                              autoPlay
+                              muted
+                              loop
+                              playsInline
+                              className="w-full max-h-[400px] object-contain mx-auto"
+                            />
+                            <div className="absolute top-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
+                              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"/>
+                              </svg>
+                              Wideo
+                            </div>
+                          </div>
+                        ) : ['image/gif', 'image/webp', 'image/apng'].includes(selectedFile.type) ? (
+                          /* Animated Image Preview */
+                          <div className="relative">
+                            <img 
+                              src={filePreview || URL.createObjectURL(selectedFile)} 
+                              alt="Podgląd animacji" 
+                              className="w-full max-h-[400px] object-contain mx-auto"
+                            />
+                            <div className="absolute top-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
+                              <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                              </svg>
+                              Animacja
+                            </div>
+                          </div>
+                        ) : filePreview ? (
+                          /* Static Image Preview */
+                          <img 
+                            src={filePreview} 
+                            alt="Podgląd kreacji" 
+                            className="w-full max-h-[400px] object-contain mx-auto"
+                          />
+                        ) : (
+                          <div className="w-full h-48 flex items-center justify-center">
+                            <ImageIcon className="h-16 w-16 text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* File Info */}
+                      <div className="flex items-center justify-between border-t pt-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                            {selectedFile.type.startsWith('video/') ? (
+                              <svg className="w-5 h-5 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"/>
+                              </svg>
+                            ) : (
+                              <ImageIcon className="h-5 w-5 text-primary" />
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-medium text-sm truncate max-w-[200px] sm:max-w-none">{selectedFile.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {(selectedFile.size / 1024 / 1024).toFixed(2)} MB • {
+                                selectedFile.type === 'video/mp4' ? 'Wideo MP4' :
+                                selectedFile.type === 'video/webm' ? 'Wideo WebM' :
+                                selectedFile.type === 'image/gif' ? 'Animacja GIF' :
+                                selectedFile.type === 'image/webp' ? 'Obraz WebP' :
+                                selectedFile.type === 'image/apng' ? 'Animacja PNG' :
+                                selectedFile.type === 'image/jpeg' ? 'Obraz JPEG' :
+                                selectedFile.type === 'image/png' ? 'Obraz PNG' :
+                                selectedFile.type
+                              }
+                            </p>
+                          </div>
                         </div>
-                      )}
-                      <div className="flex-1">
-                        <p className="font-medium">{selectedFile.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {selectedFile.type}
-                        </p>
                         <Button 
                           variant="destructive" 
-                          size="sm" 
-                          className="mt-2"
+                          size="sm"
                           onClick={handleRemoveFile}
                         >
                           <X className="h-4 w-4 mr-1" />
-                          Usuń plik
+                          Usuń
                         </Button>
                       </div>
                     </div>
