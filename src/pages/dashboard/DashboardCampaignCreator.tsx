@@ -16,7 +16,8 @@ import {
   X,
   Image as ImageIcon,
   Globe,
-  MapPin
+  MapPin,
+  LayoutGrid
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,7 @@ import { PricingPackages, PricingPackage } from "@/components/dashboard/PricingP
 import { AdministrativeTargeting } from "@/components/dashboard/AdministrativeTargeting";
 import { MultiRegionSelector, SelectedRegion } from "@/components/dashboard/MultiRegionSelector";
 import { AdImageCropDialog } from "@/components/dashboard/AdImageCropDialog";
+import { FeedTilePositionSelector } from "@/components/dashboard/FeedTilePositionSelector";
 interface AdPlacement {
   id: string;
   name: string;
@@ -51,11 +53,16 @@ interface AdPlacement {
 // Placements that are restricted to global-only targeting
 const GLOBAL_ONLY_PLACEMENT_SLUGS = ["top-banner"];
 
+// Placements that require tile position selection
+const TILE_POSITION_PLACEMENT_SLUGS = ["feed-tile"];
+
 const placementIcons: Record<string, any> = {
   "top-banner": Monitor,
   "sidebar-square": Square,
   "sponsored-article": FileText,
   "mobile-banner": Smartphone,
+  "feed-tile": LayoutGrid,
+  "feed-carousel": Monitor,
 };
 
 const STEPS = [
@@ -107,6 +114,9 @@ export default function DashboardCampaignCreator() {
   const [selectedPowiat, setSelectedPowiat] = useState("");
   const [selectedGmina, setSelectedGmina] = useState("");
   const [selectedRegions, setSelectedRegions] = useState<SelectedRegion[]>([]);
+  
+  // Feed tile position state
+  const [selectedTilePosition, setSelectedTilePosition] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -256,11 +266,23 @@ export default function DashboardCampaignCreator() {
     }
   };
 
+  // Get selected placement data
+  const selectedPlacementData = placements.find(p => p.id === selectedPlacement);
+  const PlacementIcon = selectedPlacementData ? placementIcons[selectedPlacementData.slug] || Monitor : Monitor;
+
+  // Check if selected placement requires tile position
+  const requiresTilePosition = selectedPlacementData && TILE_POSITION_PLACEMENT_SLUGS.includes(selectedPlacementData.slug);
+
   // Validate current step
   const canProceed = () => {
     switch (currentStep) {
       case 1: return !!selectedPlacement;
-      case 2: return !!emissionType && (emissionType === "exclusive" || !!selectedSlot);
+      case 2: 
+        // For feed-tile, require tile position; otherwise require emission type
+        if (requiresTilePosition) {
+          return !!selectedTilePosition;
+        }
+        return !!emissionType && (emissionType === "exclusive" || !!selectedSlot);
       case 3: return isGlobal || selectedRegions.length > 0; // Targeting validation - at least one region required
       case 4: return !!startDate && !!endDate;
       case 5: return !!campaignName && totalPrice > 0;
@@ -315,11 +337,15 @@ export default function DashboardCampaignCreator() {
       // If global, create single campaign
       // If regional with multiple regions, create one campaign per region
       if (isGlobal) {
+        const adType = requiresTilePosition 
+          ? `tile_position_${selectedTilePosition}` 
+          : (emissionType === "exclusive" ? "exclusive" : `rotation_slot_${selectedSlot}`);
+        
         const { error } = await supabase.from("ad_campaigns").insert({
           user_id: user.id,
           placement_id: selectedPlacement,
           name: campaignName,
-          ad_type: emissionType === "exclusive" ? "exclusive" : `rotation_slot_${selectedSlot}`,
+          ad_type: adType,
           start_date: format(startDate, "yyyy-MM-dd"),
           end_date: format(endDate, "yyyy-MM-dd"),
           total_credits: isAdmin ? 0 : totalPrice,
@@ -329,7 +355,8 @@ export default function DashboardCampaignCreator() {
           is_global: true,
           region: null,
           target_powiat: null,
-          target_gmina: null
+          target_gmina: null,
+          tile_position: requiresTilePosition ? selectedTilePosition : null
         });
 
         if (error) throw error;
@@ -341,13 +368,17 @@ export default function DashboardCampaignCreator() {
           return region.voivodeship.charAt(0).toUpperCase() + region.voivodeship.slice(1);
         };
 
+        const adType = requiresTilePosition 
+          ? `tile_position_${selectedTilePosition}` 
+          : (emissionType === "exclusive" ? "exclusive" : `rotation_slot_${selectedSlot}`);
+
         const campaignsToCreate = selectedRegions.map((region) => ({
           user_id: user.id,
           placement_id: selectedPlacement,
           name: selectedRegions.length > 1 
             ? `${campaignName} - ${formatRegionName(region)}`
             : campaignName,
-          ad_type: emissionType === "exclusive" ? "exclusive" : `rotation_slot_${selectedSlot}`,
+          ad_type: adType,
           start_date: format(startDate, "yyyy-MM-dd"),
           end_date: format(endDate, "yyyy-MM-dd"),
           total_credits: isAdmin ? 0 : Math.ceil(totalPrice / selectedRegions.length),
@@ -357,7 +388,8 @@ export default function DashboardCampaignCreator() {
           is_global: false,
           region: region.voivodeship,
           target_powiat: region.powiat || null,
-          target_gmina: region.gmina || null
+          target_gmina: region.gmina || null,
+          tile_position: requiresTilePosition ? selectedTilePosition : null
         }));
 
         const { error } = await supabase.from("ad_campaigns").insert(campaignsToCreate);
@@ -379,8 +411,7 @@ export default function DashboardCampaignCreator() {
     }
   };
 
-  const selectedPlacementData = placements.find(p => p.id === selectedPlacement);
-  const PlacementIcon = selectedPlacementData ? placementIcons[selectedPlacementData.slug] || Monitor : Monitor;
+
 
   return (
     <div className="space-y-6">
@@ -498,24 +529,45 @@ export default function DashboardCampaignCreator() {
             </div>
           )}
 
-          {/* Step 2: Emission Type */}
+          {/* Step 2: Emission Type / Tile Position */}
           {currentStep === 2 && (
             <div className="space-y-6">
-              <div>
-                <h2 className="text-xl font-semibold mb-2">Wybierz typ emisji</h2>
-                <p className="text-muted-foreground">
-                  Określ jak często Twoja reklama będzie wyświetlana.
-                </p>
-              </div>
+              {requiresTilePosition ? (
+                /* Feed Tile Position Selection */
+                <>
+                  <div>
+                    <h2 className="text-xl font-semibold mb-2">Wybierz pozycję kafelka</h2>
+                    <p className="text-muted-foreground">
+                      Wybierz, w której pozycji siatki artykułów ma być wyświetlana Twoja reklama.
+                    </p>
+                  </div>
 
-              <EmissionTypeSelector
-                selectedType={emissionType}
-                selectedSlot={selectedSlot}
-                onTypeSelect={setEmissionType}
-                onSlotSelect={setSelectedSlot}
-                exclusivePrice={EXCLUSIVE_DAILY_RATE}
-                rotationPrice={ROTATION_DAILY_RATE}
-              />
+                  <FeedTilePositionSelector
+                    selectedPosition={selectedTilePosition}
+                    onPositionSelect={setSelectedTilePosition}
+                    occupiedPositions={[]} // TODO: Could fetch occupied positions from backend
+                  />
+                </>
+              ) : (
+                /* Standard Emission Type Selection */
+                <>
+                  <div>
+                    <h2 className="text-xl font-semibold mb-2">Wybierz typ emisji</h2>
+                    <p className="text-muted-foreground">
+                      Określ jak często Twoja reklama będzie wyświetlana.
+                    </p>
+                  </div>
+
+                  <EmissionTypeSelector
+                    selectedType={emissionType}
+                    selectedSlot={selectedSlot}
+                    onTypeSelect={setEmissionType}
+                    onSlotSelect={setSelectedSlot}
+                    exclusivePrice={EXCLUSIVE_DAILY_RATE}
+                    rotationPrice={ROTATION_DAILY_RATE}
+                  />
+                </>
+              )}
             </div>
           )}
 

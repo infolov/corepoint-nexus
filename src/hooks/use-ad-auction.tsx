@@ -48,6 +48,7 @@ export function useAdAuction(options: UseAdAuctionOptions = {}) {
         target_powiat,
         target_gmina,
         total_credits,
+        tile_position,
         ad_placements!inner(slug, name, credit_cost)
       `)
       .eq("status", "active")
@@ -80,6 +81,7 @@ export function useAdAuction(options: UseAdAuctionOptions = {}) {
         targetUrl: campaign.target_url,
         name: campaign.name,
         placementSlug: campaign.ad_placements?.slug || "",
+        tilePosition: campaign.tile_position || undefined,
       };
     });
 

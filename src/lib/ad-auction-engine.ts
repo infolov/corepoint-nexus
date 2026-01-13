@@ -16,6 +16,7 @@ export interface AuctionAd {
   targetUrl: string | null;
   name: string;
   placementSlug: string;
+  tilePosition?: number;   // Position (1-12) in feed grid for feed-tile placements
 }
 
 export interface UserLocation {

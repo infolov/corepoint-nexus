@@ -32,6 +32,7 @@ export type Database = {
           target_gmina: string | null
           target_powiat: string | null
           target_url: string | null
+          tile_position: number | null
           total_credits: number
           updated_at: string
           user_id: string
@@ -53,6 +54,7 @@ export type Database = {
           target_gmina?: string | null
           target_powiat?: string | null
           target_url?: string | null
+          tile_position?: number | null
           total_credits: number
           updated_at?: string
           user_id: string
@@ -74,6 +76,7 @@ export type Database = {
           target_gmina?: string | null
           target_powiat?: string | null
           target_url?: string | null
+          tile_position?: number | null
           total_credits?: number
           updated_at?: string
           user_id?: string

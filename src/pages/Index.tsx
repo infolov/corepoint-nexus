@@ -5,11 +5,13 @@ import { CategoryBar } from "@/components/navigation/CategoryBar";
 import { NewsCard } from "@/components/news/NewsCard";
 import { AuctionAdSlot } from "@/components/widgets/AuctionAdSlot";
 import { FeedBannerCarousel, formatBannersForCarousel } from "@/components/widgets/FeedBannerCarousel";
+import { FeedTileAdCard } from "@/components/widgets/FeedTileAdCard";
 import { DailySummaryCard } from "@/components/news/DailySummaryCard";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import { useDisplayMode } from "@/hooks/use-display-mode";
 import { useAuth } from "@/hooks/use-auth";
 import { useCarouselBanners } from "@/hooks/use-carousel-banners";
+import { useFeedTileAds } from "@/hooks/use-feed-tile-ads";
 import { Loader2 } from "lucide-react";
 import { useArticles, formatArticleForCard } from "@/hooks/use-articles";
 import { useRSSArticles, formatRSSArticleForCard } from "@/hooks/use-rss-articles";
@@ -64,6 +66,7 @@ const Index = () => {
     user
   } = useAuth();
   const { getCarouselForPosition } = useCarouselBanners();
+  const { getAdForPosition, trackImpression, trackClick } = useFeedTileAds();
   const [userPreferences, setUserPreferences] = useState<string[]>([]);
   const [recentCategories, setRecentCategories] = useState<string[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -380,9 +383,42 @@ const Index = () => {
         {/* Main Content - Ad + 4x3 Grid pattern */}
         <div className="space-y-6 sm:space-y-8">
           {articleGrids.map((gridArticles, gridIndex) => <div key={`grid-${gridIndex}`}>
-              {/* 3x4 Article Grid (12 articles) */}
+              {/* 3x4 Article Grid (12 articles) - with feed-tile ads replacing specific positions */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {gridArticles.map((article, articleIndex) => <NewsCard key={`${article.id}-${gridIndex}-${articleIndex}`} id={article.id} title={article.title} category={article.category} image={article.image} timestamp={article.timestamp} badge={article.badge} source={article.source} sourceUrl={article.sourceUrl} variant="default" />)}
+                {gridArticles.map((article, articleIndex) => {
+                  // Check if there's an ad for this position (1-indexed)
+                  const tilePosition = articleIndex + 1;
+                  const adForPosition = getAdForPosition(tilePosition);
+                  
+                  if (adForPosition) {
+                    return (
+                      <FeedTileAdCard
+                        key={`ad-tile-${gridIndex}-${tilePosition}`}
+                        id={adForPosition.id}
+                        contentUrl={adForPosition.contentUrl}
+                        targetUrl={adForPosition.targetUrl}
+                        name={adForPosition.name}
+                        onImpression={trackImpression}
+                        onClick={trackClick}
+                      />
+                    );
+                  }
+                  
+                  return (
+                    <NewsCard 
+                      key={`${article.id}-${gridIndex}-${articleIndex}`} 
+                      id={article.id} 
+                      title={article.title} 
+                      category={article.category} 
+                      image={article.image} 
+                      timestamp={article.timestamp} 
+                      badge={article.badge} 
+                      source={article.source} 
+                      sourceUrl={article.sourceUrl} 
+                      variant="default" 
+                    />
+                  );
+                })}
               </div>
 
               {/* Carousel Banner after each grid of 12 items */}
