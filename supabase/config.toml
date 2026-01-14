@@ -30,3 +30,7 @@ verify_jwt = false
 [functions.generate-daily-summary]
 verify_jwt = false
 schedule = "0 17 * * *"
+
+[functions.fetch-emergency-alerts]
+verify_jwt = false
+schedule = "*/30 * * * *"
