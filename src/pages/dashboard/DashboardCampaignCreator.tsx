@@ -29,6 +29,7 @@ import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useAdmin } from "@/hooks/use-admin";
+import { useOccupiedTilePositions } from "@/hooks/use-occupied-tile-positions";
 import { toast } from "sonner";
 import { format, differenceInDays, addDays } from "date-fns";
 import { pl } from "date-fns/locale";
@@ -270,6 +271,23 @@ export default function DashboardCampaignCreator() {
 
   // Check if selected placement requires tile position
   const requiresTilePosition = selectedPlacementData && TILE_POSITION_PLACEMENT_SLUGS.includes(selectedPlacementData.slug);
+
+  // Fetch occupied tile positions based on selected dates and targeting
+  const { occupiedPositions, occupiedDetails, loading: loadingOccupied } = useOccupiedTilePositions({
+    placementId: requiresTilePosition ? selectedPlacement : null,
+    startDate,
+    endDate,
+    isGlobal,
+    region: selectedRegions.length > 0 ? selectedRegions[0].voivodeship : null,
+  });
+
+  // Reset tile position if it becomes occupied
+  useEffect(() => {
+    if (selectedTilePosition && occupiedPositions.includes(selectedTilePosition)) {
+      setSelectedTilePosition(null);
+      toast.warning("Wybrana pozycja została zajęta. Proszę wybrać inną.");
+    }
+  }, [occupiedPositions, selectedTilePosition]);
 
   // Validate current step
   const canProceed = () => {
@@ -540,10 +558,22 @@ export default function DashboardCampaignCreator() {
                     </p>
                   </div>
 
+                  {/* Show date selection hint if no dates selected yet */}
+                  {(!startDate || !endDate) && (
+                    <div className="p-4 bg-muted/50 rounded-lg border border-border">
+                      <p className="text-sm text-muted-foreground">
+                        💡 Tip: Po wybraniu dat w kolejnym kroku, zostaną wyświetlone pozycje zajęte w tym terminie.
+                      </p>
+                    </div>
+                  )}
+
                   <FeedTilePositionSelector
                     selectedPosition={selectedTilePosition}
                     onPositionSelect={setSelectedTilePosition}
-                    occupiedPositions={[]} // TODO: Could fetch occupied positions from backend
+                    occupiedPositions={occupiedPositions}
+                    loading={loadingOccupied}
+                    startDate={startDate}
+                    endDate={endDate}
                   />
                 </>
               ) : (
