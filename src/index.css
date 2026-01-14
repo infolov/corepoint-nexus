@@ -276,22 +276,41 @@
   @apply bg-muted-foreground/50;
 }
 
-/* Alert ticker animation */
+/* Alert ticker animation - scrolls from right edge to left edge */
 @keyframes ticker {
   0% {
-    transform: translateX(100%);
+    transform: translateX(0);
   }
   100% {
     transform: translateX(-100%);
   }
 }
 
+.ticker-container {
+  display: flex;
+  width: 100%;
+  overflow: hidden;
+}
+
 .animate-ticker {
-  display: inline-block;
+  display: flex;
   white-space: nowrap;
-  animation: ticker 25s linear infinite;
+  will-change: transform;
 }
 
 .animate-ticker:hover {
   animation-play-state: paused;
+}
+
+/* Speed variants */
+.ticker-speed-slow {
+  animation: ticker 40s linear infinite;
+}
+
+.ticker-speed-normal {
+  animation: ticker 25s linear infinite;
+}
+
+.ticker-speed-fast {
+  animation: ticker 12s linear infinite;
 }

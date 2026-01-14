@@ -82,6 +82,12 @@ export const AlertTickerManager = () => {
     }
   };
 
+  const tickerSpeed = getSetting('alert_ticker_speed', 'normal') as string;
+
+  const handleSpeedChange = async (value: string) => {
+    await updateSetting('alert_ticker_speed', value, true);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -108,6 +114,21 @@ export const AlertTickerManager = () => {
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Speed control */}
+        <div className="flex items-center gap-4 p-3 border rounded-lg bg-muted/30">
+          <Label className="text-sm font-medium whitespace-nowrap">Prędkość przewijania:</Label>
+          <Select value={tickerSpeed} onValueChange={handleSpeedChange}>
+            <SelectTrigger className="w-40">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="slow">Wolna</SelectItem>
+              <SelectItem value="normal">Normalna</SelectItem>
+              <SelectItem value="fast">Szybka</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
         {/* Fetch external alerts button */}
         <div className="flex gap-2">
           <Button 
