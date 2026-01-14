@@ -9,7 +9,7 @@ import { DynamicHeaderBranding } from "@/components/layout/DynamicHeaderBranding
 import { FeedBannerCarousel } from "@/components/widgets/FeedBannerCarousel";
 
 const categories = [
-  { slug: "", name: "Strona główna" },
+  { slug: "home", name: "Strona główna" },
   { slug: "wiadomosci", name: "Wiadomości" },
   { slug: "sport", name: "Sport" },
   { slug: "biznes", name: "Biznes" },
@@ -48,7 +48,7 @@ const mockBanners = [
 
 export default function DashboardPreview() {
   const [deviceView, setDeviceView] = useState<"desktop" | "tablet" | "mobile">("desktop");
-  const [previewCategory, setPreviewCategory] = useState("");
+  const [previewCategory, setPreviewCategory] = useState("home");
   const [key, setKey] = useState(0);
 
   const deviceSizes = {
