@@ -276,7 +276,7 @@
   @apply bg-muted-foreground/50;
 }
 
-/* Alert ticker animation - scrolls from right edge to left edge */
+/* Alert ticker animation - always traverses full bar width */
 @keyframes ticker {
   0% {
     transform: translateX(0);
@@ -287,14 +287,15 @@
 }
 
 .ticker-container {
+  flex: 1;
   display: flex;
-  width: 100%;
   overflow: hidden;
 }
 
 .animate-ticker {
-  display: flex;
+  display: inline-flex;
   white-space: nowrap;
+  padding-left: 100%; /* ensures it starts outside on the right even for short text */
   will-change: transform;
 }
 
