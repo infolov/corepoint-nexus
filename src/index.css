@@ -276,42 +276,103 @@
   @apply bg-muted-foreground/50;
 }
 
-/* Alert ticker animation - always traverses full bar width */
-@keyframes ticker {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(-100%);
-  }
+/* Alert ticker - modern news ticker with pause on hover */
+.alert-ticker {
+  font-family: 'Inter', 'Roboto', system-ui, sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+}
+
+.alert-ticker-standard {
+  background-color: #1A237E;
+  color: white;
+}
+
+.alert-ticker-breaking {
+  background-color: #D32F2F;
+  color: white;
+}
+
+.ticker-label {
+  background: inherit;
+  z-index: 10;
+  position: relative;
+}
+
+.ticker-label::after {
+  content: '';
+  position: absolute;
+  right: -16px;
+  top: 0;
+  bottom: 0;
+  width: 16px;
+  background: linear-gradient(to right, currentColor, transparent);
+  opacity: 0.1;
 }
 
 .ticker-container {
   flex: 1;
   display: flex;
   overflow: hidden;
+  position: relative;
+}
+
+/* Desktop: horizontal scroll animation */
+@keyframes ticker-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
 }
 
 .animate-ticker {
   display: inline-flex;
   white-space: nowrap;
-  padding-left: 100%; /* ensures it starts outside on the right even for short text */
   will-change: transform;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
 }
 
-.animate-ticker:hover {
+/* Pause on hover - applies to parent container */
+.ticker-container:hover .animate-ticker {
   animation-play-state: paused;
 }
 
-/* Speed variants */
-.ticker-speed-slow {
-  animation: ticker 40s linear infinite;
+/* Dynamic speed based on content width - calculated via JS, fallback to 25s */
+.ticker-speed-dynamic {
+  animation-name: ticker-scroll;
 }
 
-.ticker-speed-normal {
-  animation: ticker 25s linear infinite;
+/* Mobile: vertical fade animation */
+@keyframes fade-in-up {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  15% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  85% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
 }
 
-.ticker-speed-fast {
-  animation: ticker 12s linear infinite;
+.mobile-ticker-item {
+  animation: fade-in-up 4s ease-in-out;
+}
+
+/* Time badge styling */
+.ticker-time {
+  font-size: 11px;
+  opacity: 0.8;
+  margin-left: 6px;
 }
