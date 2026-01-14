@@ -119,14 +119,14 @@ export const AlertTickerManager = () => {
               <div className="space-y-2">
                 <Label>Region (opcjonalnie)</Label>
                 <Select
-                  value={newAlert.region}
-                  onValueChange={(value) => setNewAlert({ ...newAlert, region: value })}
+                  value={newAlert.region || '__all__'}
+                  onValueChange={(value) => setNewAlert({ ...newAlert, region: value === '__all__' ? '' : value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Cała Polska" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Cała Polska</SelectItem>
+                    <SelectItem value="__all__">Cała Polska</SelectItem>
                     {VOIVODESHIPS.map((v) => (
                       <SelectItem key={v} value={v}>
                         {v.charAt(0).toUpperCase() + v.slice(1)}
