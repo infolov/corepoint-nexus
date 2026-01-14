@@ -291,7 +291,7 @@ export default function DashboardCampaignCreator() {
     startDate,
     endDate,
     isGlobal,
-    region: selectedRegions.length > 0 ? selectedRegions[0].voivodeship : null,
+    selectedRegions,
   });
 
   // Reset tile position if it becomes occupied
@@ -334,6 +334,14 @@ export default function DashboardCampaignCreator() {
 
   const handleSubmit = async () => {
     if (!user || !selectedPlacement || !startDate || !endDate) return;
+
+    // Validate tile position is not occupied before submission
+    if (requiresTilePosition && selectedTilePosition) {
+      if (occupiedPositions.includes(selectedTilePosition)) {
+        toast.error("Wybrana pozycja kafelka jest już zajęta w wybranym terminie. Proszę wybrać inną pozycję.");
+        return;
+      }
+    }
 
     setSubmitting(true);
     try {
