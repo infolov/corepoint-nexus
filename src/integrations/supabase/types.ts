@@ -138,6 +138,7 @@ export type Database = {
           id: string
           is_active: boolean
           name: string
+          section2_credit_cost: number | null
           slug: string
         }
         Insert: {
@@ -148,6 +149,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name: string
+          section2_credit_cost?: number | null
           slug: string
         }
         Update: {
@@ -158,6 +160,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
+          section2_credit_cost?: number | null
           slug?: string
         }
         Relationships: []

@@ -49,6 +49,7 @@ interface AdPlacement {
   description: string | null;
   dimensions: string | null;
   credit_cost: number;
+  section2_credit_cost: number | null;
 }
 
 // Placements that are restricted to global-only targeting
@@ -150,8 +151,20 @@ export default function DashboardCampaignCreator() {
     fetchData();
   }, [user]);
 
-  // Calculate pricing
-  const dailyRate = emissionType === "exclusive" ? EXCLUSIVE_DAILY_RATE : ROTATION_DAILY_RATE;
+  // Calculate pricing based on tile position section
+  const getEffectiveDailyRate = () => {
+    if (requiresTilePosition && selectedPlacementData) {
+      // Section 2 (positions 13-24) uses section2_credit_cost if available
+      if (selectedTilePosition && selectedTilePosition >= 13 && selectedTilePosition <= 24) {
+        return selectedPlacementData.section2_credit_cost ?? selectedPlacementData.credit_cost;
+      }
+      // Section 1 (positions 4-12) uses base credit_cost
+      return selectedPlacementData.credit_cost;
+    }
+    return emissionType === "exclusive" ? EXCLUSIVE_DAILY_RATE : ROTATION_DAILY_RATE;
+  };
+
+  const dailyRate = getEffectiveDailyRate();
   const daysCount = startDate && endDate ? differenceInDays(endDate, startDate) + 1 : 0;
   const totalPrice = daysCount * dailyRate;
 
@@ -574,6 +587,8 @@ export default function DashboardCampaignCreator() {
                     loading={loadingOccupied}
                     startDate={startDate}
                     endDate={endDate}
+                    section1Price={selectedPlacementData?.credit_cost}
+                    section2Price={selectedPlacementData?.section2_credit_cost ?? selectedPlacementData?.credit_cost}
                   />
                 </>
               ) : (

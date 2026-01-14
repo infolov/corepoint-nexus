@@ -13,6 +13,8 @@ interface FeedTilePositionSelectorProps {
   loading?: boolean;
   startDate?: Date | null;
   endDate?: Date | null;
+  section1Price?: number;
+  section2Price?: number | null;
 }
 
 // Blocked positions (1-3) - reserved, no ads allowed
@@ -70,6 +72,8 @@ export function FeedTilePositionSelector({
   loading = false,
   startDate,
   endDate,
+  section1Price,
+  section2Price,
 }: FeedTilePositionSelectorProps) {
   const hasDateRange = startDate && endDate;
   
@@ -201,27 +205,41 @@ export function FeedTilePositionSelector({
       <CardContent>
         <Tabs defaultValue={selectedSection} className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-4">
-            <TabsTrigger value="section1" className="relative">
-              Sekcja 1 (pozycje 4-12)
-              {hasDateRange && !loading && (
-                <Badge 
-                  variant={section1Available > 0 ? "secondary" : "destructive"} 
-                  className="ml-2 text-xs"
-                >
-                  {section1Available}/9
-                </Badge>
-              )}
+            <TabsTrigger value="section1" className="relative flex-col sm:flex-row gap-1">
+              <span>Sekcja 1 (poz. 4-12)</span>
+              <div className="flex items-center gap-1">
+                {section1Price !== undefined && (
+                  <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
+                    {section1Price} kr./dzień
+                  </Badge>
+                )}
+                {hasDateRange && !loading && (
+                  <Badge 
+                    variant={section1Available > 0 ? "secondary" : "destructive"} 
+                    className="text-xs"
+                  >
+                    {section1Available}/9
+                  </Badge>
+                )}
+              </div>
             </TabsTrigger>
-            <TabsTrigger value="section2" className="relative">
-              Sekcja 2 (pozycje 13-24)
-              {hasDateRange && !loading && (
-                <Badge 
-                  variant={section2Available > 0 ? "secondary" : "destructive"} 
-                  className="ml-2 text-xs"
-                >
-                  {section2Available}/12
-                </Badge>
-              )}
+            <TabsTrigger value="section2" className="relative flex-col sm:flex-row gap-1">
+              <span>Sekcja 2 (poz. 13-24)</span>
+              <div className="flex items-center gap-1">
+                {section2Price !== undefined && section2Price !== null && (
+                  <Badge variant="outline" className="text-xs bg-orange-100 text-orange-700 border-orange-300">
+                    {section2Price} kr./dzień
+                  </Badge>
+                )}
+                {hasDateRange && !loading && (
+                  <Badge 
+                    variant={section2Available > 0 ? "secondary" : "destructive"} 
+                    className="text-xs"
+                  >
+                    {section2Available}/12
+                  </Badge>
+                )}
+              </div>
             </TabsTrigger>
           </TabsList>
 
@@ -303,7 +321,7 @@ export function FeedTilePositionSelector({
         )}
 
         <p className="text-xs text-muted-foreground mt-4">
-          💡 Tip: Sekcja 1 to pierwsza siatka 12 artykułów (pozycje 1-3 zarezerwowane). Sekcja 2 to druga siatka artykułów.
+          💡 Tip: Sekcja 1 to pierwsza siatka artykułów (lepsza widoczność, wyższa cena). Sekcja 2 to druga siatka (niższa cena).
         </p>
       </CardContent>
     </Card>
