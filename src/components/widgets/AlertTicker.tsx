@@ -12,18 +12,24 @@ interface EmergencyAlert {
   priority: number;
 }
 
+type TickerSpeed = 'slow' | 'normal' | 'fast';
+
 export const AlertTicker = () => {
   const [alerts, setAlerts] = useState<EmergencyAlert[]>([]);
   const [isEnabled, setIsEnabled] = useState(true);
-  const { settings, loading: settingsLoading } = useSiteSettings();
+  const [speed, setSpeed] = useState<TickerSpeed>('normal');
+  const { settings, loading: settingsLoading, getSetting } = useSiteSettings();
   const { location } = useGeolocation();
 
   useEffect(() => {
     if (!settingsLoading && settings) {
       const enabled = settings.alert_ticker_enabled;
       setIsEnabled(enabled === true || enabled === 'true');
+      
+      const tickerSpeed = getSetting('alert_ticker_speed', 'normal') as TickerSpeed;
+      setSpeed(tickerSpeed);
     }
-  }, [settings, settingsLoading]);
+  }, [settings, settingsLoading, getSetting]);
 
   useEffect(() => {
     const fetchAlerts = async () => {
@@ -59,6 +65,7 @@ export const AlertTicker = () => {
   }
 
   const combinedMessage = alerts.map(a => a.message).join(' • ');
+  const speedClass = `ticker-speed-${speed}`;
 
   return (
     <div className="w-full bg-destructive text-destructive-foreground overflow-hidden">
@@ -67,9 +74,12 @@ export const AlertTicker = () => {
           <AlertTriangle className="h-4 w-4" />
           <span className="font-semibold text-sm uppercase tracking-wide">Alert</span>
         </div>
-        <div className="flex-1 overflow-hidden relative">
-          <div className="animate-ticker">
-            <span className="inline-block px-4 text-sm font-medium">
+        <div className="ticker-container">
+          <div className={`animate-ticker ${speedClass}`}>
+            <span className="inline-block px-8 text-sm font-medium">
+              {combinedMessage}
+            </span>
+            <span className="inline-block px-8 text-sm font-medium">
               {combinedMessage}
             </span>
           </div>
