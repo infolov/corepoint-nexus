@@ -71,7 +71,7 @@ export function calculateDynamicScore(
   let frequencyPenalty = 0;
 
   // Targeting Bonus: +50% for matching local campaigns with specific targeting
-  // Non-matching local ads get reduced score but still participate (no complete exclusion)
+  // Non-matching local ads are EXCLUDED (score = 0) when user has location set
   if (ad.type === 'local') {
     const hasTargeting = ad.targetVoivodeship || ad.targetPowiat || ad.targetGmina || 
                         (ad.targetCity && ad.targetCity.length > 0);
@@ -86,8 +86,9 @@ export function calculateDynamicScore(
         // User has no location set - show local ads with reduced priority (-30%)
         finalScore = baseScore * 0.7;
       } else {
-        // User location doesn't match - show with much reduced priority (-70%)
-        finalScore = baseScore * 0.3;
+        // User location doesn't match - EXCLUDE this ad completely (score = 0)
+        // This ensures ads targeted to Gdańsk won't show to users in Pasłęk
+        finalScore = 0;
       }
     }
   }
