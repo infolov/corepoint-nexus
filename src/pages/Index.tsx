@@ -7,6 +7,7 @@ import { AuctionAdSlot } from "@/components/widgets/AuctionAdSlot";
 import { FeedBannerCarousel, formatBannersForCarousel } from "@/components/widgets/FeedBannerCarousel";
 import { FeedTileAdCard } from "@/components/widgets/FeedTileAdCard";
 import { DailySummaryCard } from "@/components/news/DailySummaryCard";
+import { AlertTicker } from "@/components/widgets/AlertTicker";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import { useDisplayMode } from "@/hooks/use-display-mode";
 import { useAuth } from "@/hooks/use-auth";
@@ -375,8 +376,11 @@ const Index = () => {
           <DailySummaryCard />
         </div>
 
+        {/* Alert Ticker - Emergency notifications */}
+        <AlertTicker />
+
         {/* Top Ad Banner - Using Auction Engine */}
-        <div className="mb-6">
+        <div className="mb-6 mt-4">
           <AuctionAdSlot variant="horizontal" placementSlug="top-banner" className="w-full" slotIndex={0} />
         </div>
 

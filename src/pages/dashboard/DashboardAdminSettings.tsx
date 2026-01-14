@@ -33,6 +33,7 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react";
+import { AlertTickerManager } from "@/components/admin/AlertTickerManager";
 
 const regions = [
   { id: "mazowieckie", label: "Mazowieckie" },
@@ -270,6 +271,9 @@ export default function DashboardAdminSettings() {
           Zarządzaj globalnymi ustawieniami strony
         </p>
       </div>
+
+      {/* Alert Ticker Manager */}
+      <AlertTickerManager />
 
       {settingsLoading ? (
         <div className="space-y-4">
