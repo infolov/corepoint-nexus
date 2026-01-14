@@ -99,7 +99,7 @@ export default function Dashboard() {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="p-4 border-b border-border">
-            <Logo size="md" showIcon />
+            <Logo size="md" />
           </div>
 
           {/* User Info */}
