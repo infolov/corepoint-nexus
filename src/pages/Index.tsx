@@ -376,13 +376,14 @@ const Index = () => {
           <DailySummaryCard />
         </div>
 
-        {/* Alert Ticker - Emergency notifications (full-bleed on desktop too) */}
-        <div className="relative left-1/2 right-1/2 -mx-[50vw] w-screen">
-          <AlertTicker />
-        </div>
         {/* Top Ad Banner - Using Auction Engine */}
-        <div className="mb-6 mt-4">
+        <div className="mb-4">
           <AuctionAdSlot variant="horizontal" placementSlug="top-banner" className="w-full" slotIndex={0} />
+        </div>
+
+        {/* Alert Ticker - Emergency notifications (full-bleed on desktop too) */}
+        <div className="relative left-1/2 right-1/2 -mx-[50vw] w-screen mb-6">
+          <AlertTicker />
         </div>
 
         {/* Main Content - Ad + 4x3 Grid pattern */}
