@@ -19,7 +19,9 @@ import {
   Target,
   BarChart3,
   MousePointerClick,
+  MapPin,
 } from "lucide-react";
+import { CampaignReachIndicator } from "@/components/admin/CampaignReachIndicator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -83,6 +85,10 @@ interface Campaign {
   user_id: string;
   placement_id: string;
   rejection_reason: string | null;
+  is_global: boolean;
+  region: string | null;
+  target_powiat: string | null;
+  target_gmina: string | null;
   placement_name?: string;
   placement_slug?: string;
   user_email?: string;
@@ -563,6 +569,7 @@ export default function DashboardAdminCampaigns() {
                       <TableHead>Partner</TableHead>
                       <TableHead>Nazwa kampanii</TableHead>
                       <TableHead>Placement</TableHead>
+                      <TableHead>Targetowanie</TableHead>
                       <TableHead>Typ</TableHead>
                       <TableHead>Daty</TableHead>
                       <TableHead>Status</TableHead>
@@ -580,6 +587,26 @@ export default function DashboardAdminCampaigns() {
                         </TableCell>
                         <TableCell className="font-medium">{campaign.name}</TableCell>
                         <TableCell>{campaign.placement_name}</TableCell>
+                        <TableCell>
+                          {campaign.is_global ? (
+                            <Badge variant="secondary" className="gap-1">
+                              <Target className="h-3 w-3" />
+                              Krajowa
+                            </Badge>
+                          ) : (
+                            <div className="flex flex-col gap-0.5">
+                              {campaign.region && (
+                                <Badge variant="outline" className="gap-1 text-xs">
+                                  <MapPin className="h-2.5 w-2.5" />
+                                  {campaign.target_powiat || campaign.region}
+                                </Badge>
+                              )}
+                              {!campaign.region && (
+                                <span className="text-xs text-muted-foreground">Brak</span>
+                              )}
+                            </div>
+                          )}
+                        </TableCell>
                         <TableCell>
                           <Badge variant="outline">
                             {campaign.ad_type === "image" ? "Obraz" : "Tekst"}
@@ -781,6 +808,16 @@ export default function DashboardAdminCampaigns() {
                   {previewCampaign.target_url}
                 </a>
               </div>
+            )}
+
+            {/* Campaign Reach Indicator */}
+            {previewCampaign && (
+              <CampaignReachIndicator
+                isGlobal={previewCampaign.is_global}
+                region={previewCampaign.region}
+                targetPowiat={previewCampaign.target_powiat}
+                targetGmina={previewCampaign.target_gmina}
+              />
             )}
 
             {previewCampaign?.rejection_reason && (
