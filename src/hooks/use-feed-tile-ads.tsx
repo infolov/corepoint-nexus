@@ -11,9 +11,13 @@ export interface FeedTileAd {
   region: string | null;
 }
 
+// Blocked positions (1-3) - reserved, no ads allowed
+const BLOCKED_POSITIONS = [1, 2, 3];
+
 /**
  * Hook to fetch active feed-tile ads with their tile positions
  * Returns a map of tile positions to ads for efficient lookup
+ * Supports positions 4-12 (first section) and 13-24 (second section)
  */
 export function useFeedTileAds() {
   const [ads, setAds] = useState<FeedTileAd[]>([]);
@@ -79,13 +83,15 @@ export function useFeedTileAds() {
     fetchAds();
   }, [fetchAds]);
 
-  // Get ad for specific position
+  // Get ad for specific position (excludes blocked positions 1-3)
   const getAdForPosition = useCallback((position: number): FeedTileAd | undefined => {
+    if (BLOCKED_POSITIONS.includes(position)) return undefined;
     return adsByPosition.get(position);
   }, [adsByPosition]);
 
-  // Check if position has an ad
+  // Check if position has an ad (excludes blocked positions 1-3)
   const hasAdAtPosition = useCallback((position: number): boolean => {
+    if (BLOCKED_POSITIONS.includes(position)) return false;
     return adsByPosition.has(position);
   }, [adsByPosition]);
 
