@@ -61,17 +61,14 @@ export const AlertTicker = () => {
   const combinedMessage = alerts.map(a => a.message).join(' • ');
 
   return (
-    <div className="bg-destructive text-destructive-foreground overflow-hidden">
+    <div className="w-full bg-destructive text-destructive-foreground overflow-hidden">
       <div className="flex items-center py-2">
         <div className="flex-shrink-0 px-3 flex items-center gap-2 bg-destructive/90 z-10">
           <AlertTriangle className="h-4 w-4" />
           <span className="font-semibold text-sm uppercase tracking-wide">Alert</span>
         </div>
-        <div className="flex-1 overflow-hidden">
-          <div className="animate-ticker whitespace-nowrap">
-            <span className="inline-block px-4 text-sm font-medium">
-              {combinedMessage}
-            </span>
+        <div className="flex-1 overflow-hidden relative">
+          <div className="animate-ticker">
             <span className="inline-block px-4 text-sm font-medium">
               {combinedMessage}
             </span>
