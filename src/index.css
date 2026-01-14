@@ -279,16 +279,17 @@
 /* Alert ticker animation */
 @keyframes ticker {
   0% {
-    transform: translateX(0);
+    transform: translateX(100%);
   }
   100% {
-    transform: translateX(-50%);
+    transform: translateX(-100%);
   }
 }
 
 .animate-ticker {
-  display: inline-flex;
-  animation: ticker 30s linear infinite;
+  display: inline-block;
+  white-space: nowrap;
+  animation: ticker 25s linear infinite;
 }
 
 .animate-ticker:hover {
