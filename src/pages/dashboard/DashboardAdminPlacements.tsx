@@ -48,6 +48,7 @@ interface Placement {
   description: string | null;
   dimensions: string | null;
   credit_cost: number;
+  section2_credit_cost: number | null;
   is_active: boolean;
   created_at: string;
 }
@@ -70,6 +71,7 @@ export default function DashboardAdminPlacements() {
     description: "",
     dimensions: "",
     credit_cost: 10,
+    section2_credit_cost: null as number | null,
     is_active: true,
   });
 
@@ -130,6 +132,7 @@ export default function DashboardAdminPlacements() {
         description: placement.description || "",
         dimensions: placement.dimensions || "",
         credit_cost: placement.credit_cost,
+        section2_credit_cost: placement.section2_credit_cost,
         is_active: placement.is_active,
       });
     } else {
@@ -140,6 +143,7 @@ export default function DashboardAdminPlacements() {
         description: "",
         dimensions: "",
         credit_cost: 10,
+        section2_credit_cost: null,
         is_active: true,
       });
     }
@@ -164,6 +168,7 @@ export default function DashboardAdminPlacements() {
           description: formData.description || null,
           dimensions: formData.dimensions || null,
           credit_cost: formData.credit_cost,
+          section2_credit_cost: formData.section2_credit_cost,
           is_active: formData.is_active,
         })
         .eq("id", selectedPlacement.id);
@@ -185,6 +190,7 @@ export default function DashboardAdminPlacements() {
           description: formData.description || null,
           dimensions: formData.dimensions || null,
           credit_cost: formData.credit_cost,
+          section2_credit_cost: formData.section2_credit_cost,
           is_active: formData.is_active,
         });
 
@@ -342,6 +348,12 @@ export default function DashboardAdminPlacements() {
                             <span className="font-semibold text-primary">{placement.credit_cost}</span>
                             <span className="text-xs text-muted-foreground">kr./dzień</span>
                           </div>
+                          {placement.slug === 'feed-tile' && placement.section2_credit_cost !== null && (
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-orange-500">{placement.section2_credit_cost}</span>
+                              <span className="text-xs text-muted-foreground">kr./dzień (sekcja 2)</span>
+                            </div>
+                          )}
                           {regionalPriceCounts[placement.id] ? (
                             <Badge variant="outline" className="text-xs gap-1">
                               <MapPin className="h-3 w-3" />
@@ -482,7 +494,7 @@ export default function DashboardAdminPlacements() {
             
             <div className="space-y-2">
               <Label htmlFor="credit_cost" className="flex items-center gap-2">
-                Koszt dzienny (kredyty)
+                Koszt dzienny (kredyty) {formData.slug === 'feed-tile' && <span className="text-xs text-muted-foreground">- Sekcja 1 (poz. 4-12)</span>}
                 <Badge variant="outline" className="text-xs font-normal">Cena</Badge>
               </Label>
               <div className="relative">
@@ -499,9 +511,42 @@ export default function DashboardAdminPlacements() {
                 </span>
               </div>
               <p className="text-xs text-muted-foreground">
-                Określ ile kredytów kosztuje 1 dzień emisji reklamy w tym miejscu
+                {formData.slug === 'feed-tile' 
+                  ? "Cena za pozycje 4-12 (Sekcja 1 - lepsza widoczność)"
+                  : "Określ ile kredytów kosztuje 1 dzień emisji reklamy w tym miejscu"
+                }
               </p>
             </div>
+            
+            {/* Section 2 pricing for feed-tile placement */}
+            {formData.slug === 'feed-tile' && (
+              <div className="space-y-2 border-t pt-4">
+                <Label htmlFor="section2_credit_cost" className="flex items-center gap-2">
+                  Koszt dzienny Sekcja 2 (poz. 13-24)
+                  <Badge variant="outline" className="text-xs font-normal bg-orange-100 text-orange-700 border-orange-300">Niższa cena</Badge>
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="section2_credit_cost"
+                    type="number"
+                    min="1"
+                    value={formData.section2_credit_cost ?? ''}
+                    onChange={(e) => setFormData(prev => ({ 
+                      ...prev, 
+                      section2_credit_cost: e.target.value ? parseInt(e.target.value) : null 
+                    }))}
+                    placeholder={`Domyślnie: ${formData.credit_cost}`}
+                    className="pr-16"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                    kr./dzień
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Cena za pozycje 13-24 (Sekcja 2 - dalsza w feedzie). Pozostaw puste dla tej samej ceny co Sekcja 1.
+                </p>
+              </div>
+            )}
             
             <div className="flex items-center justify-between">
               <Label htmlFor="is_active">Aktywne</Label>
