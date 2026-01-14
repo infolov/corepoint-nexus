@@ -17,6 +17,7 @@ import { useDisplayMode } from "@/hooks/use-display-mode";
 import { DynamicHeaderBranding } from "@/components/layout/DynamicHeaderBranding";
 import { useUserSettings } from "@/hooks/use-user-settings";
 import { useLocationContext } from "@/components/geolocation/LocationProvider";
+import { Logo } from "@/components/layout/Logo";
 const categories = [{
   name: "Wiadomości",
   slug: "wiadomosci",
@@ -203,11 +204,7 @@ export function Header() {
         <div className="w-full px-2 sm:px-4 md:container flex h-12 sm:h-14 md:h-16 items-center justify-between">
           {/* Left: Logo + Partner Space */}
           <div className="flex items-center gap-2 sm:gap-4 md:gap-6 min-w-0 flex-shrink">
-            <Link to="/" className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-              <span className="text-base sm:text-lg md:text-2xl lg:text-4xl font-bold tracking-tight">
-                informacje<span className="text-primary">.pl</span>
-              </span>
-            </Link>
+            <Logo size="lg" className="flex-shrink-0" />
 
             {/* Partner Branding - Dynamic with rotation on category pages - hidden on mobile */}
             <div className="hidden sm:block">

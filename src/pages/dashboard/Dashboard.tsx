@@ -27,6 +27,7 @@ import { useAdmin } from "@/hooks/use-admin";
 import { useDemo } from "@/contexts/DemoContext";
 import { cn } from "@/lib/utils";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Logo } from "@/components/layout/Logo";
 
 const sidebarLinks = [
   { name: "Panel główny", href: "/dashboard", icon: LayoutDashboard },
@@ -98,14 +99,7 @@ export default function Dashboard() {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="p-4 border-b border-border">
-            <Link to="/" className="flex items-center gap-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-hero-gradient">
-                <span className="text-xl font-bold text-primary-foreground">I</span>
-              </div>
-              <span className="text-lg font-bold tracking-tight">
-                INFORMACJE<span className="text-primary">.PL</span>
-              </span>
-            </Link>
+            <Logo size="md" showIcon />
           </div>
 
           {/* User Info */}
