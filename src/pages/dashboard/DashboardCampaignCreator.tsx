@@ -151,6 +151,12 @@ export default function DashboardCampaignCreator() {
     fetchData();
   }, [user]);
 
+  // Get selected placement data (moved up before getEffectiveDailyRate)
+  const selectedPlacementData = placements.find(p => p.id === selectedPlacement);
+  
+  // Check if selected placement requires tile position (moved up before getEffectiveDailyRate)
+  const requiresTilePosition = selectedPlacementData && TILE_POSITION_PLACEMENT_SLUGS.includes(selectedPlacementData.slug);
+
   // Calculate pricing based on tile position section
   const getEffectiveDailyRate = () => {
     if (requiresTilePosition && selectedPlacementData) {
@@ -278,12 +284,8 @@ export default function DashboardCampaignCreator() {
     }
   };
 
-  // Get selected placement data
-  const selectedPlacementData = placements.find(p => p.id === selectedPlacement);
+  // PlacementIcon derived from selectedPlacementData (already defined above)
   const PlacementIcon = selectedPlacementData ? placementIcons[selectedPlacementData.slug] || Monitor : Monitor;
-
-  // Check if selected placement requires tile position
-  const requiresTilePosition = selectedPlacementData && TILE_POSITION_PLACEMENT_SLUGS.includes(selectedPlacementData.slug);
 
   // Fetch occupied tile positions based on selected dates and targeting
   const { occupiedPositions, occupiedDetails, loading: loadingOccupied } = useOccupiedTilePositions({
