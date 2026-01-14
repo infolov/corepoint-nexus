@@ -1,17 +1,18 @@
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, Plus, Trash2, Radio } from 'lucide-react';
+import { AlertTriangle, Plus, Trash2, RefreshCw, Loader2 } from 'lucide-react';
 import { useEmergencyAlerts } from '@/hooks/use-emergency-alerts';
 import { useSiteSettings } from '@/hooks/use-site-settings';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const VOIVODESHIPS = [
   'dolnośląskie', 'kujawsko-pomorskie', 'lubelskie', 'lubuskie',
@@ -21,8 +22,9 @@ const VOIVODESHIPS = [
 ];
 
 export const AlertTickerManager = () => {
-  const { alerts, loading, createAlert, toggleAlert, deleteAlert } = useEmergencyAlerts();
+  const { alerts, loading, createAlert, toggleAlert, deleteAlert, refetch } = useEmergencyAlerts();
   const { settings, updateSetting, getSetting } = useSiteSettings();
+  const { toast } = useToast();
   
   const [newAlert, setNewAlert] = useState({
     message: '',
@@ -31,11 +33,37 @@ export const AlertTickerManager = () => {
     priority: 1,
   });
   const [isAdding, setIsAdding] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
 
   const isTickerEnabled = getSetting('alert_ticker_enabled', true);
 
   const handleToggleTicker = async () => {
     await updateSetting('alert_ticker_enabled', !isTickerEnabled, true);
+  };
+
+  const handleFetchExternalAlerts = async () => {
+    setIsFetching(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-emergency-alerts');
+      
+      if (error) throw error;
+      
+      toast({
+        title: 'Sukces',
+        description: `Pobrano alerty: IMGW Meteo: ${data.counts?.imgwMeteo || 0}, IMGW Hydro: ${data.counts?.imgwHydro || 0}, RCB: ${data.counts?.rcb || 0}. Dodano: ${data.counts?.inserted || 0}`,
+      });
+      
+      refetch();
+    } catch (error) {
+      console.error('Error fetching external alerts:', error);
+      toast({
+        title: 'Błąd',
+        description: 'Nie udało się pobrać alertów zewnętrznych',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsFetching(false);
+    }
   };
 
   const handleAddAlert = async () => {
@@ -80,12 +108,30 @@ export const AlertTickerManager = () => {
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        {!isAdding ? (
-          <Button onClick={() => setIsAdding(true)} className="w-full" variant="outline">
-            <Plus className="h-4 w-4 mr-2" />
-            Dodaj nowy alert
+        {/* Fetch external alerts button */}
+        <div className="flex gap-2">
+          <Button 
+            onClick={handleFetchExternalAlerts} 
+            variant="secondary"
+            disabled={isFetching}
+            className="flex-1"
+          >
+            {isFetching ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4 mr-2" />
+            )}
+            Pobierz alerty z RCB/IMGW
           </Button>
-        ) : (
+          {!isAdding && (
+            <Button onClick={() => setIsAdding(true)} variant="outline">
+              <Plus className="h-4 w-4 mr-2" />
+              Dodaj ręcznie
+            </Button>
+          )}
+        </div>
+
+        {isAdding && (
           <div className="border rounded-lg p-4 space-y-4 bg-muted/30">
             <div className="space-y-2">
               <Label>Treść alertu</Label>
