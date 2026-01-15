@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./use-auth";
 
@@ -12,37 +12,53 @@ interface UserRoleState {
   hasAnyRole: boolean;
   hasDashboardAccess: boolean;
   loading: boolean;
+  refetch: () => void;
 }
 
 export function useUserRole(): UserRoleState {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [roles, setRoles] = useState<UserRole[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function fetchUserRoles() {
-      if (!user) {
-        setRoles([]);
-        setLoading(false);
-        return;
-      }
+  const fetchUserRoles = useCallback(async () => {
+    if (!user) {
+      setRoles([]);
+      setLoading(false);
+      return;
+    }
 
+    try {
+      console.log("[useUserRole] Fetching roles for user:", user.id);
+      
       const { data, error } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", user.id);
 
       if (error) {
-        console.error("Error fetching user roles:", error);
+        console.error("[useUserRole] Error fetching user roles:", error);
         setRoles([]);
       } else {
-        setRoles((data || []).map(r => r.role as UserRole));
+        const fetchedRoles = (data || []).map(r => r.role as UserRole);
+        console.log("[useUserRole] Fetched roles:", fetchedRoles);
+        setRoles(fetchedRoles);
       }
+    } catch (err) {
+      console.error("[useUserRole] Unexpected error:", err);
+      setRoles([]);
+    } finally {
       setLoading(false);
     }
-
-    fetchUserRoles();
   }, [user]);
+
+  useEffect(() => {
+    // Wait for auth to finish loading before fetching roles
+    if (authLoading) {
+      return;
+    }
+    
+    fetchUserRoles();
+  }, [user, authLoading, fetchUserRoles]);
 
   const isAdmin = roles.includes("admin");
   const isAdvertiser = roles.includes("advertiser");
@@ -58,6 +74,7 @@ export function useUserRole(): UserRoleState {
     isUser: isUser && !isAdmin && !isAdvertiser, // Pure user without other roles
     hasAnyRole: roles.length > 0,
     hasDashboardAccess,
-    loading,
+    loading: loading || authLoading,
+    refetch: fetchUserRoles,
   };
 }
