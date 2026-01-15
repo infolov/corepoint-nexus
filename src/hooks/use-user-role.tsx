@@ -2,12 +2,13 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./use-auth";
 
-export type UserRole = "user" | "advertiser" | "admin";
+export type UserRole = "user" | "advertiser" | "publisher" | "admin";
 
 interface UserRoleState {
   roles: UserRole[];
   isAdmin: boolean;
   isAdvertiser: boolean;
+  isPublisher: boolean;
   isUser: boolean;
   hasAnyRole: boolean;
   hasDashboardAccess: boolean;
@@ -62,16 +63,18 @@ export function useUserRole(): UserRoleState {
 
   const isAdmin = roles.includes("admin");
   const isAdvertiser = roles.includes("advertiser");
+  const isPublisher = roles.includes("publisher");
   const isUser = roles.includes("user") || roles.length === 0; // Default to user if no roles
   
-  // Only admin and advertiser (partner) have dashboard access
-  const hasDashboardAccess = isAdmin || isAdvertiser;
+  // Admin, advertiser (partner), and publisher have dashboard access
+  const hasDashboardAccess = isAdmin || isAdvertiser || isPublisher;
 
   return {
     roles,
     isAdmin,
     isAdvertiser,
-    isUser: isUser && !isAdmin && !isAdvertiser, // Pure user without other roles
+    isPublisher,
+    isUser: isUser && !isAdmin && !isAdvertiser && !isPublisher, // Pure user without other roles
     hasAnyRole: roles.length > 0,
     hasDashboardAccess,
     loading: loading || authLoading,

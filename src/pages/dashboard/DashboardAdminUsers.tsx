@@ -24,13 +24,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { toast } from "sonner";
 import { 
   User, 
@@ -46,7 +39,9 @@ import {
   UserPlus,
   Building,
   Send,
-  KeyRound
+  KeyRound,
+  Megaphone,
+  FileEdit
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -63,9 +58,10 @@ interface UserProfile {
   roles: string[];
 }
 
-const roleConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon: React.ComponentType<{ className?: string }> }> = {
+const roleConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon: React.ComponentType<{ className?: string }>; description?: string }> = {
   user: { label: "Użytkownik", variant: "secondary", icon: User },
-  advertiser: { label: "Partner", variant: "default", icon: UserCog },
+  advertiser: { label: "Reklamodawca", variant: "default", icon: Megaphone, description: "Dostęp do kampanii reklamowych" },
+  publisher: { label: "Wydawca", variant: "outline", icon: FileEdit, description: "Pisanie i zamawianie artykułów sponsorowanych" },
   admin: { label: "Administrator", variant: "destructive", icon: Shield },
 };
 
@@ -79,7 +75,7 @@ export default function DashboardAdminUsers() {
   const [roleDialogOpen, setRoleDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<UserProfile | null>(null);
-  const [selectedRole, setSelectedRole] = useState<string>("");
+  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [processing, setProcessing] = useState(false);
   const [deleting, setDeleting] = useState(false);
   
@@ -146,8 +142,16 @@ export default function DashboardAdminUsers() {
 
   const openRoleDialog = (userProfile: UserProfile) => {
     setSelectedUser(userProfile);
-    setSelectedRole("");
+    setSelectedRoles([]);
     setRoleDialogOpen(true);
+  };
+
+  const toggleRoleSelection = (role: string) => {
+    setSelectedRoles(prev => 
+      prev.includes(role) 
+        ? prev.filter(r => r !== role)
+        : [...prev, role]
+    );
   };
 
   const openDeleteDialog = (userProfile: UserProfile) => {
@@ -265,45 +269,60 @@ export default function DashboardAdminUsers() {
 
   const { logAction } = useAdminLogs();
 
-  const handleAddRole = async () => {
-    if (!selectedUser || !selectedRole) {
-      toast.error("Wybierz rolę");
+  const handleAddRoles = async () => {
+    if (!selectedUser || selectedRoles.length === 0) {
+      toast.error("Wybierz co najmniej jedną rolę");
       return;
     }
 
-    if (selectedUser.roles.includes(selectedRole)) {
-      toast.error("Użytkownik ma już tę rolę");
+    // Filter out roles the user already has
+    const newRoles = selectedRoles.filter(role => !selectedUser.roles.includes(role));
+    
+    if (newRoles.length === 0) {
+      toast.error("Użytkownik ma już wszystkie wybrane role");
       return;
     }
 
     setProcessing(true);
 
-    const roleValue = selectedRole as "user" | "advertiser" | "admin";
+    let successCount = 0;
+    let errorCount = 0;
 
-    const { error } = await supabase
-      .from("user_roles")
-      .insert({
-        user_id: selectedUser.user_id,
-        role: roleValue,
-      });
+    for (const role of newRoles) {
+      const roleValue = role as "user" | "advertiser" | "admin" | "publisher";
 
-    if (error) {
-      if (error.code === "23505") {
-        toast.error("Użytkownik ma już tę rolę");
+      const { error } = await supabase
+        .from("user_roles")
+        .insert({
+          user_id: selectedUser.user_id,
+          role: roleValue,
+        });
+
+      if (error) {
+        if (error.code !== "23505") {
+          errorCount++;
+        }
       } else {
-        toast.error("Błąd podczas dodawania roli");
+        successCount++;
+        // Log the action
+        await logAction(
+          "role_added",
+          { role, user_email: selectedUser.email },
+          "user",
+          selectedUser.user_id
+        );
       }
-    } else {
-      // Log the action
-      await logAction(
-        "role_added",
-        { role: selectedRole, user_email: selectedUser.email },
-        "user",
-        selectedUser.user_id
-      );
-      toast.success(`Rola "${roleConfig[selectedRole]?.label}" została dodana`);
+    }
+
+    if (successCount > 0) {
+      const addedRoles = newRoles.map(r => roleConfig[r]?.label).join(", ");
+      toast.success(`Dodano role: ${addedRoles}`);
       setRoleDialogOpen(false);
       fetchUsers();
+    }
+    
+    if (errorCount > 0) {
+      toast.error(`Błąd podczas dodawania ${errorCount} ról`);
     }
 
     setProcessing(false);
@@ -322,7 +341,7 @@ export default function DashboardAdminUsers() {
 
     setProcessing(true);
 
-    const roleValue = role as "user" | "advertiser" | "admin";
+    const roleValue = role as "user" | "advertiser" | "admin" | "publisher";
 
     const { error } = await supabase
       .from("user_roles")
@@ -602,24 +621,84 @@ export default function DashboardAdminUsers() {
 
       {/* Add Role Dialog */}
       <Dialog open={roleDialogOpen} onOpenChange={setRoleDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Dodaj rolę użytkownikowi</DialogTitle>
+            <DialogTitle>Dodaj role użytkownikowi</DialogTitle>
             <DialogDescription>
-              Wybierz rolę dla użytkownika "{selectedUser?.full_name || selectedUser?.email}"
+              Wybierz role dla użytkownika "{selectedUser?.full_name || selectedUser?.email}"
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <Select value={selectedRole} onValueChange={setSelectedRole}>
-              <SelectTrigger>
-                <SelectValue placeholder="Wybierz rolę..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="user">Użytkownik</SelectItem>
-                <SelectItem value="advertiser">Partner</SelectItem>
-                <SelectItem value="admin">Administrator</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="py-4 space-y-4">
+            {/* Admin role */}
+            <div className="flex items-start space-x-3 p-3 rounded-lg border bg-destructive/5 border-destructive/20">
+              <Checkbox
+                id="role-admin"
+                checked={selectedRoles.includes("admin")}
+                onCheckedChange={() => toggleRoleSelection("admin")}
+                disabled={selectedUser?.roles.includes("admin")}
+              />
+              <div className="flex-1">
+                <Label htmlFor="role-admin" className="flex items-center gap-2 cursor-pointer font-medium">
+                  <Shield className="h-4 w-4 text-destructive" />
+                  Administrator
+                </Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Pełny dostęp do wszystkich funkcji systemu
+                </p>
+                {selectedUser?.roles.includes("admin") && (
+                  <Badge variant="outline" className="mt-1 text-xs">Już przypisane</Badge>
+                )}
+              </div>
+            </div>
+
+            {/* Partner roles section */}
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium text-muted-foreground">Role Partnera</h4>
+              
+              {/* Advertiser role */}
+              <div className="flex items-start space-x-3 p-3 rounded-lg border">
+                <Checkbox
+                  id="role-advertiser"
+                  checked={selectedRoles.includes("advertiser")}
+                  onCheckedChange={() => toggleRoleSelection("advertiser")}
+                  disabled={selectedUser?.roles.includes("advertiser")}
+                />
+                <div className="flex-1">
+                  <Label htmlFor="role-advertiser" className="flex items-center gap-2 cursor-pointer font-medium">
+                    <Megaphone className="h-4 w-4 text-primary" />
+                    Reklamodawca
+                  </Label>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Dostęp do tworzenia i zarządzania kampaniami reklamowymi
+                  </p>
+                  {selectedUser?.roles.includes("advertiser") && (
+                    <Badge variant="outline" className="mt-1 text-xs">Już przypisane</Badge>
+                  )}
+                </div>
+              </div>
+
+              {/* Publisher role */}
+              <div className="flex items-start space-x-3 p-3 rounded-lg border">
+                <Checkbox
+                  id="role-publisher"
+                  checked={selectedRoles.includes("publisher")}
+                  onCheckedChange={() => toggleRoleSelection("publisher")}
+                  disabled={selectedUser?.roles.includes("publisher")}
+                />
+                <div className="flex-1">
+                  <Label htmlFor="role-publisher" className="flex items-center gap-2 cursor-pointer font-medium">
+                    <FileEdit className="h-4 w-4 text-primary" />
+                    Wydawca
+                  </Label>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Pisanie artykułów sponsorowanych i zamawianie u dziennikarzy
+                  </p>
+                  {selectedUser?.roles.includes("publisher") && (
+                    <Badge variant="outline" className="mt-1 text-xs">Już przypisane</Badge>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button
@@ -629,10 +708,17 @@ export default function DashboardAdminUsers() {
               Anuluj
             </Button>
             <Button
-              onClick={handleAddRole}
-              disabled={processing || !selectedRole}
+              onClick={handleAddRoles}
+              disabled={processing || selectedRoles.length === 0}
             >
-              Dodaj rolę
+              {processing ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Dodawanie...
+                </>
+              ) : (
+                `Dodaj ${selectedRoles.length > 0 ? `(${selectedRoles.length})` : "role"}`
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
