@@ -9,7 +9,8 @@ import {
   TrendingUp,
   Eye,
   MousePointerClick,
-  ArrowRight
+  ArrowRight,
+  Handshake
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -224,6 +225,27 @@ export default function DashboardHome() {
             <Button variant="gradient" size="lg">
               <Target className="h-5 w-5 mr-2" />
               Przeglądaj miejsca reklamowe
+            </Button>
+          </Link>
+        </CardContent>
+      </Card>
+
+      {/* Partner CTA */}
+      <Card className="bg-gradient-to-r from-orange-500/10 to-yellow-500/5 border-orange-500/20">
+        <CardContent className="p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <Handshake className="h-5 w-5 text-orange-500" />
+              Zostań Partnerem Serwisu
+            </h3>
+            <p className="text-muted-foreground text-sm mt-1">
+              Twoje logo w nagłówku strony lub wybranej kategorii. Ekskluzywna pozycja dla wybranych partnerów.
+            </p>
+          </div>
+          <Link to="/dashboard/partner-application">
+            <Button variant="outline" size="lg" className="border-orange-500/50 text-orange-600 hover:bg-orange-500/10">
+              <Handshake className="h-5 w-5 mr-2" />
+              Złóż zgłoszenie
             </Button>
           </Link>
         </CardContent>

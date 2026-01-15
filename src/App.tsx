@@ -37,6 +37,8 @@ import DashboardAdminFactCheck from "./pages/dashboard/DashboardAdminFactCheck";
 import DashboardAdminSettings from "./pages/dashboard/DashboardAdminSettings";
 import DashboardAdminLogs from "./pages/dashboard/DashboardAdminLogs";
 import DashboardPreview from "./pages/dashboard/DashboardPreview";
+import DashboardPartnerApplication from "./pages/dashboard/DashboardPartnerApplication";
+import DashboardAdminApplications from "./pages/dashboard/DashboardAdminApplications";
 
 const queryClient = new QueryClient();
 
@@ -70,6 +72,7 @@ const App = () => (
                   <Route path="campaigns" element={<DashboardCampaigns />} />
                   <Route path="settings" element={<DashboardSettings />} />
                   <Route path="preview" element={<DashboardPreview />} />
+                  <Route path="partner-application" element={<DashboardPartnerApplication />} />
                   <Route path="admin/campaigns" element={<DashboardAdminCampaigns />} />
                   <Route path="admin/users" element={<DashboardAdminUsers />} />
                   <Route path="admin/placements" element={<DashboardAdminPlacements />} />
@@ -79,6 +82,7 @@ const App = () => (
                   <Route path="admin/factcheck" element={<DashboardAdminFactCheck />} />
                   <Route path="admin/settings" element={<DashboardAdminSettings />} />
                   <Route path="admin/logs" element={<DashboardAdminLogs />} />
+                  <Route path="admin/applications" element={<DashboardAdminApplications />} />
                 </Route>
                 <Route path="/sport/:subcategory" element={<Category />} />
                 <Route path="/:category" element={<Category />} />

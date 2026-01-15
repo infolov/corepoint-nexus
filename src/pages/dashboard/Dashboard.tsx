@@ -20,7 +20,8 @@ import {
   Building2,
   Eye,
   Activity,
-  ShieldAlert
+  ShieldAlert,
+  FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
@@ -51,6 +52,7 @@ const adminLinks = [
   { name: "Zarządzanie użytkownikami", href: "/dashboard/admin/users", icon: Users },
   { name: "Zarządzanie miejscami", href: "/dashboard/admin/placements", icon: LayoutGrid },
   { name: "Partnerzy", href: "/dashboard/admin/partners", icon: Building2 },
+  { name: "Zgłoszenia partnerskie", href: "/dashboard/admin/applications", icon: FileText },
   { name: "Karuzele banerów", href: "/dashboard/admin/carousels", icon: LayoutGrid },
 ];
 
