@@ -79,11 +79,12 @@ export default function DashboardAdminApplications() {
   }, []);
 
   const handleStatusChange = async (applicationId: string, newStatus: "approved" | "rejected") => {
-    if (!user) return;
+    if (!user || !selectedApplication) return;
 
     setIsProcessing(true);
     try {
-      const { error } = await supabase
+      // Update application status
+      const { error: updateError } = await supabase
         .from("partner_applications")
         .update({
           status: newStatus,
@@ -93,13 +94,48 @@ export default function DashboardAdminApplications() {
         })
         .eq("id", applicationId);
 
-      if (error) throw error;
+      if (updateError) throw updateError;
 
-      toast.success(
-        newStatus === "approved" 
-          ? "Zgłoszenie zostało zaakceptowane" 
-          : "Zgłoszenie zostało odrzucone"
-      );
+      // If approved, create partner campaign and assign advertiser role
+      if (newStatus === "approved") {
+        // Add advertiser role to the user
+        const { error: roleError } = await supabase
+          .from("user_roles")
+          .insert({
+            user_id: selectedApplication.user_id,
+            role: "advertiser",
+          });
+
+        // Ignore unique constraint error (user might already have this role)
+        if (roleError && !roleError.message.includes("duplicate")) {
+          console.error("Error adding advertiser role:", roleError);
+        }
+
+        // Create partner campaign
+        const endDate = new Date();
+        endDate.setFullYear(endDate.getFullYear() + 1); // 1 year campaign by default
+
+        const { error: campaignError } = await supabase
+          .from("partner_campaigns")
+          .insert({
+            user_id: selectedApplication.user_id,
+            name: `${selectedApplication.company_name} - Kampania Partnerska`,
+            partner_type: selectedApplication.partnership_type,
+            category_slug: selectedApplication.target_category || null,
+            logo_text: selectedApplication.company_name,
+            end_date: endDate.toISOString(),
+            is_active: true,
+          });
+
+        if (campaignError) {
+          console.error("Error creating partner campaign:", campaignError);
+          toast.error("Zgłoszenie zaakceptowane, ale wystąpił błąd podczas tworzenia kampanii");
+        } else {
+          toast.success("Zgłoszenie zaakceptowane! Utworzono kampanię partnerską i nadano rolę reklamodawcy.");
+        }
+      } else {
+        toast.success("Zgłoszenie zostało odrzucone");
+      }
 
       setSelectedApplication(null);
       setAdminNotes("");
