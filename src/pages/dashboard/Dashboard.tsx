@@ -21,7 +21,9 @@ import {
   Eye,
   Activity,
   ShieldAlert,
-  FileText
+  FileText,
+  UserCheck,
+  FileEdit
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
@@ -43,6 +45,10 @@ const sidebarLinks = [
   { name: "Ustawienia konta", href: "/dashboard/settings", icon: Settings },
 ];
 
+const publisherLinks = [
+  { name: "Panel Wydawcy", href: "/dashboard/publisher", icon: FileEdit },
+];
+
 const adminLinks = [
   { name: "Ustawienia globalne", href: "/dashboard/admin/settings", icon: Settings },
   { name: "Logi aktywności", href: "/dashboard/admin/logs", icon: Activity },
@@ -53,12 +59,13 @@ const adminLinks = [
   { name: "Zarządzanie miejscami", href: "/dashboard/admin/placements", icon: LayoutGrid },
   { name: "Partnerzy", href: "/dashboard/admin/partners", icon: Building2 },
   { name: "Zgłoszenia partnerskie", href: "/dashboard/admin/applications", icon: FileText },
+  { name: "Dziennikarze", href: "/dashboard/admin/journalists", icon: UserCheck },
   { name: "Karuzele banerów", href: "/dashboard/admin/carousels", icon: LayoutGrid },
 ];
 
 export default function Dashboard() {
   const { user, loading, signOut } = useAuth();
-  const { isAdmin, isAdvertiser, hasDashboardAccess, loading: roleLoading } = useUserRole();
+  const { isAdmin, isAdvertiser, isPublisher, hasDashboardAccess, loading: roleLoading } = useUserRole();
   const { isDemoMode, demoUser, exitDemoMode } = useDemo();
   const navigate = useNavigate();
   const location = useLocation();
@@ -180,6 +187,36 @@ export default function Dashboard() {
                 </Link>
               );
             })}
+
+            {/* Publisher Section */}
+            {(isPublisher || isAdmin) && (
+              <>
+                <div className="pt-4 pb-2">
+                  <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Wydawca
+                  </p>
+                </div>
+                {publisherLinks.map((link) => {
+                  const isActive = location.pathname === link.href;
+                  return (
+                    <Link
+                      key={link.href}
+                      to={link.href}
+                      onClick={() => setSidebarOpen(false)}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                        isActive 
+                          ? "bg-primary text-primary-foreground" 
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                      )}
+                    >
+                      <link.icon className="h-5 w-5" />
+                      {link.name}
+                    </Link>
+                  );
+                })}
+              </>
+            )}
 
             {/* Admin Section */}
             {isAdmin && (

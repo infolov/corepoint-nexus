@@ -39,6 +39,8 @@ import DashboardAdminLogs from "./pages/dashboard/DashboardAdminLogs";
 import DashboardPreview from "./pages/dashboard/DashboardPreview";
 import DashboardPartnerApplication from "./pages/dashboard/DashboardPartnerApplication";
 import DashboardAdminApplications from "./pages/dashboard/DashboardAdminApplications";
+import DashboardAdminJournalists from "./pages/dashboard/DashboardAdminJournalists";
+import DashboardPublisher from "./pages/dashboard/DashboardPublisher";
 
 const queryClient = new QueryClient();
 
@@ -83,6 +85,8 @@ const App = () => (
                   <Route path="admin/settings" element={<DashboardAdminSettings />} />
                   <Route path="admin/logs" element={<DashboardAdminLogs />} />
                   <Route path="admin/applications" element={<DashboardAdminApplications />} />
+                  <Route path="admin/journalists" element={<DashboardAdminJournalists />} />
+                  <Route path="publisher" element={<DashboardPublisher />} />
                 </Route>
                 <Route path="/sport/:subcategory" element={<Category />} />
                 <Route path="/:category" element={<Category />} />
