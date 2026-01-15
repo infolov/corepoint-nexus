@@ -88,6 +88,10 @@ serve(async (req) => {
 
     let emailSent = false;
     let emailSkipped = false;
+    let emailError = null;
+
+    console.log('Password updated successfully for user:', userId);
+    console.log('Email sending requested:', sendEmail, 'to:', userEmail);
 
     // Send email with new password if requested
     if (sendEmail && userEmail) {
@@ -96,7 +100,10 @@ serve(async (req) => {
       if (!RESEND_API_KEY) {
         console.log('RESEND_API_KEY not configured - skipping email send');
         emailSkipped = true;
+        emailError = 'RESEND_API_KEY not configured';
       } else {
+        console.log('RESEND_API_KEY found, preparing email...');
+        
         const emailHtml = `
           <!DOCTYPE html>
           <html>
@@ -141,7 +148,7 @@ serve(async (req) => {
                 
                 <p>Jeśli nie prosiłeś o zmianę hasła, skontaktuj się z nami natychmiast.</p>
                 
-                <p>Pozdrawiamy,<br>Zespół</p>
+                <p>Pozdrawiami,<br>Zespół</p>
               </div>
               <div class="footer">
                 <p>Ta wiadomość została wygenerowana automatycznie.</p>
@@ -152,6 +159,8 @@ serve(async (req) => {
         `;
 
         try {
+          console.log('Sending email via Resend API...');
+          
           const res = await fetch('https://api.resend.com/emails', {
             method: 'POST',
             headers: {
@@ -159,7 +168,7 @@ serve(async (req) => {
               'Authorization': `Bearer ${RESEND_API_KEY}`,
             },
             body: JSON.stringify({
-              from: 'Portal Informacyjny <noreply@resend.dev>',
+              from: 'Informacje <onboarding@resend.dev>',
               to: [userEmail],
               subject: 'Twoje hasło zostało zmienione',
               html: emailHtml,
@@ -167,14 +176,19 @@ serve(async (req) => {
           });
 
           const data = await res.json();
+          console.log('Resend API response status:', res.status);
+          console.log('Resend API response:', JSON.stringify(data));
           
           if (res.ok) {
             emailSent = true;
+            console.log('Email sent successfully!');
           } else {
-            console.error('Resend API error:', data);
+            console.error('Resend API error:', JSON.stringify(data));
+            emailError = data.message || 'Unknown Resend error';
           }
-        } catch (emailError) {
-          console.error('Error sending email:', emailError);
+        } catch (err) {
+          console.error('Error sending email:', err);
+          emailError = err instanceof Error ? err.message : 'Unknown error';
         }
       }
     }
@@ -183,7 +197,8 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         emailSent,
-        emailSkipped 
+        emailSkipped,
+        emailError
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

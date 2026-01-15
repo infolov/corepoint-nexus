@@ -208,6 +208,12 @@ export default function DashboardAdminUsers() {
       } else if (data.emailSkipped) {
         toast.success("Hasło zostało zmienione!");
         toast.info("Email nie został wysłany - brak skonfigurowanego klucza API Resend");
+      } else if (data.emailError) {
+        toast.success("Hasło zostało zmienione!");
+        toast.error(`Email nie został wysłany: ${data.emailError}`);
+      } else if (sendPasswordEmail) {
+        toast.success("Hasło zostało zmienione!");
+        toast.warning("Email mógł nie zostać wysłany - sprawdź logi");
       } else {
         toast.success("Hasło zostało zmienione!");
       }
