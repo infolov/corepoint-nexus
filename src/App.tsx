@@ -15,6 +15,7 @@ import Search from "./pages/Search";
 import NotificationSettings from "./pages/NotificationSettings";
 import Interests from "./pages/Interests";
 import NotFound from "./pages/NotFound";
+import SavedArticles from "./pages/SavedArticles";
 import WeatherDetails from "./pages/WeatherDetails";
 import AutoNews from "./pages/AutoNews";
 import LocalNews from "./pages/LocalNews";
@@ -61,6 +62,7 @@ const App = () => (
                 <Route path="/notifications/settings" element={<NotificationSettings />} />
                 <Route path="/interests" element={<Interests />} />
                 <Route path="/szukaj" element={<Search />} />
+                <Route path="/zapisane" element={<SavedArticles />} />
                 <Route path="/pogoda-szczegoly" element={<WeatherDetails />} />
                 <Route path="/auto-news" element={<AutoNews />} />
                 <Route path="/lokalne" element={<LocalNews />} />
