@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { User, LayoutDashboard, LogOut, Settings, Bell, Bookmark, History, ChevronRight, Heart, KeyRound } from "lucide-react";
+import { User, LayoutDashboard, LogOut, Settings, Bookmark, History, ChevronRight, Heart, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useUserRole } from "@/hooks/use-user-role";
@@ -66,16 +66,6 @@ export function UserPanel({ onSignOut, onSettingsClick, className }: UserPanelPr
             <div className="flex items-center gap-3">
               <Heart className="h-5 w-5 text-muted-foreground group-hover:text-primary" />
               <span className="text-senior font-medium">Zainteresowania</span>
-            </div>
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-          </Link>
-          <Link 
-            to="/powiadomienia" 
-            className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors group"
-          >
-            <div className="flex items-center gap-3">
-              <Bell className="h-5 w-5 text-muted-foreground group-hover:text-primary" />
-              <span className="text-senior font-medium">Powiadomienia</span>
             </div>
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
           </Link>
