@@ -786,6 +786,63 @@ export type Database = {
         }
         Relationships: []
       }
+      partner_applications: {
+        Row: {
+          admin_notes: string | null
+          company_name: string
+          contact_email: string
+          contact_name: string
+          contact_phone: string | null
+          created_at: string
+          id: string
+          industry: string
+          message: string | null
+          partnership_type: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          target_category: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          company_name: string
+          contact_email: string
+          contact_name: string
+          contact_phone?: string | null
+          created_at?: string
+          id?: string
+          industry: string
+          message?: string | null
+          partnership_type: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          target_category?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          company_name?: string
+          contact_email?: string
+          contact_name?: string
+          contact_phone?: string | null
+          created_at?: string
+          id?: string
+          industry?: string
+          message?: string | null
+          partnership_type?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          target_category?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       partner_campaigns: {
         Row: {
           category_slug: string | null
