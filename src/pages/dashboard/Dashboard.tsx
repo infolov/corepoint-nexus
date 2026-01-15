@@ -19,15 +19,17 @@ import {
   AlertTriangle,
   Building2,
   Eye,
-  Activity
+  Activity,
+  ShieldAlert
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
-import { useAdmin } from "@/hooks/use-admin";
+import { useUserRole } from "@/hooks/use-user-role";
 import { useDemo } from "@/contexts/DemoContext";
 import { cn } from "@/lib/utils";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Logo } from "@/components/layout/Logo";
+import { Card, CardContent } from "@/components/ui/card";
 
 const sidebarLinks = [
   { name: "Panel główny", href: "/dashboard", icon: LayoutDashboard },
@@ -54,7 +56,7 @@ const adminLinks = [
 
 export default function Dashboard() {
   const { user, loading, signOut } = useAuth();
-  const { isAdmin } = useAdmin();
+  const { isAdmin, isAdvertiser, hasDashboardAccess, loading: roleLoading } = useUserRole();
   const { isDemoMode, demoUser, exitDemoMode } = useDemo();
   const navigate = useNavigate();
   const location = useLocation();
@@ -69,6 +71,13 @@ export default function Dashboard() {
     }
   }, [user, loading, navigate, isDemoMode]);
 
+  // Redirect regular users to home page - they don't have dashboard access
+  useEffect(() => {
+    if (!loading && !roleLoading && user && !hasDashboardAccess && !isDemoMode) {
+      navigate("/");
+    }
+  }, [user, loading, roleLoading, hasDashboardAccess, navigate, isDemoMode]);
+
   const handleSignOut = async () => {
     if (isDemoMode) {
       exitDemoMode();
@@ -79,7 +88,7 @@ export default function Dashboard() {
     }
   };
 
-  if (loading && !isDemoMode) {
+  if ((loading || roleLoading) && !isDemoMode) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -88,6 +97,27 @@ export default function Dashboard() {
   }
 
   if (!effectiveUser) return null;
+
+  // Show access denied for regular users (non-demo)
+  if (!isDemoMode && !hasDashboardAccess) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="max-w-md w-full border-destructive">
+          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+            <ShieldAlert className="h-16 w-16 text-destructive mb-4" />
+            <h2 className="text-xl font-semibold mb-2">Brak dostępu do panelu</h2>
+            <p className="text-muted-foreground mb-6">
+              Panel jest dostępny tylko dla partnerów reklamowych i administratorów. 
+              Jeśli chcesz prowadzić kampanie reklamowe, skontaktuj się z nami.
+            </p>
+            <Button onClick={() => navigate("/")} variant="default">
+              Wróć do strony głównej
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-muted/30 flex">
