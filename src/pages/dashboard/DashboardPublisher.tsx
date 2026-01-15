@@ -15,27 +15,76 @@ import {
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useJournalists, Journalist } from "@/hooks/use-journalists";
 import { useSponsoredArticles, SponsoredArticleFormData } from "@/hooks/use-sponsored-articles";
-import { FileEdit, Users, ShoppingCart, Loader2, Clock, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { useSponsoredArticleEditor, SponsoredArticleFormData as EditorFormData } from "@/hooks/use-sponsored-article-editor";
+import { 
+  FileEdit, 
+  Users, 
+  ShoppingCart, 
+  Loader2, 
+  Clock, 
+  CheckCircle, 
+  XCircle, 
+  AlertCircle,
+  Plus,
+  Pencil,
+  Eye,
+  PenTool
+} from "lucide-react";
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
 
 const statusConfig: Record<string, { label: string; icon: React.ReactNode; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   pending: { label: "Oczekuje", icon: <Clock className="h-4 w-4" />, variant: "secondary" },
+  draft: { label: "Szkic", icon: <PenTool className="h-4 w-4" />, variant: "outline" },
   in_progress: { label: "W realizacji", icon: <AlertCircle className="h-4 w-4" />, variant: "default" },
+  approved: { label: "Zatwierdzony", icon: <CheckCircle className="h-4 w-4" />, variant: "default" },
   completed: { label: "Ukończone", icon: <CheckCircle className="h-4 w-4" />, variant: "outline" },
   rejected: { label: "Odrzucone", icon: <XCircle className="h-4 w-4" />, variant: "destructive" },
 };
 
+const CATEGORIES = [
+  { value: "gospodarka", label: "Gospodarka" },
+  { value: "polityka", label: "Polityka" },
+  { value: "sport", label: "Sport" },
+  { value: "technologie", label: "Technologie" },
+  { value: "kultura", label: "Kultura" },
+  { value: "nauka", label: "Nauka" },
+  { value: "zdrowie", label: "Zdrowie" },
+  { value: "lifestyle", label: "Lifestyle" },
+  { value: "motoryzacja", label: "Motoryzacja" },
+];
+
 export default function DashboardPublisher() {
   const { journalists, isLoading: journalistsLoading } = useJournalists();
   const { orders, isLoading: ordersLoading, createOrder } = useSponsoredArticles();
+  const { myArticles, isLoading: articlesLoading, createArticle, updateArticle } = useSponsoredArticleEditor();
+  
   const [isOrderDialogOpen, setIsOrderDialogOpen] = useState(false);
+  const [isArticleDialogOpen, setIsArticleDialogOpen] = useState(false);
   const [selectedJournalist, setSelectedJournalist] = useState<Journalist | null>(null);
-  const [formData, setFormData] = useState<Omit<SponsoredArticleFormData, "journalist_id" | "price">>({
+  const [editingArticle, setEditingArticle] = useState<any>(null);
+  
+  const [orderFormData, setOrderFormData] = useState<Omit<SponsoredArticleFormData, "journalist_id" | "price">>({
     title: "",
     description: "",
+    target_url: "",
+  });
+
+  const [articleFormData, setArticleFormData] = useState<EditorFormData>({
+    title: "",
+    excerpt: "",
+    content: "",
+    category: "",
+    image: "",
     target_url: "",
   });
 
@@ -43,8 +92,33 @@ export default function DashboardPublisher() {
 
   const openOrderDialog = (journalist: Journalist) => {
     setSelectedJournalist(journalist);
-    setFormData({ title: "", description: "", target_url: "" });
+    setOrderFormData({ title: "", description: "", target_url: "" });
     setIsOrderDialogOpen(true);
+  };
+
+  const openArticleDialog = (article?: any) => {
+    if (article) {
+      setEditingArticle(article);
+      setArticleFormData({
+        title: article.title,
+        excerpt: article.excerpt || "",
+        content: article.content || "",
+        category: article.category,
+        image: article.image,
+        target_url: article.target_url || "",
+      });
+    } else {
+      setEditingArticle(null);
+      setArticleFormData({
+        title: "",
+        excerpt: "",
+        content: "",
+        category: "",
+        image: "",
+        target_url: "",
+      });
+    }
+    setIsArticleDialogOpen(true);
   };
 
   const handleSubmitOrder = async () => {
@@ -52,14 +126,24 @@ export default function DashboardPublisher() {
 
     await createOrder.mutateAsync({
       journalist_id: selectedJournalist.id,
-      title: formData.title,
-      description: formData.description,
-      target_url: formData.target_url,
+      title: orderFormData.title,
+      description: orderFormData.description,
+      target_url: orderFormData.target_url,
       price: selectedJournalist.price_per_article,
     });
 
     setIsOrderDialogOpen(false);
     setSelectedJournalist(null);
+  };
+
+  const handleSubmitArticle = async () => {
+    if (editingArticle) {
+      await updateArticle.mutateAsync({ id: editingArticle.id, ...articleFormData });
+    } else {
+      await createArticle.mutateAsync(articleFormData);
+    }
+    setIsArticleDialogOpen(false);
+    setEditingArticle(null);
   };
 
   const getJournalistName = (journalistId: string | null) => {
@@ -68,7 +152,9 @@ export default function DashboardPublisher() {
     return journalist?.name || "Nieznany";
   };
 
-  if (journalistsLoading || ordersLoading) {
+  const isLoading = journalistsLoading || ordersLoading || articlesLoading;
+
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -88,18 +174,116 @@ export default function DashboardPublisher() {
         </p>
       </div>
 
-      <Tabs defaultValue="journalists" className="space-y-6">
+      <Tabs defaultValue="my-articles" className="space-y-6">
         <TabsList>
+          <TabsTrigger value="my-articles" className="flex items-center gap-2">
+            <PenTool className="h-4 w-4" />
+            Moje artykuły ({myArticles.length})
+          </TabsTrigger>
           <TabsTrigger value="journalists" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             Dziennikarze
           </TabsTrigger>
           <TabsTrigger value="orders" className="flex items-center gap-2">
             <ShoppingCart className="h-4 w-4" />
-            Moje zamówienia ({orders.length})
+            Zamówienia ({orders.length})
           </TabsTrigger>
         </TabsList>
 
+        {/* My Articles Tab */}
+        <TabsContent value="my-articles" className="space-y-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Moje artykuły sponsorowane</CardTitle>
+                <CardDescription>
+                  Twórz własne artykuły, które po zatwierdzeniu pojawią się w sekcji głównych kafelków
+                </CardDescription>
+              </div>
+              <Button onClick={() => openArticleDialog()}>
+                <Plus className="h-4 w-4 mr-2" />
+                Napisz artykuł
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {myArticles.length === 0 ? (
+                <div className="text-center py-12">
+                  <PenTool className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="font-medium text-lg mb-2">Brak artykułów</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Napisz swój pierwszy artykuł sponsorowany
+                  </p>
+                  <Button onClick={() => openArticleDialog()}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Napisz artykuł
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {myArticles.map((article) => {
+                    const status = statusConfig[article.sponsor_status || "draft"] || statusConfig.draft;
+                    return (
+                      <Card key={article.id} className="overflow-hidden">
+                        <div className="flex">
+                          {article.image && (
+                            <div className="w-40 h-32 shrink-0">
+                              <img
+                                src={article.image}
+                                alt={article.title}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          )}
+                          <CardContent className="flex-1 p-4">
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <Badge variant="outline" className="text-xs">
+                                    {article.category}
+                                  </Badge>
+                                  <Badge variant={status.variant} className="flex items-center gap-1">
+                                    {status.icon}
+                                    {status.label}
+                                  </Badge>
+                                </div>
+                                <h3 className="font-semibold line-clamp-1">{article.title}</h3>
+                                <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+                                  {article.excerpt}
+                                </p>
+                                <div className="text-xs text-muted-foreground mt-2">
+                                  {format(new Date(article.created_at), "dd MMM yyyy, HH:mm", { locale: pl })}
+                                </div>
+                              </div>
+                              <div className="flex gap-2 shrink-0">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => openArticleDialog(article)}
+                                  disabled={article.sponsor_status === "approved"}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                {article.is_published && (
+                                  <Button variant="ghost" size="icon" asChild>
+                                    <a href={`/artykul/${article.id}`} target="_blank" rel="noopener">
+                                      <Eye className="h-4 w-4" />
+                                    </a>
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Journalists Tab */}
         <TabsContent value="journalists" className="space-y-6">
           <Card>
             <CardHeader>
@@ -158,6 +342,7 @@ export default function DashboardPublisher() {
           </Card>
         </TabsContent>
 
+        {/* Orders Tab */}
         <TabsContent value="orders" className="space-y-6">
           <Card>
             <CardHeader>
@@ -232,32 +417,32 @@ export default function DashboardPublisher() {
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Tytuł artykułu *</Label>
+              <Label htmlFor="order-title">Tytuł artykułu *</Label>
               <Input
-                id="title"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                id="order-title"
+                value={orderFormData.title}
+                onChange={(e) => setOrderFormData({ ...orderFormData, title: e.target.value })}
                 placeholder="Wprowadź tytuł artykułu"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Opis / Brief *</Label>
+              <Label htmlFor="order-description">Opis / Brief *</Label>
               <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                id="order-description"
+                value={orderFormData.description}
+                onChange={(e) => setOrderFormData({ ...orderFormData, description: e.target.value })}
                 placeholder="Opisz czego ma dotyczyć artykuł, jakie informacje powinien zawierać..."
                 rows={4}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="target_url">Link do promowanej strony (opcjonalnie)</Label>
+              <Label htmlFor="order-target-url">Link do promowanej strony (opcjonalnie)</Label>
               <Input
-                id="target_url"
-                value={formData.target_url}
-                onChange={(e) => setFormData({ ...formData, target_url: e.target.value })}
+                id="order-target-url"
+                value={orderFormData.target_url}
+                onChange={(e) => setOrderFormData({ ...orderFormData, target_url: e.target.value })}
                 placeholder="https://..."
               />
             </div>
@@ -269,10 +454,141 @@ export default function DashboardPublisher() {
             </Button>
             <Button
               onClick={handleSubmitOrder}
-              disabled={!formData.title || !formData.description || createOrder.isPending}
+              disabled={!orderFormData.title || !orderFormData.description || createOrder.isPending}
             >
               {createOrder.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Złóż zamówienie
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Article Editor Dialog */}
+      <Dialog open={isArticleDialogOpen} onOpenChange={setIsArticleDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {editingArticle ? "Edytuj artykuł" : "Napisz artykuł sponsorowany"}
+            </DialogTitle>
+            <DialogDescription>
+              Po wysłaniu artykuł zostanie zweryfikowany przez administratora i opublikowany w sekcji głównych kafelków
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="article-title">Tytuł artykułu *</Label>
+                <Input
+                  id="article-title"
+                  value={articleFormData.title}
+                  onChange={(e) => setArticleFormData({ ...articleFormData, title: e.target.value })}
+                  placeholder="Wprowadź tytuł"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="article-category">Kategoria *</Label>
+                <Select
+                  value={articleFormData.category}
+                  onValueChange={(value) => setArticleFormData({ ...articleFormData, category: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Wybierz kategorię" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CATEGORIES.map((cat) => (
+                      <SelectItem key={cat.value} value={cat.value}>
+                        {cat.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="article-excerpt">Zajawka / Lead *</Label>
+              <Textarea
+                id="article-excerpt"
+                value={articleFormData.excerpt}
+                onChange={(e) => setArticleFormData({ ...articleFormData, excerpt: e.target.value })}
+                placeholder="Krótki opis artykułu widoczny na kafelku (max 200 znaków)"
+                rows={2}
+                maxLength={200}
+              />
+              <p className="text-xs text-muted-foreground text-right">
+                {articleFormData.excerpt.length}/200
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="article-content">Treść artykułu *</Label>
+              <Textarea
+                id="article-content"
+                value={articleFormData.content}
+                onChange={(e) => setArticleFormData({ ...articleFormData, content: e.target.value })}
+                placeholder="Napisz pełną treść artykułu..."
+                rows={10}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="article-image">URL obrazka głównego *</Label>
+                <Input
+                  id="article-image"
+                  value={articleFormData.image}
+                  onChange={(e) => setArticleFormData({ ...articleFormData, image: e.target.value })}
+                  placeholder="https://..."
+                />
+                {articleFormData.image && (
+                  <div className="mt-2 rounded-lg overflow-hidden border">
+                    <img
+                      src={articleFormData.image}
+                      alt="Podgląd"
+                      className="w-full h-32 object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = "/placeholder.svg";
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="article-target-url">Link do promowanej strony (opcjonalnie)</Label>
+                <Input
+                  id="article-target-url"
+                  value={articleFormData.target_url}
+                  onChange={(e) => setArticleFormData({ ...articleFormData, target_url: e.target.value })}
+                  placeholder="https://..."
+                />
+                <p className="text-xs text-muted-foreground">
+                  Przycisk "Dowiedz się więcej" będzie linkować do tej strony
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsArticleDialogOpen(false)}>
+              Anuluj
+            </Button>
+            <Button
+              onClick={handleSubmitArticle}
+              disabled={
+                !articleFormData.title ||
+                !articleFormData.excerpt ||
+                !articleFormData.content ||
+                !articleFormData.category ||
+                !articleFormData.image ||
+                createArticle.isPending ||
+                updateArticle.isPending
+              }
+            >
+              {(createArticle.isPending || updateArticle.isPending) && (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              )}
+              {editingArticle ? "Zapisz zmiany" : "Wyślij do weryfikacji"}
             </Button>
           </DialogFooter>
         </DialogContent>

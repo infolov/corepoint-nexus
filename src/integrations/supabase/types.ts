@@ -258,8 +258,12 @@ export type Database = {
           image: string
           is_featured: boolean
           is_published: boolean
+          is_sponsored: boolean | null
           region: string | null
+          sponsor_status: string | null
+          sponsor_user_id: string | null
           subcategory: string | null
+          target_url: string | null
           title: string
           updated_at: string
           verification_feedback: Json | null
@@ -279,8 +283,12 @@ export type Database = {
           image: string
           is_featured?: boolean
           is_published?: boolean
+          is_sponsored?: boolean | null
           region?: string | null
+          sponsor_status?: string | null
+          sponsor_user_id?: string | null
           subcategory?: string | null
+          target_url?: string | null
           title: string
           updated_at?: string
           verification_feedback?: Json | null
@@ -300,8 +308,12 @@ export type Database = {
           image?: string
           is_featured?: boolean
           is_published?: boolean
+          is_sponsored?: boolean | null
           region?: string | null
+          sponsor_status?: string | null
+          sponsor_user_id?: string | null
           subcategory?: string | null
+          target_url?: string | null
           title?: string
           updated_at?: string
           verification_feedback?: Json | null
