@@ -566,6 +566,45 @@ export type Database = {
         }
         Relationships: []
       }
+      journalists: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          email: string
+          id: string
+          is_active: boolean | null
+          name: string
+          price_per_article: number
+          specialization: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          price_per_article?: number
+          specialization?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          price_per_article?: number
+          specialization?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       local_ad_campaigns: {
         Row: {
           ad_type: string
@@ -1070,6 +1109,56 @@ export type Database = {
           updated_by?: string | null
         }
         Relationships: []
+      }
+      sponsored_article_orders: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          description: string
+          id: string
+          journalist_id: string | null
+          price: number
+          status: string
+          target_url: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          journalist_id?: string | null
+          price: number
+          status?: string
+          target_url?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          journalist_id?: string | null
+          price?: number
+          status?: string
+          target_url?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sponsored_article_orders_journalist_id_fkey"
+            columns: ["journalist_id"]
+            isOneToOne: false
+            referencedRelation: "journalists"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sport_subcategories: {
         Row: {
