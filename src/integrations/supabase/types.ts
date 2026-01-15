@@ -1095,6 +1095,42 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_articles: {
+        Row: {
+          article_category: string | null
+          article_excerpt: string | null
+          article_id: string
+          article_image: string | null
+          article_title: string
+          article_url: string | null
+          id: string
+          saved_at: string
+          user_id: string
+        }
+        Insert: {
+          article_category?: string | null
+          article_excerpt?: string | null
+          article_id: string
+          article_image?: string | null
+          article_title: string
+          article_url?: string | null
+          id?: string
+          saved_at?: string
+          user_id: string
+        }
+        Update: {
+          article_category?: string | null
+          article_excerpt?: string | null
+          article_id?: string
+          article_image?: string | null
+          article_title?: string
+          article_url?: string | null
+          id?: string
+          saved_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       site_settings: {
         Row: {
           description: string | null
