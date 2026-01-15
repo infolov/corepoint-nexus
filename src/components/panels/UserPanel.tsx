@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { User, LayoutDashboard, LogOut, Settings, Bell, Bookmark, History, ChevronRight, Heart, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
+import { useUserRole } from "@/hooks/use-user-role";
 import { cn } from "@/lib/utils";
 
 interface UserPanelProps {
@@ -12,8 +13,16 @@ interface UserPanelProps {
 
 export function UserPanel({ onSignOut, onSettingsClick, className }: UserPanelProps) {
   const { user } = useAuth();
+  const { hasDashboardAccess, isAdmin, isAdvertiser, loading: roleLoading } = useUserRole();
 
   if (user) {
+    // Determine role label
+    const getRoleLabel = () => {
+      if (isAdmin) return "Administrator";
+      if (isAdvertiser) return "Partner";
+      return "Użytkownik";
+    };
+
     return (
       <div className={cn("space-y-4", className)}>
         {/* User info */}
@@ -26,17 +35,22 @@ export function UserPanel({ onSignOut, onSettingsClick, className }: UserPanelPr
               {user.user_metadata?.full_name || "Użytkownik"}
             </p>
             <p className="text-sm text-muted-foreground truncate">{user.email}</p>
+            {!roleLoading && (
+              <p className="text-xs text-primary font-medium">{getRoleLabel()}</p>
+            )}
           </div>
         </div>
 
-        {/* Quick actions */}
-        <div className="grid grid-cols-2 gap-2">
-          <Link to="/dashboard">
-            <Button variant="gradient" className="w-full h-12 text-senior">
-              <LayoutDashboard className="h-5 w-5 mr-2" />
-              Panel
-            </Button>
-          </Link>
+        {/* Quick actions - Show dashboard only for partners and admins */}
+        <div className={cn("grid gap-2", hasDashboardAccess ? "grid-cols-2" : "grid-cols-1")}>
+          {hasDashboardAccess && (
+            <Link to="/dashboard">
+              <Button variant="gradient" className="w-full h-12 text-senior">
+                <LayoutDashboard className="h-5 w-5 mr-2" />
+                Panel
+              </Button>
+            </Link>
+          )}
           <Button variant="outline" className="w-full h-12 text-senior" onClick={onSignOut}>
             <LogOut className="h-5 w-5 mr-2" />
             Wyloguj
