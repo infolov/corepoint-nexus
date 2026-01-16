@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { CategoryBar } from "@/components/navigation/CategoryBar";
+
 import { NewsCard } from "@/components/news/NewsCard";
 import { AuctionAdSlot } from "@/components/widgets/AuctionAdSlot";
 import { FeedBannerCarousel, formatBannersForCarousel } from "@/components/widgets/FeedBannerCarousel";
@@ -365,9 +365,6 @@ const Index = () => {
   }
   return <div className="min-h-screen bg-background w-full overflow-x-clip">
       <Header />
-      
-      {/* Floating Category Bar */}
-      <CategoryBar activeCategory={activeCategory} onCategoryChange={setActiveCategory} />
 
 
       <main className="w-full px-2 sm:px-4 md:container py-3 sm:py-4 md:py-6">
