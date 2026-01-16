@@ -2,20 +2,9 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserSettings } from "@/hooks/use-user-settings";
 import { useAuth } from "@/hooks/use-auth";
+import { useLocalContentMixer, type LocalArticle } from "@/hooks/use-local-content-mixer";
 
-export interface LocalArticle {
-  id: string;
-  title: string;
-  excerpt: string;
-  category: string;
-  region: string;
-  image: string;
-  source: string;
-  sourceUrl: string;
-  timestamp: string;
-  content: string;
-  pubDateMs: number;
-}
+export type { LocalArticle };
 
 interface UseLocalNewsOptions {
   limit?: number;
@@ -32,11 +21,22 @@ export function useLocalNews(options: UseLocalNewsOptions = {}) {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [detectedVoivodeship, setDetectedVoivodeship] = useState<string | null>(null);
 
+  // Apply content mixing based on location settings
+  const { mixedArticles, locationLevel, mixStats } = useLocalContentMixer(
+    articles,
+    {
+      voivodeship: settings.voivodeship,
+      county: settings.county,
+      city: settings.city,
+    },
+    limit
+  );
+
   const fetchLocalNews = useCallback(async (showLoading = true) => {
     // Wait for settings to load
     if (settingsLoading) return;
     
-    // If user has no location set, try IP-based detection
+    // If user has no location set, don't fetch
     const voivodeship = settings.voivodeship;
     
     if (showLoading) setLoading(true);
@@ -56,8 +56,10 @@ export function useLocalNews(options: UseLocalNewsOptions = {}) {
       const { data, error: fetchError } = await supabase.functions.invoke('fetch-local-news', {
         body: { 
           voivodeship, 
+          county: settings.county,
+          city: settings.city,
           clientIP,
-          userId: user?.id // Pass user ID to filter by preferences
+          userId: user?.id
         },
       });
 
@@ -66,7 +68,7 @@ export function useLocalNews(options: UseLocalNewsOptions = {}) {
       }
 
       if (data?.articles) {
-        setArticles(data.articles.slice(0, limit));
+        setArticles(data.articles);
         setDetectedVoivodeship(data.voivodeship);
         setLastUpdated(new Date());
       }
@@ -76,7 +78,7 @@ export function useLocalNews(options: UseLocalNewsOptions = {}) {
     } finally {
       setLoading(false);
     }
-  }, [settings.voivodeship, settingsLoading, limit, user?.id]);
+  }, [settings.voivodeship, settings.county, settings.city, settingsLoading, user?.id]);
 
   useEffect(() => {
     if (autoFetch && !settingsLoading) {
@@ -97,14 +99,35 @@ export function useLocalNews(options: UseLocalNewsOptions = {}) {
 
   const refetch = () => fetchLocalNews(true);
 
+  // Check if user has any location set
+  const hasLocation = !!settings.voivodeship || !!detectedVoivodeship;
+
+  // Build display location string
+  const getDisplayLocation = () => {
+    if (settings.city) return settings.city;
+    if (settings.county) return settings.county;
+    if (settings.voivodeship) return settings.voivodeship;
+    if (detectedVoivodeship) return detectedVoivodeship;
+    return null;
+  };
+
   return {
-    articles,
+    articles: mixedArticles,
+    rawArticles: articles,
     loading,
     error,
     refetch,
     lastUpdated,
     detectedVoivodeship,
-    hasLocation: !!settings.voivodeship || !!detectedVoivodeship,
+    hasLocation,
+    locationLevel,
+    mixStats,
+    displayLocation: getDisplayLocation(),
+    userSettings: {
+      voivodeship: settings.voivodeship,
+      county: settings.county,
+      city: settings.city,
+    },
   };
 }
 
@@ -121,5 +144,6 @@ export function formatLocalArticleForCard(article: LocalArticle) {
     source: article.source,
     sourceUrl: article.sourceUrl,
     region: article.region,
+    locationLevel: article.locationLevel,
   };
 }
