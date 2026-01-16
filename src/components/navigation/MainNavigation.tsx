@@ -140,8 +140,8 @@ function NavItem({ category, isActive }: NavItemProps) {
 
       {/* Dropdown - positioned directly below the trigger */}
       {isOpen && category.subcategories.length > 0 && (
-        <div className="absolute left-0 top-full pt-1 z-50">
-          <div className="rounded-md border border-border bg-popover text-popover-foreground shadow-lg animate-in fade-in-0 zoom-in-95">
+        <div className="absolute left-0 top-full pt-1 z-[100]">
+          <div className="rounded-md border border-border bg-popover text-popover-foreground shadow-xl animate-in fade-in-0 zoom-in-95">
             <SubcategoryMenu category={category} onClose={() => setIsOpen(false)} />
           </div>
         </div>
@@ -159,7 +159,7 @@ export function MainNavigation() {
   };
 
   return (
-    <nav className="w-full bg-background border-b border-border">
+    <nav className="w-full bg-background border-b border-border relative z-[90]">
       <div className="container">
         <div className="flex items-center gap-1 py-1 overflow-x-auto scrollbar-hide">
           {/* Link do strony głównej */}
