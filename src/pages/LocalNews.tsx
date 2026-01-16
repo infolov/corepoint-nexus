@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { CategoryBar } from "@/components/navigation/CategoryBar";
 import { NewsCard } from "@/components/news/NewsCard";
 import { useLocalNews, formatLocalArticleForCard } from "@/hooks/use-local-news";
 import { useUserSettings } from "@/hooks/use-user-settings";
@@ -106,6 +107,7 @@ export default function LocalNews() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
+      <CategoryBar activeCategory={activeCategory} onCategoryChange={handleCategoryChange} />
       
       <main className="container py-6">
         {/* Show location selector if no location is set */}
