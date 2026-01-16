@@ -264,14 +264,17 @@ export function MainNavigation() {
   );
 
   return (
-    <nav className="w-full bg-background border-b border-border">
+    <nav className="w-full bg-background border-b border-border overflow-hidden">
       <div className="container">
-        <div className="flex items-center gap-1 py-1">
+        <div 
+          className="flex items-center gap-1 py-1 overflow-x-auto scrollbar-hide"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
           {/* Link do strony głównej */}
           <Link
             to="/"
             className={cn(
-              "inline-flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
+              "inline-flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap flex-shrink-0",
               "hover:bg-accent hover:text-accent-foreground",
               currentPath === "/" && "bg-accent text-accent-foreground"
             )}
@@ -281,15 +284,18 @@ export function MainNavigation() {
 
           {/* Priorytetowe kategorie z dropdownami */}
           {priorityCategories.map((category) => (
-            <NavItem
-              key={category.slug}
-              category={category}
-              isActive={isActive(category.slug)}
-            />
+            <div key={category.slug} className="flex-shrink-0">
+              <NavItem
+                category={category}
+                isActive={isActive(category.slug)}
+              />
+            </div>
           ))}
 
           {/* Więcej - pozostałe kategorie */}
-          <MoreMenuItem />
+          <div className="flex-shrink-0">
+            <MoreMenuItem />
+          </div>
         </div>
       </div>
     </nav>
