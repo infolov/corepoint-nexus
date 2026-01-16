@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Menu, X, Search, User, Sun, Moon, Settings, LayoutDashboard, LogOut, MapPin, Loader2, Cloud, CloudRain, CloudSnow, CloudSun, CloudMoon, Snowflake, Wind, Droplets, Navigation } from "lucide-react";
+import { Menu, X, Search, Sun, Moon, Settings, MapPin, Loader2, Cloud, CloudRain, CloudSnow, CloudSun, CloudMoon, Snowflake, Wind, Droplets, Navigation } from "lucide-react";
 import { useWeather } from "@/hooks/use-weather";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,8 +8,8 @@ import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { SettingsPanel } from "@/components/settings/SettingsPanel";
-import { SportDropdown } from "@/components/navigation/SportDropdown";
-import { CategoryDropdown } from "@/components/navigation/CategoryDropdown";
+import { MainNavigation } from "@/components/navigation/MainNavigation";
+import { MobileNavigation } from "@/components/navigation/MobileNavigation";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { UserPanel } from "@/components/panels/UserPanel";
 import { useAuth } from "@/hooks/use-auth";
@@ -18,24 +18,9 @@ import { DynamicHeaderBranding } from "@/components/layout/DynamicHeaderBranding
 import { useUserSettings } from "@/hooks/use-user-settings";
 import { useLocationContext } from "@/components/geolocation/LocationProvider";
 import { Logo } from "@/components/layout/Logo";
-const categories = [{
-  name: "Wiadomości",
-  slug: "wiadomosci",
-  parentFilter: "Wiadomości"
-}, {
-  name: "Biznes",
-  slug: "biznes",
-  parentFilter: "Biznes"
-}, {
-  name: "Lifestyle",
-  slug: "lifestyle",
-  parentFilter: "Lifestyle"
-}, {
-  name: "Rozrywka",
-  slug: "rozrywka",
-  parentFilter: "Rozrywka"
-}];
+import { useIsMobile } from "@/hooks/use-mobile";
 export function Header() {
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -202,8 +187,18 @@ export function Header() {
       {/* Top Bar */}
       <div className="bg-nav text-nav-foreground w-full">
         <div className="w-full px-2 sm:px-4 md:container flex h-12 sm:h-14 md:h-16 items-center justify-between">
-          {/* Left: Logo + Partner Space */}
+          {/* Left: Mobile Menu Button + Logo + Partner Space */}
           <div className="flex items-center gap-2 sm:gap-4 md:gap-6 min-w-0 flex-shrink">
+            {/* Mobile menu toggle */}
+            <Button
+              variant="nav"
+              size="icon"
+              className="md:hidden h-8 w-8"
+              onClick={() => setIsMobileNavOpen(true)}
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+
             <Logo size="lg" className="flex-shrink-0" />
 
             {/* Partner Branding - Dynamic with rotation on category pages - hidden on mobile */}
@@ -375,14 +370,13 @@ export function Header() {
         </div>
       </div>
 
-      {/* Mobile Menu (kept for category quick access) */}
-      <div className={cn("md:hidden bg-nav border-t border-nav-foreground/10 overflow-hidden transition-all duration-300", isMenuOpen ? "max-h-96" : "max-h-0")}>
-        <nav className="container py-4 flex flex-col gap-2">
-          {categories.map(cat => <Link key={cat.name} to={`/${cat.slug}`} className="px-4 py-2 text-nav-foreground hover:bg-nav-foreground/10 rounded-lg transition-colors" onClick={() => setIsMenuOpen(false)}>
-              {cat.name}
-            </Link>)}
-        </nav>
+      {/* Desktop Navigation Bar */}
+      <div className="hidden md:block">
+        <MainNavigation />
       </div>
+
+      {/* Mobile Navigation */}
+      <MobileNavigation isOpen={isMobileNavOpen} onClose={() => setIsMobileNavOpen(false)} />
 
       {/* Settings Panel */}
       <SettingsPanel isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} onSettingsSaved={() => window.location.reload()} />
