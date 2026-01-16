@@ -2,22 +2,12 @@ import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { ChevronDown, ChevronRight, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { CATEGORIES, Category, SubCategory } from "@/data/categories";
+import { CATEGORIES, Category } from "@/data/categories";
 
 // Kategorie wyświetlane w głównym menu (bez "Wszystko")
 const MAIN_NAV_CATEGORIES = CATEGORIES.filter(
   (cat) => cat.slug !== "all" && cat.subcategories.length > 0
 );
-
-// Kategorie priorytetowe (widoczne na desktop)
-const PRIORITY_CATEGORIES = [
-  "lokalne",
-  "wiadomosci",
-  "swiat",
-  "biznes",
-  "sport",
-  "tech-nauka",
-];
 
 interface SubcategoryMenuProps {
   category: Category;
@@ -125,14 +115,14 @@ function NavItem({ category, isActive }: NavItemProps) {
 
   return (
     <div
-      className="relative"
+      className="relative flex-shrink-0"
       ref={menuRef}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
       <button
         className={cn(
-          "inline-flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
+          "inline-flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap",
           "hover:bg-accent hover:text-accent-foreground",
           isActive && "bg-accent text-accent-foreground",
           isOpen && "bg-accent/50"
@@ -160,97 +150,6 @@ function NavItem({ category, isActive }: NavItemProps) {
   );
 }
 
-function MoreMenuItem() {
-  const [isOpen, setIsOpen] = useState(false);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  const handleMouseEnter = () => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    setIsOpen(true);
-  };
-
-  const handleMouseLeave = () => {
-    timeoutRef.current = setTimeout(() => {
-      setIsOpen(false);
-    }, 150);
-  };
-
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
-  }, []);
-
-  const otherCategories = MAIN_NAV_CATEGORIES.filter(
-    (cat) => !PRIORITY_CATEGORIES.includes(cat.slug)
-  );
-
-  return (
-    <div
-      className="relative"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
-      <button
-        className={cn(
-          "inline-flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
-          "hover:bg-accent hover:text-accent-foreground",
-          isOpen && "bg-accent/50"
-        )}
-      >
-        Więcej
-        <ChevronDown
-          className={cn(
-            "ml-1 h-3 w-3 transition-transform duration-200",
-            isOpen && "rotate-180"
-          )}
-        />
-      </button>
-
-      {isOpen && (
-        <div className="absolute left-0 top-full pt-1 z-50">
-          <div className="rounded-md border border-border bg-popover text-popover-foreground shadow-lg animate-in fade-in-0 zoom-in-95 p-2 w-[320px] md:w-[500px]">
-            <div className="grid md:grid-cols-2 gap-2">
-              {otherCategories.map((category) => (
-                <div key={category.slug} className="space-y-1">
-                  <Link
-                    to={`/${category.slug}`}
-                    onClick={() => setIsOpen(false)}
-                    className="block px-3 py-2 text-sm font-semibold hover:bg-accent rounded-md transition-colors"
-                  >
-                    {category.name}
-                  </Link>
-                  <div className="pl-3 space-y-0.5">
-                    {category.subcategories.slice(0, 4).map((sub) => (
-                      <Link
-                        key={sub.slug}
-                        to={`/${category.slug}/${sub.slug}`}
-                        onClick={() => setIsOpen(false)}
-                        className="block px-2 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-accent/50 rounded transition-colors"
-                      >
-                        {sub.name}
-                      </Link>
-                    ))}
-                    {category.subcategories.length > 4 && (
-                      <Link
-                        to={`/${category.slug}`}
-                        onClick={() => setIsOpen(false)}
-                        className="block px-2 py-1 text-xs text-primary hover:underline"
-                      >
-                        + więcej...
-                      </Link>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 export function MainNavigation() {
   const location = useLocation();
   const currentPath = location.pathname;
@@ -259,19 +158,15 @@ export function MainNavigation() {
     return currentPath === `/${slug}` || currentPath.startsWith(`/${slug}/`);
   };
 
-  const priorityCategories = MAIN_NAV_CATEGORIES.filter((cat) =>
-    PRIORITY_CATEGORIES.includes(cat.slug)
-  );
-
   return (
     <nav className="w-full bg-background border-b border-border">
       <div className="container">
-        <div className="flex items-center gap-1 py-1">
+        <div className="flex items-center gap-1 py-1 overflow-x-auto scrollbar-hide">
           {/* Link do strony głównej */}
           <Link
             to="/"
             className={cn(
-              "inline-flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
+              "inline-flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md transition-colors flex-shrink-0 whitespace-nowrap",
               "hover:bg-accent hover:text-accent-foreground",
               currentPath === "/" && "bg-accent text-accent-foreground"
             )}
@@ -279,17 +174,14 @@ export function MainNavigation() {
             Wszystko
           </Link>
 
-          {/* Priorytetowe kategorie z dropdownami */}
-          {priorityCategories.map((category) => (
+          {/* Wszystkie kategorie na scrollowanym pasku */}
+          {MAIN_NAV_CATEGORIES.map((category) => (
             <NavItem
               key={category.slug}
               category={category}
               isActive={isActive(category.slug)}
             />
           ))}
-
-          {/* Więcej - pozostałe kategorie */}
-          <MoreMenuItem />
         </div>
       </div>
     </nav>

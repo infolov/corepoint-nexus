@@ -132,7 +132,7 @@ export const CATEGORIES: Category[] = [
     ],
   },
   {
-    name: "Tech + Nauka",
+    name: "Technologia & Nauka",
     slug: "tech-nauka",
     subcategories: [
       { name: "AI", slug: "ai" },
