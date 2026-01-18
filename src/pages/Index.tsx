@@ -7,6 +7,7 @@ import { AuctionAdSlot } from "@/components/widgets/AuctionAdSlot";
 import { FeedBannerCarousel, formatBannersForCarousel } from "@/components/widgets/FeedBannerCarousel";
 import { FeedTileAdCard } from "@/components/widgets/FeedTileAdCard";
 import { DailySummaryCard } from "@/components/news/DailySummaryCard";
+import { DailySummaryWidget } from "@/components/widgets/DailySummaryWidget";
 import { AlertTicker } from "@/components/widgets/AlertTicker";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import { useDisplayMode } from "@/hooks/use-display-mode";
@@ -371,9 +372,10 @@ const Index = () => {
 
 
       <main className="w-full px-2 sm:px-4 md:container py-3 sm:py-4 md:py-6">
-        {/* Daily Summary Card */}
-        <div className="mb-6">
+        {/* Daily Summary Section - Card + Widget side by side on desktop */}
+        <div className="mb-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
           <DailySummaryCard />
+          <DailySummaryWidget />
         </div>
 
         {/* Top Ad Banner - Using Auction Engine */}
