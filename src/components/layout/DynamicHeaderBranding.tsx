@@ -74,12 +74,17 @@ export function DynamicHeaderBranding({
       <span className="text-[10px] md:text-sm text-nav-foreground/60 whitespace-nowrap">
         {shouldRotate && showCategoryPartner ? <><span className="hidden md:inline">{`Partner ${getCategoryDisplayName(currentCategory)}:`}</span><span className="md:hidden">Partner:</span></> : <><span className="hidden md:inline">Partner Serwisu:</span><span className="md:hidden">Partner:</span></>}
       </span>
-      <div className="h-6 md:h-10 w-16 md:w-28 rounded md:rounded-lg flex items-center justify-center overflow-hidden bg-muted">
-        {displayPartner ? displayPartner.logo_url ? <a href={displayPartner.target_url || "#"} target="_blank" rel="noopener noreferrer" className="h-full w-full flex items-center justify-center" onClick={e => e.stopPropagation()}>
-              <img src={displayPartner.logo_url} alt={displayPartner.name} className="h-4 md:h-8 max-w-full object-contain" />
+      <div className={cn(
+        "rounded md:rounded-lg flex items-center justify-center overflow-hidden",
+        displayPartner?.logo_url 
+          ? "h-auto w-auto" 
+          : "h-6 md:h-10 w-16 md:w-28 bg-nav-foreground/10"
+      )}>
+        {displayPartner ? displayPartner.logo_url ? <a href={displayPartner.target_url || "#"} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center" onClick={e => e.stopPropagation()}>
+              <img src={displayPartner.logo_url} alt={displayPartner.name} className="h-6 md:h-10 max-w-[80px] md:max-w-[120px] object-contain" />
             </a> : <a href={displayPartner.target_url || "#"} target="_blank" rel="noopener noreferrer" className="text-[8px] md:text-sm text-nav-foreground/70 hover:text-nav-foreground transition-colors truncate px-1 md:px-2" onClick={e => e.stopPropagation()}>
               {displayPartner.logo_text || displayPartner.name}
-            </a> : <span className="text-[8px] md:text-sm text-nav-foreground/50">Logo</span>}
+            </a> : <span className="text-[8px] md:text-sm text-nav-foreground/40">Logo</span>}
       </div>
     </div>;
 }
