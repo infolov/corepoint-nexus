@@ -29,15 +29,21 @@ export const COMMON_TAGS = [
   { name: "Bezpieczeństwo", slug: "bezpieczenstwo", color: "warning" },
 ] as const;
 
-// Podkategorie lokalne
-export const LOCAL_SUBCATEGORIES: SubCategory[] = [
-  { name: "Wypadki", slug: "wypadki" },
-  { name: "Utrudnienia", slug: "utrudnienia" },
-  { name: "Miasto i samorząd", slug: "miasto-samorzad" },
-  { name: "Inwestycje i remonty", slug: "inwestycje-remonty" },
-  { name: "Bezpieczeństwo", slug: "bezpieczenstwo" },
-  { name: "Kultura", slug: "kultura-lokalna" },
-  { name: "Sport", slug: "sport-lokalny" },
+// Podkategorie lokalne z słowami kluczowymi do filtrowania
+export interface LocalSubCategory {
+  name: string;
+  slug: string;
+  keywords: string[];
+}
+
+export const LOCAL_SUBCATEGORIES: LocalSubCategory[] = [
+  { name: "Wypadki", slug: "wypadki", keywords: ["wypadek", "kolizja", "zderzenie", "potrącenie", "śmiertelny", "ranny", "ofiara", "karetka", "straż"] },
+  { name: "Utrudnienia", slug: "utrudnienia", keywords: ["utrudnienia", "korek", "objazd", "remont drogi", "zamknięta", "blokada", "roboty drogowe", "awaria"] },
+  { name: "Miasto i samorząd", slug: "miasto-samorzad", keywords: ["burmistrz", "wójt", "prezydent miasta", "rada miasta", "radny", "sesja", "uchwała", "samorząd", "urząd"] },
+  { name: "Inwestycje i remonty", slug: "inwestycje-remonty", keywords: ["inwestycja", "remont", "budowa", "modernizacja", "przebudowa", "dotacja", "fundusze", "przetarg"] },
+  { name: "Bezpieczeństwo", slug: "bezpieczenstwo", keywords: ["policja", "straż", "kradzież", "włamanie", "oszustwo", "zatrzymanie", "patrol", "bezpieczeństwo", "przestępstwo"] },
+  { name: "Kultura", slug: "kultura-lokalna", keywords: ["koncert", "festiwal", "wystawa", "teatr", "muzeum", "biblioteka", "dom kultury", "wydarzenie", "impreza"] },
+  { name: "Sport", slug: "sport-lokalny", keywords: ["mecz", "turniej", "zawody", "liga", "drużyna", "klub sportowy", "stadion", "hala", "mistrzostwa"] },
 ];
 
 // Województwa Polski
