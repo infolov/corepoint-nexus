@@ -19,6 +19,7 @@ import SavedArticles from "./pages/SavedArticles";
 import WeatherDetails from "./pages/WeatherDetails";
 import AutoNews from "./pages/AutoNews";
 import LocalNews from "./pages/LocalNews";
+import DailySummary from "./pages/DailySummary";
 import Dashboard from "./pages/dashboard/Dashboard";
 import DashboardHome from "./pages/dashboard/DashboardHome";
 import DashboardCalendar from "./pages/dashboard/DashboardCalendar";
@@ -66,6 +67,7 @@ const App = () => (
                 <Route path="/pogoda-szczegoly" element={<WeatherDetails />} />
                 <Route path="/auto-news" element={<AutoNews />} />
                 <Route path="/lokalne" element={<LocalNews />} />
+                <Route path="/skrot-dnia" element={<DailySummary />} />
                 <Route path="/dashboard" element={<Dashboard />}>
                   <Route index element={<DashboardHome />} />
                   <Route path="calendar" element={<DashboardCalendar />} />
