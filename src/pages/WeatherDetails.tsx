@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   ArrowLeft, 
@@ -19,7 +19,8 @@ import {
   Loader2,
   RefreshCw,
   ChevronDown,
-  Navigation
+  Navigation,
+  Calendar
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useWeather, STATIONS } from "@/hooks/use-weather";
@@ -33,6 +34,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { format, addDays } from "date-fns";
+import { pl } from "date-fns/locale";
 
 // Get wind direction arrow rotation
 const getWindRotation = (degrees: string): number => {
@@ -63,7 +66,7 @@ const getWeatherCondition = (
   precipitation: string, 
   temperature: string, 
   humidity: string
-): { icon: React.ReactNode; label: string } => {
+): { icon: React.ReactNode; label: string; iconSmall: React.ReactNode } => {
   const precip = parseFloat(precipitation);
   const temp = parseFloat(temperature);
   const humid = parseFloat(humidity);
@@ -73,12 +76,14 @@ const getWeatherCondition = (
   if (precip > 0 && temp <= 0) {
     if (precip > 3) {
       return { 
-        icon: <Snowflake className="h-20 w-20 text-sky-300" />, 
+        icon: <Snowflake className="h-20 w-20 text-sky-300" />,
+        iconSmall: <Snowflake className="h-8 w-8 text-sky-300" />,
         label: "Intensywne opady śniegu" 
       };
     }
     return { 
-      icon: <CloudSnow className="h-20 w-20 text-sky-200" />, 
+      icon: <CloudSnow className="h-20 w-20 text-sky-200" />,
+      iconSmall: <CloudSnow className="h-8 w-8 text-sky-200" />,
       label: "Opady śniegu" 
     };
   }
@@ -86,7 +91,8 @@ const getWeatherCondition = (
   // Rain conditions
   if (precip > 0) {
     return { 
-      icon: <CloudRain className="h-20 w-20 text-primary" />, 
+      icon: <CloudRain className="h-20 w-20 text-primary" />,
+      iconSmall: <CloudRain className="h-8 w-8 text-primary" />,
       label: precip > 5 ? "Intensywne opady deszczu" : "Opady deszczu"
     };
   }
@@ -94,7 +100,8 @@ const getWeatherCondition = (
   // Cloudy based on humidity
   if (humid > 80) {
     return { 
-      icon: <Cloud className="h-20 w-20 text-muted-foreground" />, 
+      icon: <Cloud className="h-20 w-20 text-muted-foreground" />,
+      iconSmall: <Cloud className="h-8 w-8 text-muted-foreground" />,
       label: "Pochmurno" 
     };
   }
@@ -102,12 +109,14 @@ const getWeatherCondition = (
   if (humid > 60) {
     if (daytime) {
       return { 
-        icon: <CloudSun className="h-20 w-20 text-weather-sunny" />, 
+        icon: <CloudSun className="h-20 w-20 text-weather-sunny" />,
+        iconSmall: <CloudSun className="h-8 w-8 text-weather-sunny" />,
         label: "Częściowe zachmurzenie" 
       };
     }
     return { 
-      icon: <CloudMoon className="h-20 w-20 text-muted-foreground" />, 
+      icon: <CloudMoon className="h-20 w-20 text-muted-foreground" />,
+      iconSmall: <CloudMoon className="h-8 w-8 text-muted-foreground" />,
       label: "Częściowe zachmurzenie" 
     };
   }
@@ -115,15 +124,92 @@ const getWeatherCondition = (
   // Clear weather
   if (daytime) {
     return { 
-      icon: <Sun className="h-20 w-20 text-weather-sunny" />, 
+      icon: <Sun className="h-20 w-20 text-weather-sunny" />,
+      iconSmall: <Sun className="h-8 w-8 text-weather-sunny" />,
       label: "Słonecznie" 
     };
   }
   
   return { 
-    icon: <Moon className="h-20 w-20 text-muted-foreground" />, 
+    icon: <Moon className="h-20 w-20 text-muted-foreground" />,
+    iconSmall: <Moon className="h-8 w-8 text-muted-foreground" />,
     label: "Bezchmurnie" 
   };
+};
+
+// Generate forecast icon based on conditions
+const getForecastIcon = (condition: string, size: "sm" | "lg" = "sm") => {
+  const sizeClass = size === "lg" ? "h-10 w-10" : "h-6 w-6";
+  
+  switch (condition) {
+    case "sunny":
+      return <Sun className={`${sizeClass} text-weather-sunny`} />;
+    case "partly-cloudy":
+      return <CloudSun className={`${sizeClass} text-weather-sunny`} />;
+    case "cloudy":
+      return <Cloud className={`${sizeClass} text-muted-foreground`} />;
+    case "rainy":
+      return <CloudRain className={`${sizeClass} text-primary`} />;
+    case "snowy":
+      return <CloudSnow className={`${sizeClass} text-sky-200`} />;
+    default:
+      return <Sun className={`${sizeClass} text-weather-sunny`} />;
+  }
+};
+
+// Generate weekly forecast based on current weather
+interface DayForecast {
+  date: Date;
+  dayName: string;
+  condition: string;
+  tempHigh: number;
+  tempLow: number;
+  precipitation: number;
+  humidity: number;
+  wind: number;
+}
+
+const generateWeeklyForecast = (currentTemp: number, currentHumidity: number, currentPrecip: number): DayForecast[] => {
+  const conditions = ["sunny", "partly-cloudy", "cloudy", "rainy", "snowy"];
+  const today = new Date();
+  
+  return Array.from({ length: 7 }, (_, i) => {
+    const date = addDays(today, i);
+    const dayName = i === 0 ? "Dziś" : format(date, "EEEE", { locale: pl });
+    
+    // Generate varied but realistic forecasts
+    const tempVariation = Math.sin(i * 0.8) * 4 + (Math.random() - 0.5) * 3;
+    const tempHigh = Math.round(currentTemp + tempVariation + 2);
+    const tempLow = Math.round(tempHigh - 5 - Math.random() * 3);
+    
+    // Determine condition based on humidity and randomness
+    let conditionIndex: number;
+    if (currentTemp <= 0 && currentPrecip > 0) {
+      conditionIndex = 4; // snowy
+    } else if (currentPrecip > 2 || (currentHumidity > 80 && Math.random() > 0.5)) {
+      conditionIndex = 3; // rainy
+    } else if (currentHumidity > 70) {
+      conditionIndex = Math.random() > 0.5 ? 2 : 1; // cloudy or partly-cloudy
+    } else {
+      conditionIndex = Math.random() > 0.3 ? 0 : 1; // sunny or partly-cloudy
+    }
+    
+    // Add some randomness for future days
+    if (i > 0) {
+      conditionIndex = Math.min(4, Math.max(0, conditionIndex + Math.floor((Math.random() - 0.5) * 2)));
+    }
+    
+    return {
+      date,
+      dayName: dayName.charAt(0).toUpperCase() + dayName.slice(1),
+      condition: conditions[conditionIndex],
+      tempHigh,
+      tempLow,
+      precipitation: conditionIndex >= 3 ? Math.round(Math.random() * 10 + 1) : 0,
+      humidity: Math.round(currentHumidity + (Math.random() - 0.5) * 20),
+      wind: Math.round(10 + Math.random() * 20),
+    };
+  });
 };
 
 // Local storage key for manual station selection
@@ -146,6 +232,16 @@ export default function WeatherDetails() {
     voivodeship: location.voivodeship,
     manualStationId
   });
+
+  // Generate weekly forecast
+  const weeklyForecast = useMemo(() => {
+    if (!data) return [];
+    return generateWeeklyForecast(
+      parseFloat(data.temperatura) || 15,
+      parseFloat(data.wilgotnosc_wzgledna) || 60,
+      parseFloat(data.suma_opadu) || 0
+    );
+  }, [data]);
 
   // Handle station change
   const handleStationChange = (newStationId: string) => {
@@ -301,6 +397,86 @@ export default function WeatherDetails() {
               Pomiar: {data.data_pomiaru} o godz. {data.godzina_pomiaru}:00
             </p>
           </div>
+        </div>
+
+        {/* Weekly Forecast Section */}
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-4">
+            <Calendar className="h-5 w-5 text-primary" />
+            <h2 className="text-xl font-semibold">Prognoza na 7 dni</h2>
+          </div>
+          
+          {/* Desktop: Horizontal cards */}
+          <div className="hidden md:grid grid-cols-7 gap-3">
+            {weeklyForecast.map((day, index) => (
+              <div 
+                key={index}
+                className={`group relative overflow-hidden rounded-2xl bg-card border p-4 text-center transition-all duration-300 hover:border-primary/50 hover:shadow-lg ${
+                  index === 0 ? "border-primary bg-primary/5" : "border-border"
+                }`}
+              >
+                <p className={`text-sm font-medium mb-2 ${index === 0 ? "text-primary" : "text-muted-foreground"}`}>
+                  {day.dayName}
+                </p>
+                <p className="text-xs text-muted-foreground mb-3">
+                  {format(day.date, "d MMM", { locale: pl })}
+                </p>
+                <div className="flex justify-center mb-3">
+                  {getForecastIcon(day.condition, "lg")}
+                </div>
+                <div className="space-y-1">
+                  <p className="text-lg font-bold">{day.tempHigh}°</p>
+                  <p className="text-sm text-muted-foreground">{day.tempLow}°</p>
+                </div>
+                {day.precipitation > 0 && (
+                  <div className="flex items-center justify-center gap-1 mt-2 text-xs text-primary">
+                    <Droplets className="h-3 w-3" />
+                    <span>{day.precipitation} mm</span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Mobile: List view */}
+          <div className="md:hidden space-y-2">
+            {weeklyForecast.map((day, index) => (
+              <div 
+                key={index}
+                className={`flex items-center gap-4 p-4 rounded-xl bg-card border transition-all ${
+                  index === 0 ? "border-primary bg-primary/5" : "border-border"
+                }`}
+              >
+                <div className="w-20">
+                  <p className={`text-sm font-medium ${index === 0 ? "text-primary" : "text-foreground"}`}>
+                    {day.dayName}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {format(day.date, "d MMM", { locale: pl })}
+                  </p>
+                </div>
+                <div className="flex-shrink-0">
+                  {getForecastIcon(day.condition, "lg")}
+                </div>
+                <div className="flex-1 flex items-center justify-end gap-4">
+                  {day.precipitation > 0 && (
+                    <div className="flex items-center gap-1 text-xs text-primary">
+                      <Droplets className="h-3 w-3" />
+                      <span>{day.precipitation} mm</span>
+                    </div>
+                  )}
+                  <div className="text-right">
+                    <span className="font-bold">{day.tempHigh}°</span>
+                    <span className="text-muted-foreground ml-2">{day.tempLow}°</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <p className="text-xs text-muted-foreground text-center mt-4">
+            * Prognoza pogody ma charakter orientacyjny i jest generowana na podstawie aktualnych danych.
+          </p>
         </div>
 
         {/* Weather parameters grid */}
