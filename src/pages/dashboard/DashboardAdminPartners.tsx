@@ -287,14 +287,18 @@ export default function DashboardAdminPartners() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="target_url">Link docelowy</Label>
+                <Label htmlFor="target_url">Link docelowy *</Label>
                 <Input
                   id="target_url"
                   type="url"
-                  placeholder="https://..."
+                  placeholder="https://partner-website.com"
                   value={formData.target_url}
                   onChange={(e) => setFormData({ ...formData, target_url: e.target.value })}
+                  required
                 />
+                <p className="text-xs text-muted-foreground">
+                  Adres strony partnera, na którą będzie kierował link po kliknięciu w logo
+                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -433,6 +437,16 @@ function PartnerCard({
           <p className="text-sm text-muted-foreground">
             {format(new Date(partner.start_date), "d MMM yyyy", { locale: pl })} - {format(new Date(partner.end_date), "d MMM yyyy", { locale: pl })}
           </p>
+          {partner.target_url && (
+            <a 
+              href={partner.target_url} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-xs text-primary hover:underline truncate max-w-[200px] block"
+            >
+              {partner.target_url}
+            </a>
+          )}
         </div>
       </div>
       <div className="flex items-center gap-2">
