@@ -96,7 +96,7 @@ const RSS_SOURCES = [
   { url: 'https://businessinsider.com.pl/rss', source: 'Business Insider PL', category: 'Biznes' },
   { url: 'https://www.forbes.pl/rss', source: 'Forbes PL', category: 'Biznes' },
   
-  // ===== SPORT =====
+  // ===== SPORT (GENERAL) =====
   { url: 'https://sportowefakty.wp.pl/rss.xml', source: 'Sportowe Fakty', category: 'Sport' },
   { url: 'https://sport.tvp.pl/rss/sport.xml', source: 'TVP Sport', category: 'Sport' },
   { url: 'https://www.sport.pl/rss.xml', source: 'Sport.pl', category: 'Sport' },
@@ -107,6 +107,52 @@ const RSS_SOURCES = [
   { url: 'https://sport.onet.pl/rss.xml', source: 'Onet Sport', category: 'Sport' },
   { url: 'https://www.weszlo.com/feed/', source: 'Weszło', category: 'Sport' },
   { url: 'https://pilkanozna.pl/feed/', source: 'PilkaNozna.pl', category: 'Sport' },
+  
+  // ===== PIŁKA NOŻNA =====
+  { url: 'https://www.goal.pl/feeds/rss/ekstraklasa', source: 'Goal Ekstraklasa', category: 'Sport' },
+  { url: 'https://www.transfermarkt.pl/rss/news', source: 'Transfermarkt PL', category: 'Sport' },
+  { url: 'https://www.90minut.pl/rss.xml', source: '90minut.pl', category: 'Sport' },
+  
+  // ===== NBA / KOSZYKÓWKA =====
+  { url: 'https://www.probasket.pl/feed/', source: 'ProBasket.pl', category: 'Sport' },
+  { url: 'https://basket.com.pl/feed/', source: 'Basket.com.pl', category: 'Sport' },
+  { url: 'https://www.plk.pl/rss/', source: 'PLK.pl', category: 'Sport' },
+  { url: 'https://www.eurohoops.net/pl/feed/', source: 'Eurohoops PL', category: 'Sport' },
+  { url: 'https://www.basketnews.pl/feed/', source: 'BasketNews.pl', category: 'Sport' },
+  
+  // ===== NHL / HOKEJ =====
+  { url: 'https://hokej.net/feed/', source: 'Hokej.net', category: 'Sport' },
+  { url: 'https://www.polskihokej.com/rss/', source: 'PolskiHokej.com', category: 'Sport' },
+  { url: 'https://www.hockeydb.pl/rss/', source: 'HockeyDB.pl', category: 'Sport' },
+  
+  // ===== E-SPORT =====
+  { url: 'https://esportmania.pl/feed/', source: 'Esportmania', category: 'Sport' },
+  { url: 'https://www.esportsea.pl/feed/', source: 'ESportSea', category: 'Sport' },
+  { url: 'https://esportnow.pl/feed/', source: 'EsportNow', category: 'Sport' },
+  { url: 'https://dotesports.com/feed', source: 'DotEsports', category: 'Sport' },
+  { url: 'https://www.thegamer.com/feed/', source: 'TheGamer', category: 'Sport' },
+  { url: 'https://esportsobserver.com/feed/', source: 'Esports Observer', category: 'Sport' },
+  
+  // ===== F1 / MOTORSPORT =====
+  { url: 'https://f1wm.pl/feed/', source: 'F1WM.pl', category: 'Sport' },
+  { url: 'https://www.f1-news.eu/feed/', source: 'F1-News.eu', category: 'Sport' },
+  { url: 'https://motosport.pl/rss/', source: 'MotoSport.pl', category: 'Sport' },
+  { url: 'https://www.speedway.pl/rss/', source: 'Speedway.pl', category: 'Sport' },
+  
+  // ===== TENIS =====
+  { url: 'https://www.tenis.pl/feed/', source: 'Tenis.pl', category: 'Sport' },
+  { url: 'https://tenisklub.pl/feed/', source: 'TenisKlub.pl', category: 'Sport' },
+  
+  // ===== SIATKÓWKA =====
+  { url: 'https://www.siatka.org/feed/', source: 'Siatka.org', category: 'Sport' },
+  { url: 'https://siatkowka24.pl/feed/', source: 'Siatkówka24', category: 'Sport' },
+  { url: 'https://www.plusliga.pl/rss/', source: 'PlusLiga', category: 'Sport' },
+  
+  // ===== MMA / SPORTY WALKI =====
+  { url: 'https://www.mmarocks.pl/feed/', source: 'MMARocks', category: 'Sport' },
+  { url: 'https://fightsite.pl/feed/', source: 'FightSite', category: 'Sport' },
+  { url: 'https://www.ufcpolska.pl/feed/', source: 'UFC Polska', category: 'Sport' },
+  { url: 'https://lowking.pl/feed/', source: 'LowKing', category: 'Sport' },
   
   // ===== TECHNOLOGIA =====
   { url: 'https://www.chip.pl/feed', source: 'Chip.pl', category: 'Technologia' },
