@@ -174,14 +174,86 @@ export const CATEGORIES: Category[] = [
           { name: "Bundesliga", slug: "bundesliga" },
           { name: "Serie A", slug: "serie-a" },
           { name: "Ligue 1", slug: "ligue-1" },
+          { name: "Liga Mistrzów", slug: "liga-mistrzow" },
+          { name: "Liga Europy", slug: "liga-europy" },
+          { name: "Reprezentacja", slug: "reprezentacja" },
+          { name: "Transfery", slug: "transfery" },
         ],
       },
-      { name: "Reprezentacja", slug: "reprezentacja" },
-      { name: "Rozgrywki europejskie", slug: "rozgrywki-europejskie" },
-      { name: "Siatkówka", slug: "siatkowka" },
-      { name: "Sporty walki", slug: "sporty-walki" },
-      { name: "Tenis", slug: "tenis" },
-      { name: "Motorsport", slug: "motorsport" },
+      {
+        name: "Koszykówka",
+        slug: "koszykowka",
+        subcategories: [
+          { name: "NBA", slug: "nba" },
+          { name: "Euroliga", slug: "euroliga" },
+          { name: "Polska Liga Koszykówki", slug: "plk" },
+        ],
+      },
+      {
+        name: "Siatkówka",
+        slug: "siatkowka",
+        subcategories: [
+          { name: "PlusLiga", slug: "plusliga" },
+          { name: "Liga Mistrzów Siatkówki", slug: "liga-mistrzow-siatkowki" },
+          { name: "Reprezentacja Siatkówki", slug: "reprezentacja-siatkowki" },
+        ],
+      },
+      {
+        name: "Tenis",
+        slug: "tenis",
+        subcategories: [
+          { name: "ATP", slug: "atp" },
+          { name: "WTA", slug: "wta" },
+          { name: "Wielki Szlem", slug: "wielki-szlem" },
+        ],
+      },
+      {
+        name: "Sporty Motorowe",
+        slug: "sporty-motorowe",
+        subcategories: [
+          { name: "Formuła 1", slug: "formula-1" },
+          { name: "MotoGP", slug: "motogp" },
+          { name: "Rajdy WRC", slug: "rajdy-wrc" },
+          { name: "Żużel", slug: "zuzel" },
+        ],
+      },
+      {
+        name: "Sporty Walki",
+        slug: "sporty-walki",
+        subcategories: [
+          { name: "MMA", slug: "mma" },
+          { name: "UFC", slug: "ufc" },
+          { name: "KSW", slug: "ksw" },
+          { name: "Boks", slug: "boks" },
+        ],
+      },
+      {
+        name: "Hokej",
+        slug: "hokej",
+        subcategories: [
+          { name: "NHL", slug: "nhl" },
+          { name: "Liga Europejska Hokeja", slug: "liga-europejska-hokeja" },
+        ],
+      },
+      {
+        name: "E-sport",
+        slug: "esport",
+        subcategories: [
+          { name: "CS2", slug: "cs2" },
+          { name: "League of Legends", slug: "lol" },
+          { name: "Valorant", slug: "valorant" },
+        ],
+      },
+      { name: "Lekkoatletyka", slug: "lekkoatletyka" },
+      {
+        name: "Sporty Zimowe",
+        slug: "sporty-zimowe",
+        subcategories: [
+          { name: "Skoki Narciarskie", slug: "skoki-narciarskie" },
+          { name: "Biegi Narciarskie", slug: "biegi-narciarskie" },
+          { name: "Biathlon", slug: "biathlon" },
+        ],
+      },
     ],
   },
   {
