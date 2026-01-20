@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -22,9 +22,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useJournalists, Journalist } from "@/hooks/use-journalists";
 import { useSponsoredArticles, SponsoredArticleFormData } from "@/hooks/use-sponsored-articles";
 import { useSponsoredArticleEditor, SponsoredArticleFormData as EditorFormData } from "@/hooks/use-sponsored-article-editor";
+import { useRSSArticles, RSSArticle } from "@/hooks/use-rss-articles";
 import { 
   FileEdit, 
   Users, 
@@ -37,7 +39,10 @@ import {
   Plus,
   Pencil,
   Eye,
-  PenTool
+  PenTool,
+  Link,
+  Search,
+  X
 } from "lucide-react";
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
@@ -67,11 +72,14 @@ export default function DashboardPublisher() {
   const { journalists, isLoading: journalistsLoading } = useJournalists();
   const { orders, isLoading: ordersLoading, createOrder } = useSponsoredArticles();
   const { myArticles, isLoading: articlesLoading, createArticle, updateArticle } = useSponsoredArticleEditor();
+  const { articles: rssArticles, loading: rssLoading } = useRSSArticles();
   
   const [isOrderDialogOpen, setIsOrderDialogOpen] = useState(false);
   const [isArticleDialogOpen, setIsArticleDialogOpen] = useState(false);
   const [selectedJournalist, setSelectedJournalist] = useState<Journalist | null>(null);
   const [editingArticle, setEditingArticle] = useState<any>(null);
+  const [rssSearchQuery, setRssSearchQuery] = useState("");
+  const [selectedRssArticle, setSelectedRssArticle] = useState<RSSArticle | null>(null);
   
   const [orderFormData, setOrderFormData] = useState<Omit<SponsoredArticleFormData, "journalist_id" | "price">>({
     title: "",
@@ -87,6 +95,19 @@ export default function DashboardPublisher() {
     image: "",
     target_url: "",
   });
+
+  // Filter RSS articles based on search query
+  const filteredRssArticles = useMemo(() => {
+    if (!rssSearchQuery.trim()) return [];
+    const query = rssSearchQuery.toLowerCase();
+    return rssArticles
+      .filter(a => 
+        a.title.toLowerCase().includes(query) || 
+        a.source.toLowerCase().includes(query) ||
+        a.category.toLowerCase().includes(query)
+      )
+      .slice(0, 10);
+  }, [rssArticles, rssSearchQuery]);
 
   const activeJournalists = journalists.filter((j) => j.is_active);
 
@@ -118,7 +139,34 @@ export default function DashboardPublisher() {
         target_url: "",
       });
     }
+    setRssSearchQuery("");
+    setSelectedRssArticle(null);
     setIsArticleDialogOpen(true);
+  };
+
+  const handleSelectRssArticle = (rssArticle: RSSArticle) => {
+    setSelectedRssArticle(rssArticle);
+    setArticleFormData({
+      title: rssArticle.title,
+      excerpt: rssArticle.excerpt,
+      content: rssArticle.content,
+      category: rssArticle.category.toLowerCase(),
+      image: rssArticle.image,
+      target_url: rssArticle.sourceUrl,
+    });
+    setRssSearchQuery("");
+  };
+
+  const handleClearRssArticle = () => {
+    setSelectedRssArticle(null);
+    setArticleFormData({
+      title: "",
+      excerpt: "",
+      content: "",
+      category: "",
+      image: "",
+      target_url: "",
+    });
   };
 
   const handleSubmitOrder = async () => {
@@ -202,7 +250,7 @@ export default function DashboardPublisher() {
               </div>
               <Button onClick={() => openArticleDialog()}>
                 <Plus className="h-4 w-4 mr-2" />
-                Napisz artykuł
+                Dodaj artykuł
               </Button>
             </CardHeader>
             <CardContent>
@@ -211,11 +259,11 @@ export default function DashboardPublisher() {
                   <PenTool className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                   <h3 className="font-medium text-lg mb-2">Brak artykułów</h3>
                   <p className="text-muted-foreground mb-4">
-                    Napisz swój pierwszy artykuł sponsorowany
+                    Dodaj swój pierwszy artykuł sponsorowany
                   </p>
                   <Button onClick={() => openArticleDialog()}>
                     <Plus className="h-4 w-4 mr-2" />
-                    Napisz artykuł
+                    Dodaj artykuł
                   </Button>
                 </div>
               ) : (
@@ -468,14 +516,105 @@ export default function DashboardPublisher() {
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editingArticle ? "Edytuj artykuł" : "Napisz artykuł sponsorowany"}
+              {editingArticle ? "Edytuj artykuł" : "Dodaj artykuł sponsorowany"}
             </DialogTitle>
             <DialogDescription>
-              Po wysłaniu artykuł zostanie zweryfikowany przez administratora i opublikowany w sekcji głównych kafelków
+              Podepnij artykuł z RSS lub wypełnij dane ręcznie. Po wysłaniu artykuł zostanie zweryfikowany przez administratora.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
+            {/* RSS Article Picker */}
+            {!editingArticle && (
+              <div className="space-y-2 p-4 border rounded-lg bg-muted/30">
+                <Label className="flex items-center gap-2">
+                  <Link className="h-4 w-4" />
+                  Podepnij artykuł z RSS (opcjonalnie)
+                </Label>
+                
+                {selectedRssArticle ? (
+                  <div className="flex items-start gap-3 p-3 bg-background border rounded-lg">
+                    {selectedRssArticle.image && (
+                      <img 
+                        src={selectedRssArticle.image} 
+                        alt="" 
+                        className="w-16 h-16 object-cover rounded shrink-0"
+                      />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium line-clamp-2 text-sm">{selectedRssArticle.title}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {selectedRssArticle.source} • {selectedRssArticle.category}
+                      </p>
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={handleClearRssArticle}
+                      className="shrink-0"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      value={rssSearchQuery}
+                      onChange={(e) => setRssSearchQuery(e.target.value)}
+                      placeholder="Szukaj artykułu po tytule, źródle lub kategorii..."
+                      className="pl-10"
+                    />
+                    
+                    {rssSearchQuery && (
+                      <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-background border rounded-lg shadow-lg">
+                        {rssLoading ? (
+                          <div className="p-4 text-center text-muted-foreground">
+                            <Loader2 className="h-4 w-4 animate-spin mx-auto" />
+                          </div>
+                        ) : filteredRssArticles.length === 0 ? (
+                          <div className="p-4 text-center text-muted-foreground text-sm">
+                            Nie znaleziono artykułów
+                          </div>
+                        ) : (
+                          <ScrollArea className="max-h-64">
+                            <div className="p-1">
+                              {filteredRssArticles.map((rssArticle) => (
+                                <button
+                                  key={rssArticle.id}
+                                  type="button"
+                                  onClick={() => handleSelectRssArticle(rssArticle)}
+                                  className="w-full flex items-start gap-3 p-2 hover:bg-muted rounded-md text-left transition-colors"
+                                >
+                                  {rssArticle.image && (
+                                    <img 
+                                      src={rssArticle.image} 
+                                      alt="" 
+                                      className="w-12 h-12 object-cover rounded shrink-0"
+                                    />
+                                  )}
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-medium line-clamp-2 text-sm">{rssArticle.title}</p>
+                                    <p className="text-xs text-muted-foreground mt-0.5">
+                                      {rssArticle.source} • {rssArticle.category}
+                                    </p>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          </ScrollArea>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                <p className="text-xs text-muted-foreground">
+                  Wyszukaj i wybierz artykuł z RSS, aby automatycznie wypełnić formularz
+                </p>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="article-title">Tytuł artykułu *</Label>
