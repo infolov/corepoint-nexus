@@ -32,10 +32,10 @@ const sortByDate = <T extends { pubDateMs?: number; createdAt?: string }>(array:
 };
 
 export default function Category() {
-  const { category, subcategory } = useParams<{ category: string; subcategory?: string }>();
+  const { category, subcategory, subsubcategory } = useParams<{ category: string; subcategory?: string; subsubcategory?: string }>();
   const [searchParams] = useSearchParams();
   const subFromQuery = searchParams.get("sub");
-  const subSubFromQuery = searchParams.get("subsub");
+  const subSubFromQuery = searchParams.get("subsub") || subsubcategory;
   
   const { settings: displaySettings } = useDisplayMode();
   const isCompact = displaySettings.mode === "compact" || displaySettings.dataSaver;
@@ -53,9 +53,10 @@ export default function Category() {
   
   const [visibleCount, setVisibleCount] = useState(getInitialCount);
 
-  // Determine current category/subcategory
+  // Determine current category/subcategory/subsubcategory
   const currentCategorySlug = category || "all";
   const currentSubcategorySlug = subcategory || subFromQuery || null;
+  const currentSubSubcategorySlug = subSubFromQuery || null;
   
   // Get category info for display
   const categoryInfo = getCategoryBySlug(currentCategorySlug);
@@ -66,14 +67,23 @@ export default function Category() {
     ? categoryInfo?.subcategories.find(s => s.slug === currentSubcategorySlug)
     : null;
   const subcategoryName = subcategoryInfo?.name || currentSubcategorySlug;
+  
+  // Get sub-subcategory name
+  const subSubcategoryInfo = currentSubSubcategorySlug && subcategoryInfo?.subcategories
+    ? subcategoryInfo.subcategories.find(s => s.slug === currentSubSubcategorySlug)
+    : null;
+  const subSubcategoryName = subSubcategoryInfo?.name || currentSubSubcategorySlug;
 
   // Build active category slug for CategoryBar
   const activeCategory = useMemo(() => {
+    if (currentSubSubcategorySlug) {
+      return `${currentCategorySlug}/${currentSubcategorySlug}/${currentSubSubcategorySlug}`;
+    }
     if (currentSubcategorySlug) {
       return `${currentCategorySlug}/${currentSubcategorySlug}`;
     }
     return currentCategorySlug;
-  }, [currentCategorySlug, currentSubcategorySlug]);
+  }, [currentCategorySlug, currentSubcategorySlug, currentSubSubcategorySlug]);
 
   // Combine and filter articles
   const filteredArticles = useMemo(() => {
@@ -306,7 +316,7 @@ export default function Category() {
         "tesla", "bateria", "akumulator", "hybryda", "plug-in", "phev", "zeroemisyjny"
       ],
 
-      // ========== SPORT ==========
+      // ========== SPORT - Main categories ==========
       "sport/pilka-nozna": [
         "piłka nożna", "ekstraklasa", "liga", "uefa", "fifa", "champions league",
         "liga mistrzów", "liga europy", "puchar", "mecz", "bramka", "gol", "trener",
@@ -314,33 +324,211 @@ export default function Category() {
         "śląsk", "pogoń", "piast", "warta", "cracovia", "widzew", "zagłębie",
         "real", "barcelona", "manchester", "liverpool", "bayern", "dortmund", "psg"
       ],
-      "sport/reprezentacja": [
-        "reprezentacja", "kadra", "biało-czerwoni", "probierz", "selekcjoner",
-        "eliminacje", "mistrzostwa", "euro", "mundial", "mecz reprezentacji"
-      ],
-      "sport/rozgrywki-europejskie": [
-        "champions league", "liga mistrzów", "liga europy", "liga konferencji",
-        "puchar europy", "runda", "faza grupowa", "półfinał", "finał"
+      "sport/koszykowka": [
+        "koszykówka", "nba", "euroliga", "plk", "basket", "kosz", "rzut", "trójka",
+        "slam dunk", "playoff", "lakers", "celtics", "bulls", "warriors", "nets",
+        "lebron", "curry", "durant", "antetokoumpo", "slask wroclaw"
       ],
       "sport/siatkowka": [
         "siatkówka", "plusliga", "tauron liga", "siatkarze", "siatkarki", "set",
         "tie-break", "atak", "blok", "zagrywka", "heynena", "jastrzębski", "zaksa",
         "resovia", "skra", "gdańsk", "warszawa", "liga narodów"
       ],
-      "sport/sporty-walki": [
-        "mma", "ufc", "ksw", "boks", "bokser", "walka", "gala", "knockout", "ko",
-        "tko", "waga", "kategoria wagowa", "mistrz", "pas", "oktagon", "ring",
-        "jędrzejczyk", "błachowicz", "mamed chalidow", "tyson"
-      ],
       "sport/tenis": [
         "tenis", "atp", "wta", "wimbledon", "roland garros", "us open", "australian open",
         "wielkoszlemowy", "rakieta", "kort", "świątek", "hurkacz", "djokovic", "nadal",
         "federer", "alcaraz", "sinner", "ranking", "turniej"
       ],
-      "sport/motorsport": [
+      "sport/sporty-motorowe": [
         "f1", "formuła 1", "motogp", "rajdy", "wrc", "żużel", "tor", "wyścig",
         "grand prix", "pole position", "pit stop", "verstappen", "hamilton", "leclerc",
-        "kubica", "zmarzlik", "speedway"
+        "kubica", "zmarzlik", "speedway", "rally", "dakar"
+      ],
+      "sport/sporty-walki": [
+        "mma", "ufc", "ksw", "boks", "bokser", "walka", "gala", "knockout", "ko",
+        "tko", "waga", "kategoria wagowa", "mistrz", "pas", "oktagon", "ring",
+        "jędrzejczyk", "błachowicz", "mamed chalidow", "tyson", "fury", "usyk"
+      ],
+      "sport/hokej": [
+        "hokej", "nhl", "krążek", "bramkarz", "gol hokejowy", "powerplay",
+        "stanley cup", "lodowisko", "łyżwy", "kij hokejowy", "oilers", "rangers"
+      ],
+      "sport/esport": [
+        "esport", "e-sport", "gaming", "cs2", "csgo", "counter-strike", "valorant",
+        "league of legends", "lol", "dota", "fortnite", "turniej esportowy",
+        "drużyna esportowa", "streamer", "twitch", "iem", "blast"
+      ],
+      "sport/lekkoatletyka": [
+        "lekkoatletyka", "bieg", "maraton", "sprint", "skok", "pchnięcie kulą",
+        "oszczep", "młot", "wielobój", "mistrzostwa świata lekkoatletyka",
+        "diamentowa liga", "stadion lekkoatletyczny", "rekord świata"
+      ],
+      "sport/sporty-zimowe": [
+        "sporty zimowe", "skoki narciarskie", "skoki", "biegi narciarskie",
+        "biathlon", "łyżwiarstwo", "curling", "snowboard", "narciarstwo",
+        "stoch", "kubacki", "żyła", "kobayashi", "kraft", "puchar świata skoków"
+      ],
+      "sport/reprezentacja": [
+        "reprezentacja", "kadra", "biało-czerwoni", "probierz", "selekcjoner",
+        "eliminacje", "mistrzostwa", "euro", "mundial", "mecz reprezentacji"
+      ],
+
+      // ========== SPORT - Third level (sub-subcategories) ==========
+      // Piłka nożna
+      "sport/pilka-nozna/ekstraklasa": [
+        "ekstraklasa", "lech", "legia", "raków", "jagiellonia", "wisła kraków",
+        "górnik zabrze", "śląsk wrocław", "pogoń szczecin", "piast gliwice",
+        "warta poznań", "cracovia", "widzew łódź", "zagłębie lubin", "korona kielce",
+        "kolejka ekstraklasy", "tabela ekstraklasy"
+      ],
+      "sport/pilka-nozna/premier-league": [
+        "premier league", "manchester", "united", "city", "liverpool", "chelsea",
+        "arsenal", "tottenham", "newcastle", "west ham", "brighton", "aston villa",
+        "angielska liga", "english premier"
+      ],
+      "sport/pilka-nozna/la-liga": [
+        "la liga", "real madryt", "barcelona", "atletico", "sevilla", "villarreal",
+        "real sociedad", "betis", "athletic bilbao", "hiszpania liga"
+      ],
+      "sport/pilka-nozna/bundesliga": [
+        "bundesliga", "bayern", "dortmund", "borussia", "leipzig", "leverkusen",
+        "wolfsburg", "frankfurt", "monachium", "niemiecka liga"
+      ],
+      "sport/pilka-nozna/serie-a": [
+        "serie a", "juventus", "inter", "milan", "napoli", "roma", "lazio",
+        "fiorentina", "atalanta", "włoska liga"
+      ],
+      "sport/pilka-nozna/ligue-1": [
+        "ligue 1", "psg", "paris saint germain", "marseille", "lyon", "monaco",
+        "lille", "lens", "francuska liga"
+      ],
+      "sport/pilka-nozna/liga-mistrzow": [
+        "liga mistrzów", "champions league", "ucl", "puchar europy", "faza grupowa",
+        "półfinał lm", "finał lm", "hymn ligi mistrzów"
+      ],
+      "sport/pilka-nozna/liga-europy": [
+        "liga europy", "europa league", "puchar uefa", "liga konferencji"
+      ],
+      "sport/pilka-nozna/reprezentacja": [
+        "reprezentacja polski", "kadra", "biało-czerwoni", "probierz", "selekcjoner",
+        "eliminacje", "euro 2024", "mundial", "mecz towarzyski"
+      ],
+      "sport/pilka-nozna/transfery": [
+        "transfer", "okno transferowe", "sprzedaż", "wypożyczenie", "kontrakt",
+        "agent", "rekord transferowy", "wolny transfer", "podpis"
+      ],
+
+      // Koszykówka
+      "sport/koszykowka/nba": [
+        "nba", "lakers", "celtics", "bulls", "warriors", "nets", "lebron james",
+        "stephen curry", "kevin durant", "giannis", "playoff nba", "finały nba"
+      ],
+      "sport/koszykowka/euroliga": [
+        "euroliga", "euroleague", "cska", "real madryt koszykówka", "fenerbahce",
+        "olympiakos", "barcelona basket", "final four euroliga"
+      ],
+      "sport/koszykowka/plk": [
+        "plk", "polska liga koszykówki", "slask wroclaw", "trefl sopot",
+        "zastal zielona góra", "arka gdynia", "basket zielona góra"
+      ],
+
+      // Siatkówka
+      "sport/siatkowka/plusliga": [
+        "plusliga", "zaksa kędzierzyn", "jastrzębski węgiel", "skra bełchatów",
+        "resovia", "cev", "mistrz plusligi"
+      ],
+      "sport/siatkowka/liga-mistrzow-siatkowki": [
+        "liga mistrzów siatkówki", "cev champions league", "final four siatkówka"
+      ],
+      "sport/siatkowka/reprezentacja-siatkowki": [
+        "reprezentacja siatkówki", "kadra siatkarzy", "heynena", "grbic",
+        "liga narodów siatkówka", "mistrzostwa świata siatkówka"
+      ],
+
+      // Tenis
+      "sport/tenis/atp": [
+        "atp", "ranking atp", "turniej atp", "masters 1000", "djokovic", "nadal",
+        "alcaraz", "sinner", "medvedev", "zverev"
+      ],
+      "sport/tenis/wta": [
+        "wta", "ranking wta", "świątek", "sabalenka", "rybakina", "gauff",
+        "turniej wta", "wta finals"
+      ],
+      "sport/tenis/wielki-szlem": [
+        "wielki szlem", "australian open", "roland garros", "wimbledon", "us open",
+        "grand slam", "puchar tenisowy"
+      ],
+
+      // Sporty motorowe
+      "sport/sporty-motorowe/formula-1": [
+        "f1", "formuła 1", "verstappen", "hamilton", "leclerc", "sainz", "norris",
+        "red bull racing", "ferrari f1", "mercedes f1", "mclaren f1", "grand prix"
+      ],
+      "sport/sporty-motorowe/motogp": [
+        "motogp", "moto2", "moto3", "marquez", "bagnaia", "quartararo", "ducati",
+        "honda motogp", "yamaha motogp"
+      ],
+      "sport/sporty-motorowe/rajdy-wrc": [
+        "wrc", "rajdy", "rally", "ogier", "neuville", "tanak", "rajd polski",
+        "rajd monte carlo", "dakar"
+      ],
+      "sport/sporty-motorowe/zuzel": [
+        "żużel", "speedway", "zmarzlik", "sajfutdinow", "madsen", "grand prix żużel",
+        "pgp żużel", "drużynowe mistrzostwa świata"
+      ],
+
+      // Sporty walki
+      "sport/sporty-walki/mma": [
+        "mma", "mieszane sztuki walki", "klatka", "oktagon", "grappling",
+        "ground and pound", "submission"
+      ],
+      "sport/sporty-walki/ufc": [
+        "ufc", "ultimate fighting", "dana white", "jon jones", "conor mcgregor",
+        "khabib", "makhachev", "volkanovski"
+      ],
+      "sport/sporty-walki/ksw": [
+        "ksw", "mamed chalidow", "soldic", "pudzianowski", "juras", "gamrot",
+        "gala ksw", "federacja ksw"
+      ],
+      "sport/sporty-walki/boks": [
+        "boks", "boxing", "tyson fury", "usyk", "canelo", "joshua", "wilder",
+        "walka bokserska", "pas mistrzowski boks", "wbc", "wba", "ibf", "wbo"
+      ],
+
+      // Hokej
+      "sport/hokej/nhl": [
+        "nhl", "stanley cup", "oilers", "rangers", "bruins", "maple leafs",
+        "mcdavid", "crosby", "ovechkin"
+      ],
+      "sport/hokej/liga-europejska-hokeja": [
+        "chl", "khl", "liga hokejowa", "europejski hokej"
+      ],
+
+      // E-sport
+      "sport/esport/cs2": [
+        "cs2", "counter-strike 2", "csgo", "faze clan", "natus vincere", "g2",
+        "iem katowice", "blast premier", "major cs"
+      ],
+      "sport/esport/lol": [
+        "lol", "league of legends", "lck", "lec", "lcs", "worlds", "t1", "gen.g",
+        "fnatic lol", "g2 esports"
+      ],
+      "sport/esport/valorant": [
+        "valorant", "vct", "champions valorant", "sentinels", "loud", "fnatic valorant"
+      ],
+
+      // Sporty zimowe
+      "sport/sporty-zimowe/skoki-narciarskie": [
+        "skoki narciarskie", "puchar świata skoków", "turniej czterech skoczni",
+        "stoch", "kubacki", "żyła", "kobayashi", "kraft", "raw air"
+      ],
+      "sport/sporty-zimowe/biegi-narciarskie": [
+        "biegi narciarskie", "tour de ski", "kowalczyk", "klaebo", "johaug",
+        "bieg narciarski", "styl klasyczny", "łyżwa"
+      ],
+      "sport/sporty-zimowe/biathlon": [
+        "biathlon", "puchar świata biathlon", "boe", "jacquelin", "wierer",
+        "strzelanie biathlon", "sprint biathlon"
       ],
 
       // ========== KULTURA ==========
@@ -421,21 +609,37 @@ export default function Category() {
 
     // If subcategory is selected, filter further by title keywords
     if (currentSubcategorySlug) {
-      const subKey = `${currentCategorySlug}/${currentSubcategorySlug}`;
-      const subKeywords = subcategoryKeywords[subKey] || [];
-      
-      if (subKeywords.length > 0) {
-        filtered = filtered.filter(article => {
-          const titleLower = (article.title || "").toLowerCase();
-          return subKeywords.some(keyword => 
-            titleLower.includes(keyword.toLowerCase())
-          );
-        });
+      // First try sub-subcategory level
+      if (currentSubSubcategorySlug) {
+        const subSubKey = `${currentCategorySlug}/${currentSubcategorySlug}/${currentSubSubcategorySlug}`;
+        const subSubKeywords = subcategoryKeywords[subSubKey] || [];
+        
+        if (subSubKeywords.length > 0) {
+          filtered = filtered.filter(article => {
+            const titleLower = (article.title || "").toLowerCase();
+            return subSubKeywords.some(keyword => 
+              titleLower.includes(keyword.toLowerCase())
+            );
+          });
+        }
+      } else {
+        // Standard subcategory filtering
+        const subKey = `${currentCategorySlug}/${currentSubcategorySlug}`;
+        const subKeywords = subcategoryKeywords[subKey] || [];
+        
+        if (subKeywords.length > 0) {
+          filtered = filtered.filter(article => {
+            const titleLower = (article.title || "").toLowerCase();
+            return subKeywords.some(keyword => 
+              titleLower.includes(keyword.toLowerCase())
+            );
+          });
+        }
       }
     }
 
     return filtered;
-  }, [rssArticles, dbArticles, currentCategorySlug, currentSubcategorySlug]);
+  }, [rssArticles, dbArticles, currentCategorySlug, currentSubcategorySlug, currentSubSubcategorySlug]);
 
   // Infinite scroll
   const hasMore = visibleCount < filteredArticles.length;
@@ -449,7 +653,7 @@ export default function Category() {
   // Reset visible count when category changes
   useEffect(() => {
     setVisibleCount(getInitialCount());
-  }, [currentCategorySlug, currentSubcategorySlug]);
+  }, [currentCategorySlug, currentSubcategorySlug, currentSubSubcategorySlug]);
 
   const visibleArticles = filteredArticles.slice(0, visibleCount);
   const heroArticle = visibleArticles[0];
@@ -458,9 +662,11 @@ export default function Category() {
   const isLoadingData = rssLoading || dbLoading;
 
   // Build page title
-  const pageTitle = subcategoryName 
-    ? `${categoryName} › ${subcategoryName}`
-    : categoryName;
+  const pageTitle = subSubcategoryName 
+    ? `${categoryName} › ${subcategoryName} › ${subSubcategoryName}`
+    : subcategoryName 
+      ? `${categoryName} › ${subcategoryName}`
+      : categoryName;
 
   return (
     <div className="min-h-screen bg-background w-full overflow-x-clip">
