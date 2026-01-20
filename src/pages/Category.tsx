@@ -5,22 +5,21 @@ import { Footer } from "@/components/layout/Footer";
 import { CategoryBar } from "@/components/navigation/CategoryBar";
 import { NewsCard } from "@/components/news/NewsCard";
 import { AuctionAdSlot } from "@/components/widgets/AuctionAdSlot";
+import { FeedBannerCarousel, formatBannersForCarousel } from "@/components/widgets/FeedBannerCarousel";
+import { FeedTileAdCard } from "@/components/widgets/FeedTileAdCard";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import { useDisplayMode } from "@/hooks/use-display-mode";
+import { useCarouselBanners } from "@/hooks/use-carousel-banners";
+import { useFeedTileAds } from "@/hooks/use-feed-tile-ads";
 import { Loader2 } from "lucide-react";
 import { useArticles, formatArticleForCard } from "@/hooks/use-articles";
 import { useRSSArticles, formatRSSArticleForCard } from "@/hooks/use-rss-articles";
 import { CATEGORIES, getCategoryBySlug, CATEGORY_KEYWORDS } from "@/data/categories";
 
-// Responsive initial count based on device
-const getInitialCount = () => {
-  if (typeof window === "undefined") return 12;
-  if (window.innerWidth < 640) return 6;
-  if (window.innerWidth < 1024) return 9;
-  return 12;
-};
-
-const ARTICLES_PER_LOAD = 6;
+// Grid layout constants - consistent with Index.tsx
+const ARTICLES_PER_GRID = 12;
+const INITIAL_GRIDS = 2;
+const GRIDS_PER_LOAD = 1;
 
 // Sort articles by date (newest first)
 const sortByDate = <T extends { pubDateMs?: number; createdAt?: string }>(array: T[]): T[] => {
@@ -51,7 +50,9 @@ export default function Category() {
     loading: rssLoading,
   } = useRSSArticles();
   
-  const [visibleCount, setVisibleCount] = useState(getInitialCount);
+  const [visibleGrids, setVisibleGrids] = useState(INITIAL_GRIDS);
+  const { getCarouselForPosition } = useCarouselBanners();
+  const { getAdForPosition, trackImpression, trackClick } = useFeedTileAds();
 
   // Determine current category/subcategory/subsubcategory
   const currentCategorySlug = category || "all";
@@ -641,23 +642,44 @@ export default function Category() {
     return filtered;
   }, [rssArticles, dbArticles, currentCategorySlug, currentSubcategorySlug, currentSubSubcategorySlug]);
 
-  // Infinite scroll
-  const hasMore = visibleCount < filteredArticles.length;
+  // Infinite scroll - always has more by cycling through articles
+  const hasMore = true;
   
   const loadMore = useCallback(() => {
-    setVisibleCount(prev => Math.min(prev + ARTICLES_PER_LOAD, filteredArticles.length));
-  }, [filteredArticles.length]);
+    setVisibleGrids(prev => prev + GRIDS_PER_LOAD);
+  }, []);
 
   const { loadMoreRef, isLoading } = useInfiniteScroll(loadMore, hasMore);
 
-  // Reset visible count when category changes
+  // Reset visible grids when category changes
   useEffect(() => {
-    setVisibleCount(getInitialCount());
+    setVisibleGrids(INITIAL_GRIDS);
   }, [currentCategorySlug, currentSubcategorySlug, currentSubSubcategorySlug]);
 
-  const visibleArticles = filteredArticles.slice(0, visibleCount);
-  const heroArticle = visibleArticles[0];
-  const gridArticles = visibleArticles.slice(1);
+  // Generate enough articles for infinite scroll by cycling
+  const getArticlesForDisplay = useMemo(() => {
+    if (filteredArticles.length === 0) return [];
+    
+    const totalNeeded = visibleGrids * ARTICLES_PER_GRID;
+    const result = [];
+    for (let i = 0; i < totalNeeded; i++) {
+      result.push(filteredArticles[i % filteredArticles.length]);
+    }
+    return result;
+  }, [filteredArticles, visibleGrids]);
+
+  // Split feed articles into grids of 12
+  const articleGrids = useMemo(() => {
+    const grids = [];
+    for (let i = 0; i < visibleGrids; i++) {
+      const startIndex = i * ARTICLES_PER_GRID;
+      const gridArticles = getArticlesForDisplay.slice(startIndex, startIndex + ARTICLES_PER_GRID);
+      if (gridArticles.length > 0) {
+        grids.push(gridArticles);
+      }
+    }
+    return grids;
+  }, [getArticlesForDisplay, visibleGrids]);
 
   const isLoadingData = rssLoading || dbLoading;
 
@@ -709,80 +731,111 @@ export default function Category() {
           </div>
         )}
 
-        {/* Articles Grid */}
+        {/* Main Content - Grid pattern with carousels (same as Index) */}
         {filteredArticles.length > 0 && (
-          <div className="space-y-4 sm:space-y-6">
-            {/* Hero Article - hidden in compact mode */}
-            {heroArticle && !isCompact && (
-              <NewsCard
-                id={heroArticle.id}
-                title={heroArticle.title}
-                excerpt={heroArticle.excerpt}
-                category={heroArticle.category}
-                image={heroArticle.image}
-                timestamp={heroArticle.timestamp}
-                source={heroArticle.source}
-                sourceUrl={'sourceUrl' in heroArticle ? heroArticle.sourceUrl : undefined}
-                badge={'badge' in heroArticle ? heroArticle.badge : undefined}
-                variant="hero"
-                className="h-[250px] sm:h-[350px] lg:h-[400px]"
-              />
-            )}
+          <div className="space-y-6 sm:space-y-8">
+            {articleGrids.map((gridArticles, gridIndex) => (
+              <div key={`grid-${gridIndex}`}>
+                {/* Compact mode - list view */}
+                {isCompact ? (
+                  <div className="space-y-1">
+                    {gridArticles.map((article, articleIndex) => (
+                      <NewsCard
+                        key={`${article.id}-${gridIndex}-${articleIndex}`}
+                        id={article.id}
+                        title={article.title}
+                        category={article.category}
+                        image={article.image}
+                        timestamp={article.timestamp}
+                        source={article.source}
+                        sourceUrl={'sourceUrl' in article ? article.sourceUrl : undefined}
+                        badge={'badge' in article ? article.badge : undefined}
+                        variant="compact"
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  /* 3x4 Article Grid (12 articles) - with feed-tile ads replacing specific positions */
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {gridArticles.map((article, articleIndex) => {
+                      // Check if there's an ad for this position (1-indexed)
+                      const tilePosition = articleIndex + 1;
+                      const adForPosition = getAdForPosition(tilePosition);
+                      
+                      if (adForPosition) {
+                        return (
+                          <FeedTileAdCard
+                            key={`ad-tile-${gridIndex}-${tilePosition}`}
+                            id={adForPosition.id}
+                            contentUrl={adForPosition.contentUrl}
+                            targetUrl={adForPosition.targetUrl}
+                            name={adForPosition.name}
+                            onImpression={trackImpression}
+                            onClick={trackClick}
+                          />
+                        );
+                      }
+                      
+                      return (
+                        <NewsCard 
+                          key={`${article.id}-${gridIndex}-${articleIndex}`} 
+                          id={article.id} 
+                          title={article.title} 
+                          category={article.category} 
+                          image={article.image} 
+                          timestamp={article.timestamp} 
+                          badge={'badge' in article ? article.badge : undefined} 
+                          source={article.source} 
+                          sourceUrl={'sourceUrl' in article ? article.sourceUrl : undefined} 
+                          variant="default" 
+                        />
+                      );
+                    })}
+                  </div>
+                )}
 
-            {/* Compact mode - list view */}
-            {isCompact ? (
-              <div className="space-y-1">
-                {visibleArticles.map((article, index) => (
-                  <NewsCard
-                    key={`${article.id}-${index}`}
-                    id={article.id}
-                    title={article.title}
-                    category={article.category}
-                    image={article.image}
-                    timestamp={article.timestamp}
-                    source={article.source}
-                    sourceUrl={'sourceUrl' in article ? article.sourceUrl : undefined}
-                    badge={'badge' in article ? article.badge : undefined}
-                    variant="compact"
-                  />
-                ))}
+                {/* Carousel Banner after each grid of 12 items */}
+                <div className="mt-6 sm:mt-8">
+                  {(() => {
+                    // Check if there's a carousel group for this position
+                    const carouselGroup = getCarouselForPosition(gridIndex + 1);
+                    
+                    if (carouselGroup && carouselGroup.banners.length > 0) {
+                      // Use the carousel with banners from the database
+                      const formattedBanners = formatBannersForCarousel(carouselGroup.banners);
+                      return (
+                        <FeedBannerCarousel
+                          banners={formattedBanners}
+                          className="w-full"
+                        />
+                      );
+                    }
+                    
+                    // Fallback to auction ad slot if no carousel configured
+                    return (
+                      <AuctionAdSlot 
+                        variant="horizontal" 
+                        placementSlug="feed-carousel"
+                        className="w-full" 
+                        slotIndex={gridIndex + 1}
+                      />
+                    );
+                  })()}
+                </div>
               </div>
-            ) : (
-              /* Grid of Articles */
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                {gridArticles.map((article, index) => (
-                  <NewsCard
-                    key={`${article.id}-${index}`}
-                    id={article.id}
-                    title={article.title}
-                    category={article.category}
-                    image={article.image}
-                    timestamp={article.timestamp}
-                    source={article.source}
-                    sourceUrl={'sourceUrl' in article ? article.sourceUrl : undefined}
-                    badge={'badge' in article ? article.badge : undefined}
-                    variant="default"
-                  />
-                ))}
-              </div>
-            )}
+            ))}
 
-            {/* Infinite scroll trigger */}
+            {/* Load more trigger - infinite scroll */}
             <div 
               ref={loadMoreRef} 
-              className="py-6 sm:py-8 flex justify-center min-h-[60px]"
+              className="py-8 flex justify-center min-h-[200px] sm:min-h-[180px] md:min-h-[150px]"
+              style={{ touchAction: 'pan-y' }}
             >
-              {isLoading && hasMore && (
+              {isLoading && (
                 <div className="flex items-center gap-2 text-muted-foreground animate-pulse">
-                  <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 animate-spin" />
-                  <span className="text-sm sm:text-base">Ładowanie więcej artykułów...</span>
+                  <Loader2 className="h-6 w-6 sm:h-7 sm:w-7 animate-spin" />
+                  <span className="text-senior-base">Ładowanie...</span>
                 </div>
-              )}
-              
-              {!hasMore && filteredArticles.length > 0 && (
-                <p className="text-muted-foreground text-sm">
-                  To wszystkie artykuły w tej kategorii
-                </p>
               )}
             </div>
           </div>
