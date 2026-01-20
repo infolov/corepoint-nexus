@@ -100,7 +100,7 @@ export function SportDropdown() {
                     {group.children.map((child) => (
                       <Link
                         key={child.id}
-                        to={`/sport/${child.slug}`}
+                        to={`/sport/${mainCat.slug}/${child.slug}`}
                         className="block px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
                       >
                         {child.name}

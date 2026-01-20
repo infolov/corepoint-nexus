@@ -92,6 +92,7 @@ const App = () => (
                   <Route path="admin/journalists" element={<DashboardAdminJournalists />} />
                   <Route path="publisher" element={<DashboardPublisher />} />
                 </Route>
+                <Route path="/sport/:subcategory/:subsubcategory" element={<Category />} />
                 <Route path="/sport/:subcategory" element={<Category />} />
                 <Route path="/:category" element={<Category />} />
                 <Route path="*" element={<NotFound />} />
