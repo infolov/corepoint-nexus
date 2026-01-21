@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MapPin, Navigation, X, ChevronDown } from "lucide-react";
+import { MapPin, Navigation, X, Loader2, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
   Dialog, 
@@ -15,10 +15,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useGeolocation, UserLocation } from "@/hooks/use-geolocation";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useSmartGeolocation, UserLocation } from "@/hooks/use-smart-geolocation";
 import { getVoivodeships, getPowiats, getGminas } from "@/data/poland-divisions";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
 
 interface LocationPromptProps {
   open: boolean;
@@ -47,8 +47,7 @@ const voivodeshipDisplayNames: Record<string, string> = {
 };
 
 export function LocationPrompt({ open, onClose, onLocationSet }: LocationPromptProps) {
-  const { detectLocation, saveLocation, dismissPrompt, loading } = useGeolocation();
-  const [isDetecting, setIsDetecting] = useState(false);
+  const { detectLocation, saveLocation, isDetecting, error, detectionPhase, isSecureContext, clearError } = useSmartGeolocation();
   const [showManual, setShowManual] = useState(false);
   const [selectedVoivodeship, setSelectedVoivodeship] = useState("");
   const [selectedPowiat, setSelectedPowiat] = useState("");
@@ -58,21 +57,26 @@ export function LocationPrompt({ open, onClose, onLocationSet }: LocationPromptP
   const powiats = selectedVoivodeship ? getPowiats(selectedVoivodeship) : [];
   const cities = selectedVoivodeship && selectedPowiat ? getGminas(selectedVoivodeship, selectedPowiat) : [];
 
+  const getDetectionLabel = () => {
+    switch (detectionPhase) {
+      case "high_accuracy": return "GPS...";
+      case "network": return "Sieć...";
+      case "ip_fallback": return "IP...";
+      default: return "Wykrywanie...";
+    }
+  };
+
   const handleAutoDetect = async () => {
-    setIsDetecting(true);
-    try {
-      const location = await detectLocation();
-      const displayLocation = location.city 
-        ? `${location.city}, ${location.county}` 
-        : voivodeshipDisplayNames[location.voivodeship || ""] || location.voivodeship;
-      toast.success(`Wykryto lokalizację: ${displayLocation}`);
+    if (isDetecting) return;
+    
+    clearError();
+    const location = await detectLocation();
+    
+    if (location) {
       onLocationSet?.(location);
       onClose();
-    } catch (error) {
-      toast.error("Nie udało się wykryć lokalizacji. Wybierz ręcznie.");
+    } else {
       setShowManual(true);
-    } finally {
-      setIsDetecting(false);
     }
   };
 
@@ -97,7 +101,7 @@ export function LocationPrompt({ open, onClose, onLocationSet }: LocationPromptP
   };
 
   const handleSkip = () => {
-    dismissPrompt();
+    localStorage.setItem("locationPrompted", "true");
     onClose();
   };
 
@@ -126,6 +130,7 @@ export function LocationPrompt({ open, onClose, onLocationSet }: LocationPromptP
               size="icon"
               className="h-7 w-7 sm:h-8 sm:w-8"
               onClick={handleSkip}
+              disabled={isDetecting}
             >
               <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </Button>
@@ -136,17 +141,35 @@ export function LocationPrompt({ open, onClose, onLocationSet }: LocationPromptP
         </DialogHeader>
 
         <div className="space-y-3 sm:space-y-4 py-2 sm:py-4">
+          {/* Security warning */}
+          {!isSecureContext && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription className="text-xs">
+                Geolokalizacja wymaga HTTPS. Wybierz lokalizację ręcznie.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Error display */}
+          {error && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription className="text-xs">{error}</AlertDescription>
+            </Alert>
+          )}
+
           {!showManual ? (
             <>
               <Button
                 className="w-full h-10 sm:h-12 gap-2 text-sm sm:text-base"
                 onClick={handleAutoDetect}
-                disabled={isDetecting || loading}
+                disabled={isDetecting || !isSecureContext}
               >
                 {isDetecting ? (
                   <>
-                    <div className="animate-spin rounded-full h-3.5 w-3.5 sm:h-4 sm:w-4 border-b-2 border-white" />
-                    Wykrywanie...
+                    <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
+                    {getDetectionLabel()}
                   </>
                 ) : (
                   <>
@@ -169,6 +192,7 @@ export function LocationPrompt({ open, onClose, onLocationSet }: LocationPromptP
                 variant="outline"
                 className="w-full h-10 sm:h-12 gap-2 text-sm sm:text-base"
                 onClick={() => setShowManual(true)}
+                disabled={isDetecting}
               >
                 <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 Wybierz ręcznie
