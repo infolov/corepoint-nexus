@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Link, useSearchParams } from "react-router-dom";
 import { AuctionAdSlot } from "@/components/widgets/AuctionAdSlot";
 import { LOCAL_SUBCATEGORIES, LocalSubCategory } from "@/data/categories";
-import { UserLocation } from "@/hooks/use-geolocation";
+import { UserLocation } from "@/hooks/use-smart-geolocation";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DropdownMenu,

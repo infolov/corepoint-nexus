@@ -3,7 +3,7 @@ import { Newspaper, ChevronRight, Globe, MapPin, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useGeolocation } from "@/hooks/use-geolocation";
+import { useLocationContext } from "@/components/geolocation/LocationProvider";
 import { DAILY_SUMMARY_SECTIONS } from "@/data/categories";
 
 interface SummaryArticle {
@@ -23,7 +23,7 @@ export function DailySummaryWidget() {
   });
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<SummarySection>("polska");
-  const { location } = useGeolocation();
+  const { location } = useLocationContext();
 
   useEffect(() => {
     const fetchTopArticles = async () => {

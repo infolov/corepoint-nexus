@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { AlertTriangle, Radio, MapPin, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useSiteSettings } from '@/hooks/use-site-settings';
-import { useGeolocation } from '@/hooks/use-geolocation';
+import { useLocationContext } from '@/components/geolocation/LocationProvider';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { formatDistanceToNow } from 'date-fns';
 import { pl } from 'date-fns/locale';
@@ -32,7 +32,7 @@ export const AlertTicker = () => {
   const [animationDuration, setAnimationDuration] = useState(25);
   
   const { settings, loading: settingsLoading } = useSiteSettings();
-  const { location } = useGeolocation();
+  const { location } = useLocationContext();
   const isMobile = useIsMobile();
 
   useEffect(() => {

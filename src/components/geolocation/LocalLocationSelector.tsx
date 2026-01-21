@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MapPin, Navigation, ChevronRight, Loader2 } from "lucide-react";
+import { MapPin, Navigation, ChevronRight, Loader2, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -10,10 +10,11 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getVoivodeships, getPowiats, getGminas } from "@/data/poland-divisions";
-import { useGeolocation, UserLocation } from "@/hooks/use-geolocation";
+import { useSmartGeolocation, UserLocation } from "@/hooks/use-smart-geolocation";
 import { toast } from "sonner";
-import { getLocalContentMixConfig, LOCAL_SUBCATEGORIES, LocalSubCategory } from "@/data/categories";
+import { getLocalContentMixConfig, LOCAL_SUBCATEGORIES } from "@/data/categories";
 
 const voivodeshipDisplayNames: Record<string, string> = {
   'mazowieckie': 'Mazowieckie',
@@ -40,8 +41,7 @@ interface LocalLocationSelectorProps {
 }
 
 export function LocalLocationSelector({ onLocationSet, compact = false }: LocalLocationSelectorProps) {
-  const { detectLocation, saveLocation } = useGeolocation();
-  const [isDetecting, setIsDetecting] = useState(false);
+  const { detectLocation, saveLocation, isDetecting, error, detectionPhase, isSecureContext, clearError } = useSmartGeolocation();
   const [selectedVoivodeship, setSelectedVoivodeship] = useState("");
   const [selectedPowiat, setSelectedPowiat] = useState("");
   const [selectedCity, setSelectedCity] = useState("");
@@ -68,19 +68,16 @@ export function LocalLocationSelector({ onLocationSet, compact = false }: LocalL
   };
 
   const handleAutoDetect = async () => {
-    setIsDetecting(true);
-    try {
-      const location = await detectLocation();
-      const displayLocation = location.city 
-        ? `${location.city}, ${location.county}` 
-        : voivodeshipDisplayNames[location.voivodeship || ""] || location.voivodeship;
-      toast.success(`Wykryto lokalizację: ${displayLocation}`);
+    if (isDetecting) return; // Prevent double-clicks
+    
+    clearError();
+    const location = await detectLocation();
+    
+    if (location) {
       onLocationSet(location);
-    } catch (error) {
-      toast.error("Nie udało się wykryć lokalizacji. Wybierz ręcznie.");
+    } else {
+      // Detection failed, show manual selection
       setShowManualSelection(true);
-    } finally {
-      setIsDetecting(false);
     }
   };
 
@@ -116,9 +113,29 @@ export function LocalLocationSelector({ onLocationSet, compact = false }: LocalL
 
   const contentMixPreview = getContentMixPreview();
 
+  // Detection phase label for UX feedback
+  const getDetectionLabel = () => {
+    switch (detectionPhase) {
+      case "high_accuracy": return "GPS...";
+      case "network": return "Sieć...";
+      case "ip_fallback": return "IP...";
+      default: return "Wykryj";
+    }
+  };
+
   if (compact) {
     return (
       <div className="bg-gradient-to-r from-primary/5 to-primary/10 rounded-lg p-4 border border-primary/20">
+        {/* Security warning */}
+        {!isSecureContext && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              Geolokalizacja wymaga bezpiecznego połączenia HTTPS.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           <div className="flex items-center gap-2 flex-1">
             <div className="p-2 bg-primary/20 rounded-full">
@@ -134,24 +151,40 @@ export function LocalLocationSelector({ onLocationSet, compact = false }: LocalL
               variant="outline" 
               size="sm"
               onClick={handleAutoDetect}
-              disabled={isDetecting}
+              disabled={isDetecting || !isSecureContext}
             >
               {isDetecting ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  {getDetectionLabel()}
+                </>
               ) : (
-                <Navigation className="h-4 w-4 mr-2" />
+                <>
+                  <Navigation className="h-4 w-4 mr-2" />
+                  Wykryj
+                </>
               )}
-              Wykryj
             </Button>
             <Button 
               variant="default" 
               size="sm"
               onClick={() => setShowManualSelection(!showManualSelection)}
+              disabled={isDetecting}
             >
               Wybierz ręcznie
             </Button>
           </div>
         </div>
+
+        {/* Error display */}
+        {error && error !== "PERMISSION_DENIED" && (
+          <Alert variant="destructive" className="mt-3">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription className="text-sm">
+              {error}
+            </AlertDescription>
+          </Alert>
+        )}
 
         {showManualSelection && (
           <div className="mt-4 pt-4 border-t border-border space-y-3">
@@ -232,28 +265,60 @@ export function LocalLocationSelector({ onLocationSet, compact = false }: LocalL
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Security warning */}
+        {!isSecureContext && (
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              Geolokalizacja wymaga bezpiecznego połączenia HTTPS. 
+              Automatyczne wykrywanie lokalizacji nie będzie działać.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Error display */}
+        {error && (
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
         {/* Auto-detect option */}
         <div className="flex flex-col sm:flex-row gap-3">
           <Button 
             variant="outline" 
             className="flex-1 h-14"
             onClick={handleAutoDetect}
-            disabled={isDetecting}
+            disabled={isDetecting || !isSecureContext}
           >
             {isDetecting ? (
-              <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+              <>
+                <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                <div className="text-left">
+                  <div className="font-medium">{getDetectionLabel()}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {detectionPhase === "high_accuracy" && "Szukam sygnału GPS..."}
+                    {detectionPhase === "network" && "Lokalizacja sieciowa..."}
+                    {detectionPhase === "ip_fallback" && "Wykrywanie po IP..."}
+                  </div>
+                </div>
+              </>
             ) : (
-              <Navigation className="h-5 w-5 mr-2" />
+              <>
+                <Navigation className="h-5 w-5 mr-2" />
+                <div className="text-left">
+                  <div className="font-medium">Wykryj automatycznie</div>
+                  <div className="text-xs text-muted-foreground">GPS → Sieć → IP</div>
+                </div>
+              </>
             )}
-            <div className="text-left">
-              <div className="font-medium">Wykryj automatycznie</div>
-              <div className="text-xs text-muted-foreground">Użyj GPS lub adresu IP</div>
-            </div>
           </Button>
           <Button 
             variant={showManualSelection ? "secondary" : "default"}
             className="flex-1 h-14"
             onClick={() => setShowManualSelection(!showManualSelection)}
+            disabled={isDetecting}
           >
             <MapPin className="h-5 w-5 mr-2" />
             <div className="text-left">

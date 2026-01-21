@@ -1,12 +1,14 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { useGeolocation, UserLocation } from "@/hooks/use-geolocation";
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
+import { useSmartGeolocation, UserLocation } from "@/hooks/use-smart-geolocation";
 import { LocationPrompt } from "./LocationPrompt";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 
 interface LocationContextType {
   location: UserLocation;
   loading: boolean;
   hasLocation: boolean;
-  refreshLocation: () => Promise<UserLocation>;
+  refreshLocation: () => Promise<UserLocation | null>;
   showLocationPrompt: () => void;
 }
 
@@ -25,35 +27,107 @@ interface LocationProviderProps {
 }
 
 export function LocationProvider({ children }: LocationProviderProps) {
-  const geolocation = useGeolocation();
+  const { user } = useAuth();
+  const smartGeo = useSmartGeolocation();
   const [showPrompt, setShowPrompt] = useState(false);
+  const [location, setLocation] = useState<UserLocation>({
+    voivodeship: null,
+    county: null,
+    city: null,
+  });
+  const [loading, setLoading] = useState(true);
+  const [hasPrompted, setHasPrompted] = useState(false);
 
-  // Show prompt on first visit if no location is set and hasn't been prompted yet
+  // Load saved location on mount
   useEffect(() => {
-    if (!geolocation.loading && !geolocation.hasLocation && !geolocation.hasPrompted) {
-      // Small delay to let the page load first
+    const loadSavedLocation = async () => {
+      setLoading(true);
+      
+      // First check localStorage
+      const localSettings = localStorage.getItem("userSettings");
+      let loadedLocation: UserLocation = { voivodeship: null, county: null, city: null };
+      
+      if (localSettings) {
+        try {
+          const parsed = JSON.parse(localSettings);
+          loadedLocation = {
+            voivodeship: parsed.voivodeship || null,
+            county: parsed.county || null,
+            city: parsed.city || null,
+          };
+        } catch (e) {
+          console.error("Error parsing local settings:", e);
+        }
+      }
+
+      // If logged in, fetch from database (overrides localStorage)
+      if (user) {
+        try {
+          const { data, error } = await supabase
+            .from("user_site_settings")
+            .select("voivodeship, county, city")
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+          if (!error && data) {
+            loadedLocation = {
+              voivodeship: data.voivodeship || null,
+              county: data.county || null,
+              city: data.city || null,
+            };
+            localStorage.setItem("userSettings", JSON.stringify(loadedLocation));
+          }
+        } catch (error) {
+          console.error("Error loading location from database:", error);
+        }
+      }
+
+      const prompted = localStorage.getItem("locationPrompted") === "true";
+      setHasPrompted(prompted);
+      setLocation(loadedLocation);
+      setLoading(false);
+    };
+
+    loadSavedLocation();
+  }, [user]);
+
+  // Show prompt on first visit if no location is set
+  useEffect(() => {
+    if (!loading && !hasLocation && !hasPrompted) {
       const timer = setTimeout(() => {
         setShowPrompt(true);
       }, 1500);
       return () => clearTimeout(timer);
     }
-  }, [geolocation.loading, geolocation.hasLocation, geolocation.hasPrompted]);
+  }, [loading, hasPrompted]);
 
-  const handleLocationSet = (location: UserLocation) => {
-    setShowPrompt(false);
-    // The geolocation hook already handles saving
-  };
+  const hasLocation = !!(location.voivodeship || location.city);
 
-  const handleClose = () => {
+  const handleLocationSet = useCallback((newLocation: UserLocation) => {
+    setLocation(newLocation);
     setShowPrompt(false);
-    geolocation.dismissPrompt();
-  };
+    setHasPrompted(true);
+  }, []);
+
+  const handleClose = useCallback(() => {
+    setShowPrompt(false);
+    localStorage.setItem("locationPrompted", "true");
+    setHasPrompted(true);
+  }, []);
+
+  const refreshLocation = useCallback(async () => {
+    const newLocation = await smartGeo.detectLocation();
+    if (newLocation) {
+      setLocation(newLocation);
+    }
+    return newLocation;
+  }, [smartGeo]);
 
   const contextValue: LocationContextType = {
-    location: geolocation.location,
-    loading: geolocation.loading,
-    hasLocation: geolocation.hasLocation,
-    refreshLocation: geolocation.detectLocation,
+    location,
+    loading,
+    hasLocation,
+    refreshLocation,
     showLocationPrompt: () => setShowPrompt(true),
   };
 
