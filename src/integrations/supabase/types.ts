@@ -435,6 +435,92 @@ export type Database = {
           },
         ]
       }
+      categories: {
+        Row: {
+          created_at: string
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          keywords: string[] | null
+          name: string
+          parent_slug: string | null
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          keywords?: string[] | null
+          name: string
+          parent_slug?: string | null
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          keywords?: string[] | null
+          name?: string
+          parent_slug?: string | null
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      content_sources: {
+        Row: {
+          category_id: string
+          created_at: string
+          fetch_interval_minutes: number | null
+          id: string
+          is_active: boolean | null
+          last_fetched_at: string | null
+          name: string
+          selector: string | null
+          type: Database["public"]["Enums"]["source_type"]
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          fetch_interval_minutes?: number | null
+          id?: string
+          is_active?: boolean | null
+          last_fetched_at?: string | null
+          name: string
+          selector?: string | null
+          type?: Database["public"]["Enums"]["source_type"]
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          fetch_interval_minutes?: number | null
+          id?: string
+          is_active?: boolean | null
+          last_fetched_at?: string | null
+          name?: string
+          selector?: string | null
+          type?: Database["public"]["Enums"]["source_type"]
+          updated_at?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_sources_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       credit_packages: {
         Row: {
           created_at: string
@@ -1214,6 +1300,7 @@ export type Database = {
           display_order: number | null
           id: string
           is_active: boolean | null
+          keywords: string[] | null
           name: string
           parent_category: string | null
           slug: string
@@ -1223,6 +1310,7 @@ export type Database = {
           display_order?: number | null
           id?: string
           is_active?: boolean | null
+          keywords?: string[] | null
           name: string
           parent_category?: string | null
           slug: string
@@ -1232,6 +1320,7 @@ export type Database = {
           display_order?: number | null
           id?: string
           is_active?: boolean | null
+          keywords?: string[] | null
           name?: string
           parent_category?: string | null
           slug?: string
@@ -1464,6 +1553,7 @@ export type Database = {
     }
     Enums: {
       app_role: "user" | "advertiser" | "admin" | "publisher"
+      source_type: "rss" | "scraping"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1592,6 +1682,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["user", "advertiser", "admin", "publisher"],
+      source_type: ["rss", "scraping"],
     },
   },
 } as const
