@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Sparkles, Loader2, AlertCircle, Volume2, VolumeX, Square, User } from "lucide-react";
+import { Sparkles, Loader2, AlertCircle, Volume2, VolumeX, Square, User, Play, Pause } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
@@ -204,20 +204,14 @@ export const ArticleSummary = ({ title, content, category, sourceUrl, onTitleGen
             </Select>
             <Button 
               variant="outline" 
-              size="sm" 
+              size="icon" 
               onClick={handlePlayAudio}
-              className="gap-2"
+              className="h-8 w-8"
             >
               {isPlaying ? (
-                <>
-                  <VolumeX className="h-4 w-4" />
-                  Pauza
-                </>
+                <Pause className="h-4 w-4" />
               ) : (
-                <>
-                  <Volume2 className="h-4 w-4" />
-                  Odsłuchaj
-                </>
+                <Play className="h-4 w-4" />
               )}
             </Button>
             {isPlaying && (
