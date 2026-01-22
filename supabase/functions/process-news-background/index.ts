@@ -7,8 +7,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// RSS Sources - removed Focus.pl (404 error)
-const RSS_SOURCES = [
+// Legacy RSS Sources (fallback if no database sources configured)
+const LEGACY_RSS_SOURCES = [
   { url: 'https://www.polsatnews.pl/rss/wszystkie.xml', source: 'Polsat News', category: 'Wiadomości' },
   { url: 'https://tvn24.pl/najnowsze.xml', source: 'TVN24', category: 'Wiadomości' },
   { url: 'https://wiadomosci.wp.pl/rss.xml', source: 'Wirtualna Polska', category: 'Wiadomości' },
@@ -19,6 +19,26 @@ const RSS_SOURCES = [
   { url: 'https://www.chip.pl/feed', source: 'Chip.pl', category: 'Technologia' },
   { url: 'https://tech.wp.pl/rss.xml', source: 'WP Tech', category: 'Technologia' },
 ];
+
+// Interface for database content sources
+interface ContentSourceRow {
+  id: string;
+  category_id: string;
+  name: string;
+  url: string;
+  type: 'rss' | 'scraping';
+  is_active: boolean;
+  selector: string | null;
+  last_fetched_at: string | null;
+  fetch_interval_minutes: number;
+}
+
+// Interface for category data
+interface CategoryRow {
+  id: string;
+  name: string;
+  slug: string;
+}
 
 // Decode HTML entities
 function decodeHTMLEntities(text: string): string {
@@ -56,9 +76,10 @@ interface RSSItem {
   imageUrl: string;
   pubDate: Date | null;
   description?: string;
+  sourceId?: string; // Optional - for database sources
 }
 
-function parseRSSItem(item: string, source: string, category: string): RSSItem | null {
+function parseRSSItem(item: string, source: string, category: string, sourceId?: string): RSSItem | null {
   try {
     const titleMatch = item.match(/<title>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/title>/s);
     const linkMatch = item.match(/<link>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/link>/s);
@@ -80,6 +101,10 @@ function parseRSSItem(item: string, source: string, category: string): RSSItem |
       'Sport': 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=800&h=500&fit=crop',
       'Technologia': 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&h=500&fit=crop',
       'Nauka': 'https://images.unsplash.com/photo-1507413245164-6160d8298b31?w=800&h=500&fit=crop',
+      'Rozrywka': 'https://images.unsplash.com/photo-1603190287605-e6ade32fa852?w=800&h=500&fit=crop',
+      'Zdrowie': 'https://images.unsplash.com/photo-1505751172876-fa1923c5c528?w=800&h=500&fit=crop',
+      'Kultura': 'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=800&h=500&fit=crop',
+      'Motoryzacja': 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=800&h=500&fit=crop',
     };
     
     if (!image) {
@@ -100,7 +125,7 @@ function parseRSSItem(item: string, source: string, category: string): RSSItem |
       }
     }
 
-    return { title, url, source, category, imageUrl: image, pubDate, description };
+    return { title, url, source, category, imageUrl: image, pubDate, description, sourceId };
   } catch (error) {
     console.error('Error parsing RSS item:', error);
     return null;
@@ -108,7 +133,7 @@ function parseRSSItem(item: string, source: string, category: string): RSSItem |
 }
 
 // Fetch RSS feed
-async function fetchRSSFeed(feedUrl: string, source: string, category: string): Promise<RSSItem[]> {
+async function fetchRSSFeed(feedUrl: string, source: string, category: string, sourceId?: string): Promise<RSSItem[]> {
   try {
     console.log(`Fetching RSS from: ${feedUrl}`);
     const response = await fetch(feedUrl, {
@@ -128,7 +153,7 @@ async function fetchRSSFeed(feedUrl: string, source: string, category: string): 
     
     const articles: RSSItem[] = [];
     for (const item of items.slice(0, 5)) { // Limit to 5 per source
-      const article = parseRSSItem(item, source, category);
+      const article = parseRSSItem(item, source, category, sourceId);
       if (article) {
         articles.push(article);
       }
@@ -462,6 +487,73 @@ async function callLovableAI(prompt: string, originalTitle: string, maxRetries: 
   return null;
 }
 
+// Fetch sources from database
+async function fetchDatabaseSources(supabase: any): Promise<{ url: string; source: string; category: string; sourceId: string }[]> {
+  try {
+    // Fetch active content sources
+    const { data: sources, error: sourcesError } = await supabase
+      .from('content_sources')
+      .select('id, name, url, type, category_id')
+      .eq('is_active', true)
+      .eq('type', 'rss'); // Only RSS sources for now
+
+    if (sourcesError) {
+      console.error('Error fetching content_sources:', sourcesError);
+      return [];
+    }
+
+    if (!sources || sources.length === 0) {
+      console.log('No active RSS sources in content_sources table');
+      return [];
+    }
+
+    // Fetch category names for all sources
+    const categoryIds = [...new Set(sources.map((s: ContentSourceRow) => s.category_id))];
+    const { data: categories, error: categoriesError } = await supabase
+      .from('categories')
+      .select('id, name')
+      .in('id', categoryIds);
+
+    if (categoriesError) {
+      console.error('Error fetching categories:', categoriesError);
+      return [];
+    }
+
+    const categoryMap = new Map((categories || []).map((c: CategoryRow) => [c.id, c.name]));
+
+    // Map sources to the format expected by fetchRSSFeed
+    return sources.map((source: ContentSourceRow) => ({
+      url: source.url,
+      source: source.name,
+      category: categoryMap.get(source.category_id) || 'Wiadomości',
+      sourceId: source.id,
+    }));
+  } catch (error) {
+    console.error('Error in fetchDatabaseSources:', error);
+    return [];
+  }
+}
+
+// Update last_fetched_at for processed sources
+async function updateSourceLastFetched(supabase: any, sourceIds: string[]): Promise<void> {
+  if (sourceIds.length === 0) return;
+  
+  try {
+    const { error } = await supabase
+      .from('content_sources')
+      .update({ last_fetched_at: new Date().toISOString() })
+      .in('id', sourceIds);
+    
+    if (error) {
+      console.error('Error updating last_fetched_at:', error);
+    } else {
+      console.log(`Updated last_fetched_at for ${sourceIds.length} sources`);
+    }
+  } catch (error) {
+    console.error('Error in updateSourceLastFetched:', error);
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -493,22 +585,44 @@ serve(async (req) => {
     let firecrawlCreditsExhausted = false;
     let firecrawlExhaustedAt: string | null = null;
     
-    // 1. Fetch RSS from all sources
-    const fetchPromises = RSS_SOURCES.map(({ url, source, category }) =>
-      fetchRSSFeed(url, source, category)
+    // 1. Fetch sources from database first, fallback to legacy sources
+    const databaseSources = await fetchDatabaseSources(supabase);
+    const useDatabaseSources = databaseSources.length > 0;
+    
+    console.log(`Found ${databaseSources.length} active sources in database`);
+    
+    // Combine database sources with legacy sources
+    const allSources = useDatabaseSources 
+      ? databaseSources 
+      : LEGACY_RSS_SOURCES.map(s => ({ ...s, sourceId: '' }));
+    
+    if (!useDatabaseSources) {
+      console.log('No database sources found, using legacy RSS sources');
+    }
+    
+    // 2. Fetch RSS from all sources
+    const fetchPromises = allSources.map(({ url, source, category, sourceId }) =>
+      fetchRSSFeed(url, source, category, sourceId)
     );
     const results = await Promise.allSettled(fetchPromises);
     
     let allArticles: RSSItem[] = [];
+    const processedSourceIds = new Set<string>();
+    
     results.forEach((result) => {
       if (result.status === 'fulfilled') {
-        allArticles = [...allArticles, ...result.value];
+        result.value.forEach(article => {
+          allArticles.push(article);
+          if (article.sourceId) {
+            processedSourceIds.add(article.sourceId);
+          }
+        });
       }
     });
     
     console.log(`Total RSS articles fetched: ${allArticles.length}`);
     
-    // 2. Get existing URLs to avoid duplicates
+    // 3. Get existing URLs to avoid duplicates
     const { data: existingArticles } = await supabase
       .from('processed_articles')
       .select('url');
@@ -516,11 +630,11 @@ serve(async (req) => {
     const existingUrls = new Set(existingArticles?.map(a => a.url) || []);
     console.log(`Existing articles in DB: ${existingUrls.size}`);
     
-    // 3. Filter new articles
+    // 4. Filter new articles
     const newArticles = allArticles.filter(a => !existingUrls.has(a.url));
     console.log(`New articles to process: ${newArticles.length}`);
     
-    // 4. Process new articles (limit to 10 per run to avoid timeouts)
+    // 5. Process new articles (limit to 10 per run to avoid timeouts)
     const articlesToProcess = newArticles.slice(0, 10);
     let processedCount = 0;
     let failedCount = 0;
@@ -692,6 +806,11 @@ serve(async (req) => {
       }
     }
     
+    // Update last_fetched_at for all processed sources
+    if (useDatabaseSources && processedSourceIds.size > 0) {
+      await updateSourceLastFetched(supabase, Array.from(processedSourceIds));
+    }
+    
     const result = {
       success: true,
       totalFetched: allArticles.length,
@@ -702,6 +821,8 @@ serve(async (req) => {
       fallbackModeUsed: fallbackModeCount,
       firecrawlCreditsExhausted,
       firecrawlExhaustedAt,
+      usedDatabaseSources: useDatabaseSources,
+      databaseSourcesCount: databaseSources.length,
       timestamp: new Date().toISOString(),
       // Admin warning message
       adminWarning: firecrawlCreditsExhausted 
