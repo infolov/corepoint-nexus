@@ -23,7 +23,8 @@ import {
   ShieldAlert,
   FileText,
   UserCheck,
-  FileEdit
+  FileEdit,
+  FolderTree
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
@@ -51,6 +52,7 @@ const publisherLinks = [
 
 const adminLinks = [
   { name: "Ustawienia globalne", href: "/dashboard/admin/settings", icon: Settings },
+  { name: "Kategorie i źródła", href: "/dashboard/admin/categories", icon: FolderTree },
   { name: "Logi aktywności", href: "/dashboard/admin/logs", icon: Activity },
   { name: "Statystyki platformy", href: "/dashboard/admin/stats", icon: BarChart3 },
   { name: "Weryfikacja Faktów", href: "/dashboard/admin/factcheck", icon: Shield },
