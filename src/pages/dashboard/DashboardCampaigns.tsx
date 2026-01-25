@@ -196,16 +196,25 @@ export default function DashboardCampaigns() {
     fetchCampaigns();
   }, [user, isDemoMode]);
 
+  // Helper to get effective status (treat expired "active" campaigns as "completed")
+  const getEffectiveStatus = (campaign: Campaign) => {
+    const today = new Date().toISOString().split("T")[0];
+    if (campaign.status === "active" && campaign.end_date < today) {
+      return "completed";
+    }
+    return campaign.status;
+  };
+
   const filteredCampaigns = campaigns.filter((campaign) => {
     if (activeTab === "all") return true;
-    return campaign.status === activeTab;
+    return getEffectiveStatus(campaign) === activeTab;
   });
 
   const getCounts = () => ({
     all: campaigns.length,
-    pending: campaigns.filter(c => c.status === "pending").length,
-    active: campaigns.filter(c => c.status === "active").length,
-    completed: campaigns.filter(c => c.status === "completed").length,
+    pending: campaigns.filter(c => getEffectiveStatus(c) === "pending").length,
+    active: campaigns.filter(c => getEffectiveStatus(c) === "active").length,
+    completed: campaigns.filter(c => getEffectiveStatus(c) === "completed").length,
   });
 
   const counts = getCounts();
