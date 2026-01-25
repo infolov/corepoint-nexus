@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { DisplayModeProvider } from "@/hooks/use-display-mode";
 import { DemoProvider } from "@/contexts/DemoContext";
 import { LocationProvider } from "@/components/geolocation/LocationProvider";
+import { CookieConsentProvider } from "@/hooks/use-cookie-consent";
+import { CookieConsentBanner } from "@/components/cookies/CookieConsentBanner";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
@@ -52,9 +54,11 @@ const App = () => (
     <DisplayModeProvider>
       <DemoProvider>
         <LocationProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
+          <CookieConsentProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <CookieConsentBanner />
             <BrowserRouter>
               <Routes>
                 <Route path="/" element={<Index />} />
@@ -99,8 +103,9 @@ const App = () => (
                 <Route path="/:category" element={<Category />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
-            </BrowserRouter>
-          </TooltipProvider>
+              </BrowserRouter>
+            </TooltipProvider>
+          </CookieConsentProvider>
         </LocationProvider>
       </DemoProvider>
     </DisplayModeProvider>
