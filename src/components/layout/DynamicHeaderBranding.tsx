@@ -42,20 +42,48 @@ export function DynamicHeaderBranding({
   const categoryPartner = currentCategory ? getCategoryPartner(currentCategory) : null;
   const shouldRotate = !isHomePage && categoryPartner !== null;
 
-  // Rotation effect - every 10 seconds
+  // Rotation effect - 80% category partner, 20% site partner
   useEffect(() => {
     if (!shouldRotate) {
       setShowCategoryPartner(false);
       return;
     }
-    const interval = setInterval(() => {
-      setIsTransitioning(true);
-      setTimeout(() => {
-        setShowCategoryPartner(prev => !prev);
-        setIsTransitioning(false);
-      }, 300); // Fade out duration
-    }, 10000);
-    return () => clearInterval(interval);
+    
+    // Start with category partner visible
+    setShowCategoryPartner(true);
+    
+    const timeoutIds: NodeJS.Timeout[] = [];
+    
+    const runCycle = () => {
+      // Show category partner for 8 seconds (80%)
+      const categoryTimeout = setTimeout(() => {
+        setIsTransitioning(true);
+        const fadeOutTimeout = setTimeout(() => {
+          setShowCategoryPartner(false); // Switch to site partner
+          setIsTransitioning(false);
+          
+          // Show site partner for 2 seconds (20%)
+          const siteTimeout = setTimeout(() => {
+            setIsTransitioning(true);
+            const fadeBackTimeout = setTimeout(() => {
+              setShowCategoryPartner(true); // Switch back to category partner
+              setIsTransitioning(false);
+              runCycle(); // Start next cycle
+            }, 300);
+            timeoutIds.push(fadeBackTimeout);
+          }, 2000);
+          timeoutIds.push(siteTimeout);
+        }, 300);
+        timeoutIds.push(fadeOutTimeout);
+      }, 8000);
+      timeoutIds.push(categoryTimeout);
+    };
+    
+    runCycle();
+    
+    return () => {
+      timeoutIds.forEach(id => clearTimeout(id));
+    };
   }, [shouldRotate]);
 
   // Reset to site partner when navigating
