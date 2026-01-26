@@ -55,14 +55,14 @@ export function DynamicHeaderBranding({
     const timeoutIds: NodeJS.Timeout[] = [];
     
     const runCycle = () => {
-      // Show category partner for 8 seconds (80%)
+      // Show category partner for 48 seconds (80% of 60s)
       const categoryTimeout = setTimeout(() => {
         setIsTransitioning(true);
         const fadeOutTimeout = setTimeout(() => {
           setShowCategoryPartner(false); // Switch to site partner
           setIsTransitioning(false);
           
-          // Show site partner for 2 seconds (20%)
+          // Show site partner for 12 seconds (20% of 60s)
           const siteTimeout = setTimeout(() => {
             setIsTransitioning(true);
             const fadeBackTimeout = setTimeout(() => {
@@ -71,11 +71,11 @@ export function DynamicHeaderBranding({
               runCycle(); // Start next cycle
             }, 300);
             timeoutIds.push(fadeBackTimeout);
-          }, 2000);
+          }, 12000);
           timeoutIds.push(siteTimeout);
         }, 300);
         timeoutIds.push(fadeOutTimeout);
-      }, 8000);
+      }, 48000);
       timeoutIds.push(categoryTimeout);
     };
     
