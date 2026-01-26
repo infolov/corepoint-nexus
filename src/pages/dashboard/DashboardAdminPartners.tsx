@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
-import { Plus, Pencil, Trash2, Eye, Building2, Loader2 } from "lucide-react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { Plus, Pencil, Trash2, Eye, Building2, Loader2, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -42,6 +42,10 @@ export default function DashboardAdminPartners() {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPartner, setEditingPartner] = useState<Partner | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     name: "",
     logo_url: "",
@@ -74,15 +78,75 @@ export default function DashboardAdminPartners() {
     fetchPartners();
   }, []);
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file size (max 500KB)
+    if (file.size > 500 * 1024) {
+      toast.error("Plik jest zbyt duży. Maksymalny rozmiar to 500 KB.");
+      return;
+    }
+
+    // Validate file type
+    const allowedTypes = ["image/png", "image/jpeg", "image/jpg", "image/svg+xml", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Niedozwolony format pliku. Dozwolone: PNG, JPG, SVG, WebP.");
+      return;
+    }
+
+    setLogoFile(file);
+    setLogoPreview(URL.createObjectURL(file));
+    setFormData({ ...formData, logo_url: "" }); // Clear URL if file is selected
+  };
+
+  const clearLogoFile = () => {
+    setLogoFile(null);
+    if (logoPreview) {
+      URL.revokeObjectURL(logoPreview);
+      setLogoPreview(null);
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const uploadLogo = async (file: File): Promise<string> => {
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+    const filePath = `logos/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("partner-logos")
+      .upload(filePath, file);
+
+    if (uploadError) throw uploadError;
+
+    const { data } = supabase.storage
+      .from("partner-logos")
+      .getPublicUrl(filePath);
+
+    return data.publicUrl;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
 
     try {
+      setUploading(true);
+      
+      let logoUrl = formData.logo_url || null;
+
+      // Upload file if selected
+      if (logoFile) {
+        logoUrl = await uploadLogo(logoFile);
+      }
+
       const partnerData = {
         ...formData,
         user_id: user.id,
-        logo_url: formData.logo_url || null,
+        logo_url: logoUrl,
         logo_text: formData.logo_text || null,
         target_url: formData.target_url || null,
         category_slug: formData.partner_type === "category" ? formData.category_slug : null,
@@ -112,6 +176,8 @@ export default function DashboardAdminPartners() {
     } catch (error) {
       console.error("Error saving partner:", error);
       toast.error("Nie udało się zapisać partnera");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -161,6 +227,7 @@ export default function DashboardAdminPartners() {
       end_date: "",
     });
     setEditingPartner(null);
+    clearLogoFile();
   };
 
   const openEditDialog = (partner: Partner) => {
@@ -175,6 +242,10 @@ export default function DashboardAdminPartners() {
       start_date: partner.start_date.split("T")[0],
       end_date: partner.end_date.split("T")[0],
     });
+    clearLogoFile();
+    if (partner.logo_url) {
+      setLogoPreview(partner.logo_url);
+    }
     setDialogOpen(true);
   };
 
@@ -264,13 +335,79 @@ export default function DashboardAdminPartners() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="logo_url">URL logo (opcjonalnie)</Label>
+                <Label>Logo partnera</Label>
+                
+                {/* Preview of current/selected logo */}
+                {(logoPreview || formData.logo_url) && (
+                  <div className="relative inline-block">
+                    <img
+                      src={logoPreview || formData.logo_url}
+                      alt="Podgląd logo"
+                      className="h-16 max-w-[200px] object-contain bg-muted rounded border p-2"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="absolute -top-2 -right-2 h-6 w-6"
+                      onClick={() => {
+                        clearLogoFile();
+                        setFormData({ ...formData, logo_url: "" });
+                      }}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                )}
+
+                {/* File upload */}
+                <div className="flex gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/jpg,image/svg+xml,image/webp"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    id="logo-upload"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    {logoFile ? "Zmień plik" : "Wybierz plik"}
+                  </Button>
+                  {logoFile && (
+                    <span className="text-sm text-muted-foreground self-center truncate max-w-[150px]">
+                      {logoFile.name}
+                    </span>
+                  )}
+                </div>
+
+                {/* URL input as alternative */}
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">lub podaj URL</span>
+                  </div>
+                </div>
+
                 <Input
-                  id="logo_url"
                   type="url"
                   placeholder="https://..."
                   value={formData.logo_url}
-                  onChange={(e) => setFormData({ ...formData, logo_url: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, logo_url: e.target.value });
+                    if (e.target.value) {
+                      clearLogoFile();
+                      setLogoPreview(e.target.value);
+                    }
+                  }}
+                  disabled={!!logoFile}
                 />
                 <p className="text-xs text-muted-foreground">
                   Zalecane wymiary: <strong>200×60 px</strong> (max 400×120 px). Maks. rozmiar pliku: <strong>500 KB</strong>. Formaty: PNG, JPG, SVG, WebP.
@@ -325,7 +462,8 @@ export default function DashboardAdminPartners() {
               </div>
 
               <DialogFooter>
-                <Button type="submit">
+                <Button type="submit" disabled={uploading}>
+                  {uploading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                   {editingPartner ? "Zapisz zmiany" : "Dodaj partnera"}
                 </Button>
               </DialogFooter>
