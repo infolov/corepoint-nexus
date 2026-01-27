@@ -1,30 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, Outlet, useLocation } from "react-router-dom";
 import { 
-  LayoutDashboard, 
-  Calendar, 
-  Target, 
-  CreditCard, 
-  BarChart3, 
-  Megaphone, 
-  Settings, 
-  LogOut,
   Menu,
-  X,
-  User,
   ChevronRight,
-  Shield,
-  Users,
-  LayoutGrid,
-  AlertTriangle,
-  Building2,
-  Eye,
-  Activity,
   ShieldAlert,
-  FileText,
-  UserCheck,
-  FileEdit,
-  FolderTree
+  AlertTriangle,
+  X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
@@ -32,38 +13,9 @@ import { useUserRole } from "@/hooks/use-user-role";
 import { useDemo } from "@/contexts/DemoContext";
 import { cn } from "@/lib/utils";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Logo } from "@/components/layout/Logo";
 import { Card, CardContent } from "@/components/ui/card";
-
-const sidebarLinks = [
-  { name: "Panel główny", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Kalendarz rezerwacji", href: "/dashboard/calendar", icon: Calendar },
-  { name: "Miejsca reklamowe", href: "/dashboard/placements", icon: Target },
-  { name: "Kredyty reklamowe", href: "/dashboard/credits", icon: CreditCard },
-  { name: "Statystyki kampanii", href: "/dashboard/stats", icon: BarChart3 },
-  { name: "Moje kampanie", href: "/dashboard/campaigns", icon: Megaphone },
-  { name: "Podgląd reklam", href: "/dashboard/preview", icon: Eye },
-  { name: "Ustawienia konta", href: "/dashboard/settings", icon: Settings },
-];
-
-const publisherLinks = [
-  { name: "Panel Wydawcy", href: "/dashboard/publisher", icon: FileEdit },
-];
-
-const adminLinks = [
-  { name: "Ustawienia globalne", href: "/dashboard/admin/settings", icon: Settings },
-  { name: "Kategorie i źródła", href: "/dashboard/admin/categories", icon: FolderTree },
-  { name: "Logi aktywności", href: "/dashboard/admin/logs", icon: Activity },
-  { name: "Statystyki platformy", href: "/dashboard/admin/stats", icon: BarChart3 },
-  { name: "Weryfikacja Faktów", href: "/dashboard/admin/factcheck", icon: Shield },
-  { name: "Zarządzanie kampaniami", href: "/dashboard/admin/campaigns", icon: Megaphone },
-  { name: "Zarządzanie użytkownikami", href: "/dashboard/admin/users", icon: Users },
-  { name: "Zarządzanie miejscami", href: "/dashboard/admin/placements", icon: LayoutGrid },
-  { name: "Partnerzy", href: "/dashboard/admin/partners", icon: Building2 },
-  { name: "Zgłoszenia partnerskie", href: "/dashboard/admin/applications", icon: FileText },
-  { name: "Dziennikarze", href: "/dashboard/admin/journalists", icon: UserCheck },
-  { name: "Karuzele banerów", href: "/dashboard/admin/carousels", icon: LayoutGrid },
-];
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 
 export default function Dashboard() {
   const { user, loading, signOut } = useAuth();
@@ -88,6 +40,11 @@ export default function Dashboard() {
       navigate("/");
     }
   }, [user, loading, roleLoading, hasDashboardAccess, navigate, isDemoMode]);
+
+  // Close mobile sidebar on route change
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname]);
 
   const handleSignOut = async () => {
     if (isDemoMode) {
@@ -130,151 +87,31 @@ export default function Dashboard() {
     );
   }
 
+  const sidebarProps = {
+    user: effectiveUser,
+    isAdmin,
+    isPublisher,
+    isDemoMode,
+    onSignOut: handleSignOut,
+  };
+
   return (
-    <div className="min-h-screen bg-muted/30 flex">
-      {/* Sidebar */}
-      <aside className={cn(
-        "fixed inset-y-0 left-0 z-50 w-64 bg-card border-r border-border transform transition-transform duration-200 lg:translate-x-0 lg:static",
-        sidebarOpen ? "translate-x-0" : "-translate-x-full"
-      )}>
-        <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="p-4 border-b border-border">
-            <Logo size="md" />
-          </div>
-
-          {/* User Info */}
-          <div className="p-4 border-b border-border">
-            <div className="flex items-center gap-3">
-              <div className={cn(
-                "w-10 h-10 rounded-full flex items-center justify-center",
-                isDemoMode ? "bg-amber-500/10" : "bg-primary/10"
-              )}>
-                <User className={cn("h-5 w-5", isDemoMode ? "text-amber-500" : "text-primary")} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-medium truncate">
-                    {effectiveUser.user_metadata?.full_name || "Użytkownik"}
-                  </p>
-                  {isDemoMode && (
-                    <span className="px-1.5 py-0.5 text-[10px] font-bold bg-amber-500 text-white rounded">
-                      DEMO
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground truncate">{effectiveUser.email}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-            {sidebarLinks.map((link) => {
-              const isActive = location.pathname === link.href;
-              return (
-                <Link
-                  key={link.href}
-                  to={link.href}
-                  onClick={() => setSidebarOpen(false)}
-                  className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
-                    isActive 
-                      ? "bg-primary text-primary-foreground" 
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  )}
-                >
-                  <link.icon className="h-5 w-5" />
-                  {link.name}
-                </Link>
-              );
-            })}
-
-            {/* Publisher Section */}
-            {(isPublisher || isAdmin) && (
-              <>
-                <div className="pt-4 pb-2">
-                  <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Wydawca
-                  </p>
-                </div>
-                {publisherLinks.map((link) => {
-                  const isActive = location.pathname === link.href;
-                  return (
-                    <Link
-                      key={link.href}
-                      to={link.href}
-                      onClick={() => setSidebarOpen(false)}
-                      className={cn(
-                        "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
-                        isActive 
-                          ? "bg-primary text-primary-foreground" 
-                          : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                      )}
-                    >
-                      <link.icon className="h-5 w-5" />
-                      {link.name}
-                    </Link>
-                  );
-                })}
-              </>
-            )}
-
-            {/* Admin Section */}
-            {isAdmin && (
-              <>
-                <div className="pt-4 pb-2">
-                  <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Administracja
-                  </p>
-                </div>
-                {adminLinks.map((link) => {
-                  const isActive = location.pathname === link.href;
-                  return (
-                    <Link
-                      key={link.href}
-                      to={link.href}
-                      onClick={() => setSidebarOpen(false)}
-                      className={cn(
-                        "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
-                        isActive 
-                          ? "bg-primary text-primary-foreground" 
-                          : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                      )}
-                    >
-                      <link.icon className="h-5 w-5" />
-                      {link.name}
-                    </Link>
-                  );
-                })}
-              </>
-            )}
-          </nav>
-
-          {/* Footer */}
-          <div className="p-4 border-t border-border">
-            <Button 
-              variant="ghost" 
-              className="w-full justify-start text-muted-foreground hover:text-destructive"
-              onClick={handleSignOut}
-            >
-              <LogOut className="h-5 w-5 mr-3" />
-              Wyloguj się
-            </Button>
-          </div>
-        </div>
+    <div className="min-h-screen bg-muted/30 flex w-full">
+      {/* Desktop Sidebar */}
+      <aside className="hidden lg:block w-64 bg-card border-r border-border flex-shrink-0">
+        <DashboardSidebar {...sidebarProps} />
       </aside>
 
-      {/* Overlay */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden" 
-          onClick={() => setSidebarOpen(false)} 
-        />
-      )}
+      {/* Mobile Sidebar (Sheet) */}
+      <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+        <SheetContent side="left" className="w-72 p-0">
+          <SheetTitle className="sr-only">Menu nawigacyjne</SheetTitle>
+          <DashboardSidebar {...sidebarProps} onClose={() => setSidebarOpen(false)} />
+        </SheetContent>
+      </Sheet>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-h-screen">
+      <div className="flex-1 flex flex-col min-h-screen min-w-0">
         {/* Top Bar */}
         <header className="sticky top-0 z-30 bg-card border-b border-border px-4 py-3 flex items-center gap-4">
           <Button 
