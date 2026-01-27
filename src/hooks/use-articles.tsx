@@ -79,7 +79,6 @@ export function useArticles(options: UseArticlesOptions = {}) {
 
       // Set up auto-refresh every 5 minutes
       intervalRef.current = setInterval(() => {
-        console.log("Auto-refreshing database articles...");
         fetchArticles(false); // Don't show loading spinner for auto-refresh
       }, REFRESH_INTERVAL);
 

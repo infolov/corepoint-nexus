@@ -19,10 +19,6 @@ import { useArticles, formatArticleForCard } from "@/hooks/use-articles";
 import { useRSSArticles, formatRSSArticleForCard } from "@/hooks/use-rss-articles";
 
 import { supabase } from "@/integrations/supabase/client";
-import { newsArticles, businessArticles, sportArticles, techArticles, lifestyleArticles } from "@/data/mockNews";
-
-// Combine all mock articles as fallback
-const allMockArticles = [...newsArticles, ...businessArticles, ...sportArticles, ...techArticles, ...lifestyleArticles];
 
 // Sort articles by popularity (view_count) and publication date
 const sortByPopularityAndDate = <T extends { pubDateMs?: number; createdAt?: string; viewCount?: number }>(array: T[]): T[] => {
@@ -77,7 +73,6 @@ const Index = () => {
   // Auto-refresh every 5 minutes
   useEffect(() => {
     refreshIntervalRef.current = setInterval(() => {
-      console.log("Auto-refreshing articles...");
       refetchRSS();
       refetchDB();
     }, 5 * 60 * 1000);
@@ -169,9 +164,6 @@ const Index = () => {
       articles = [...sortedRSS, ...sortedDB];
     } else if (formattedDbArticles.length > 0) {
       articles = sortByPopularityAndDate(formattedDbArticles);
-    } else {
-      // Use mock data as fallback
-      articles = sortByPopularityAndDate(allMockArticles.map(a => ({ ...a, viewCount: 0 })));
     }
 
     // Filter by category if not "all"

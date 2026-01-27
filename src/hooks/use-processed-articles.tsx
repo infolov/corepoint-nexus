@@ -92,7 +92,6 @@ export function useProcessedArticles(limit = 50) {
           table: 'processed_articles',
         },
         (payload) => {
-          console.log('New article processed:', payload.new);
           setArticles(prev => [payload.new as ProcessedArticle, ...prev]);
           setLastUpdate(new Date());
         }
@@ -118,7 +117,6 @@ export function useProcessedArticles(limit = 50) {
     try {
       const { data, error } = await supabase.functions.invoke('process-news-background');
       if (error) throw error;
-      console.log('Background process triggered:', data);
       return data as BackgroundProcessResult;
     } catch (err) {
       console.error('Error triggering background process:', err);

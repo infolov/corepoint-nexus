@@ -447,7 +447,6 @@ export function useWeather(defaultStationId: string = "12375", options?: UseWeat
   useEffect(() => {
     // If manual station is selected, use it
     if (options?.manualStationId) {
-      console.log(`Weather: Using manually selected station ${options.manualStationId}`);
       setStationId(options.manualStationId);
       setIsManualSelection(true);
       return;
@@ -459,7 +458,6 @@ export function useWeather(defaultStationId: string = "12375", options?: UseWeat
     if (options?.city) {
       const stationByCity = findStationByCity(options.city);
       if (stationByCity) {
-        console.log(`Weather: Using station ${stationByCity.name} for city ${options.city}`);
         setStationId(stationByCity.id);
         return;
       }
@@ -473,12 +471,10 @@ export function useWeather(defaultStationId: string = "12375", options?: UseWeat
             position.coords.latitude,
             position.coords.longitude
           );
-          console.log(`Weather: Using nearest station ${nearest.name} from browser geolocation`);
           setStationId(nearest.id);
         },
         () => {
           // Geolocation denied or failed, use default (Warszawa)
-          console.log("Weather: Using default station (Warszawa)");
           setStationId(defaultStationId);
         },
         { timeout: 5000, maximumAge: 600000 } // 10 min cache

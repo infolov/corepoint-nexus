@@ -483,13 +483,10 @@ export function useSmartGeolocation() {
 
   // IP-based fallback detection with multiple API sources
   const detectWithIP = useCallback(async (): Promise<DetectionResult> => {
-    console.log("Starting IP-based geolocation...");
-    
     try {
       const ipResponse = await fetch('https://api.ipify.org?format=json');
       const ipData = await ipResponse.json();
       const clientIP = ipData.ip;
-      console.log("Client IP:", clientIP);
 
       // Try multiple geolocation APIs - ip-api.com is more accurate for Poland
       const geoAPIs = [
@@ -518,7 +515,6 @@ export function useSmartGeolocation() {
             // Use coordinates to find nearest city from our comprehensive database
             if (result.lat && result.lon) {
               const nearest = findNearestCity(result.lat, result.lon);
-              console.log(`Nearest city: ${nearest.name} (${nearest.distance.toFixed(1)}km)`);
               
               if (nearest.distance < 60) {
                 return {
@@ -572,7 +568,6 @@ export function useSmartGeolocation() {
   const detectLocation = useCallback(async (): Promise<UserLocation | null> => {
     // Prevent multiple simultaneous detections
     if (isDetectingRef.current) {
-      console.log("Detection already in progress");
       return null;
     }
 

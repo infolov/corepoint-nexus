@@ -35,30 +35,9 @@ export function ArticlePreviewModal({ isOpen, onClose, article }: ArticlePreview
   const [isPlaying, setIsPlaying] = useState(false);
   const speechSynthRef = useRef<SpeechSynthesisUtterance | null>(null);
 
-  // Mock related articles based on category
-  const relatedArticles = [
-    {
-      id: "related-1",
-      title: "Podobny artykuł z tej samej kategorii",
-      image: "https://images.unsplash.com/photo-1495020689067-958852a7765e?w=300&h=200&fit=crop",
-      source: "Polsat News",
-      sourceUrl: "https://polsatnews.pl"
-    },
-    {
-      id: "related-2", 
-      title: "Więcej informacji na ten temat",
-      image: "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=300&h=200&fit=crop",
-      source: "TVN24",
-      sourceUrl: "https://tvn24.pl"
-    },
-    {
-      id: "related-3",
-      title: "Zobacz także powiązane wiadomości",
-      image: "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=300&h=200&fit=crop",
-      source: "Onet",
-      sourceUrl: "https://onet.pl"
-    },
-  ];
+  // Related articles will be fetched from RSS when data is available
+  // For now, show empty state - the modal focuses on AI summary
+  const relatedArticles: { id: string; title: string; image: string; source: string; sourceUrl: string }[] = [];
 
   useEffect(() => {
     const fetchSummary = async () => {
@@ -175,10 +154,6 @@ export function ArticlePreviewModal({ isOpen, onClose, article }: ArticlePreview
             src={article.image}
             alt={article.title}
             className="w-full h-full object-cover"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.src = "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=800&h=500&fit=crop";
-            }}
           />
         </div>
 

@@ -11,23 +11,6 @@ import { useRSSArticles } from "@/hooks/use-rss-articles";
 import { AuctionAdSlot } from "@/components/widgets/AuctionAdSlot";
 import { NewsCard } from "@/components/news/NewsCard";
 import { toast } from "sonner";
-import {
-  newsArticles,
-  businessArticles,
-  sportArticles,
-  techArticles,
-  lifestyleArticles,
-} from "@/data/mockNews";
-
-// Combine all mock articles for lookup
-const allMockArticles = [
-  ...newsArticles,
-  ...businessArticles,
-  ...sportArticles,
-  ...techArticles,
-  ...lifestyleArticles,
-];
-
 const Article = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -88,10 +71,9 @@ const Article = () => {
     }
   };
 
-  // Find article: cache first, then RSS, then mock
+  // Find article: cache first, then RSS
   const rssArticle = rssArticles.find((a) => a.id === id);
-  const mockArticle = allMockArticles.find((a) => a.id === id);
-  const article = cachedArticle || rssArticle || mockArticle;
+  const article = cachedArticle || rssArticle;
 
   // Track article view for logged-in users
   useEffect(() => {
@@ -136,7 +118,7 @@ const Article = () => {
   const source = article?.source || "Informacje.pl";
 
   // Get related articles (same category, exclude current)
-  const relatedArticles = [...rssArticles, ...allMockArticles]
+  const relatedArticles = rssArticles
     .filter(a => a.category === article.category && a.id !== id)
     .slice(0, 4);
 
