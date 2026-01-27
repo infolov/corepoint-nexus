@@ -62,19 +62,9 @@ export const ArticleSummary = ({ title, content, category, sourceUrl, onTitleGen
       setError(null);
       
       try {
-        console.log("Fetching summary for:", title.substring(0, 50));
-        console.log("Content length:", content?.length || 0);
-        
-        // Warn if content is very short
-        if (isContentTooShort) {
-          console.warn("Warning: Article content is too short for reliable summarization");
-        }
-        
         const { data, error: fnError } = await supabase.functions.invoke("summarize-article", {
           body: { title, content: content || title, category, sourceUrl },
         });
-
-        console.log("Summary response:", data, fnError);
 
         if (fnError) {
           throw new Error(fnError.message);

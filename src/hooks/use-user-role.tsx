@@ -29,8 +29,6 @@ export function useUserRole(): UserRoleState {
     }
 
     try {
-      console.log("[useUserRole] Fetching roles for user:", user.id);
-      
       const { data, error } = await supabase
         .from("user_roles")
         .select("role")
@@ -41,7 +39,6 @@ export function useUserRole(): UserRoleState {
         setRoles([]);
       } else {
         const fetchedRoles = (data || []).map(r => r.role as UserRole);
-        console.log("[useUserRole] Fetched roles:", fetchedRoles);
         setRoles(fetchedRoles);
       }
     } catch (err) {

@@ -685,10 +685,7 @@ export default function DashboardPublisher() {
                     <img
                       src={articleFormData.image}
                       alt="Podgląd"
-                      className="w-full h-32 object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = "/placeholder.svg";
-                      }}
+                      className="w-full h-32 object-cover bg-muted"
                     />
                   </div>
                 )}

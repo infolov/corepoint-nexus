@@ -10,8 +10,8 @@ import {
 } from "@/components/ui/context-menu";
 import { toast } from "sonner";
 
-// Fallback image for broken images
-const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=800&h=500&fit=crop";
+// Fallback image for broken images - using local placeholder
+const FALLBACK_IMAGE = "/placeholder.svg";
 
 interface NewsCardProps {
   id?: string;

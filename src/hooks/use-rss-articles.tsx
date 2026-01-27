@@ -39,10 +39,6 @@ export function useRSSArticles() {
     setError(null);
 
     try {
-      console.log("Fetching articles from cached news endpoint...");
-      const startTime = performance.now();
-      
-      // Use the new cached endpoint
       const { data, error: fetchError } = await supabase.functions.invoke("get-cached-news");
 
       if (fetchError) {
@@ -50,18 +46,12 @@ export function useRSSArticles() {
         throw fetchError;
       }
 
-      const endTime = performance.now();
-      console.log(`Frontend fetch completed in ${Math.round(endTime - startTime)}ms`);
-
       const fetchedArticles: RSSArticle[] = data?.articles || [];
       const meta: CacheMeta | undefined = data?.meta;
       
       if (meta) {
-        console.log(`Cache meta: ${meta.total} articles, RSS from cache: ${meta.fromCache.rss}, Scraper from cache: ${meta.fromCache.scraper}, Backend elapsed: ${meta.elapsed}ms`);
         setCacheMeta(meta);
       }
-
-      console.log("Total articles received:", fetchedArticles.length);
       
       // Merge new articles with existing ones for smooth updates
       const existingIds = new Set(articlesRef.current.map(a => a.id));
@@ -82,11 +72,6 @@ export function useRSSArticles() {
     } catch (err) {
       console.error("Error fetching articles:", err);
       setError("Błąd podczas ładowania artykułów");
-      
-      // Keep existing articles on error
-      if (articlesRef.current.length > 0) {
-        console.log("Keeping existing articles due to error");
-      }
     } finally {
       setLoading(false);
     }
@@ -98,8 +83,7 @@ export function useRSSArticles() {
 
     // Set up auto-refresh every 5 minutes
     intervalRef.current = setInterval(() => {
-      console.log("Auto-refreshing articles...");
-      fetchArticles(false); // Don't show loading spinner for auto-refresh
+      fetchArticles(false);
     }, REFRESH_INTERVAL);
 
     return () => {
