@@ -1,7 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { ExternalLink, X } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+
+// Size constraints for tile ads
+const TILE_CONSTRAINTS = {
+  minHeight: 120,
+  maxHeight: 320,
+  defaultHeight: 200,
+};
 
 interface FeedTileAdCardProps {
   id: string;
@@ -14,8 +21,8 @@ interface FeedTileAdCardProps {
 }
 
 /**
- * Ad card component styled to match NewsCard
- * Used in feed grid to display ads in place of articles
+ * Ad card component that adapts to uploaded image dimensions
+ * with min/max constraints to prevent too small or too large ads
  */
 export function FeedTileAdCard({
   id,
@@ -28,7 +35,34 @@ export function FeedTileAdCard({
 }: FeedTileAdCardProps) {
   const [impressionTracked, setImpressionTracked] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
   const cardRef = useRef<HTMLDivElement>(null);
+
+  // Observe container width for responsive sizing
+  useEffect(() => {
+    if (!cardRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setContainerWidth(entry.contentRect.width);
+      }
+    });
+    observer.observe(cardRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  // Load image dimensions
+  useEffect(() => {
+    if (!contentUrl || contentUrl.match(/\.(mp4|webm)$/i)) {
+      setImageDimensions(null);
+      return;
+    }
+    const img = new Image();
+    img.onload = () => {
+      setImageDimensions({ width: img.naturalWidth, height: img.naturalHeight });
+    };
+    img.src = contentUrl;
+  }, [contentUrl]);
 
   // Track impression when card is visible
   useEffect(() => {
@@ -62,8 +96,19 @@ export function FeedTileAdCard({
     }
   };
 
+  // Calculate constrained height based on image aspect ratio
+  const getConstrainedHeight = () => {
+    if (!imageDimensions || containerWidth === 0) {
+      return TILE_CONSTRAINTS.defaultHeight;
+    }
+    const aspectRatio = imageDimensions.width / imageDimensions.height;
+    let height = containerWidth / aspectRatio;
+    height = Math.max(TILE_CONSTRAINTS.minHeight, Math.min(TILE_CONSTRAINTS.maxHeight, height));
+    return Math.round(height);
+  };
+
   const isVideo = contentUrl?.match(/\.(mp4|webm)$/i);
-  const isAnimatedImage = contentUrl?.match(/\.(gif|webp|apng)$/i);
+  const mediaHeight = getConstrainedHeight();
 
   return (
     <div
@@ -87,13 +132,20 @@ export function FeedTileAdCard({
         </Badge>
       </div>
 
-      {/* Media Container - matches NewsCard aspect ratio */}
-      <div className="relative aspect-[16/9] overflow-hidden">
+      {/* Media Container - adaptive height based on image */}
+      <div 
+        className="relative overflow-hidden transition-all duration-300"
+        style={{
+          height: mediaHeight,
+          minHeight: TILE_CONSTRAINTS.minHeight,
+          maxHeight: TILE_CONSTRAINTS.maxHeight,
+        }}
+      >
         {contentUrl ? (
           isVideo ? (
             <video
               src={contentUrl}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain"
               autoPlay
               muted
               loop
@@ -104,8 +156,8 @@ export function FeedTileAdCard({
               src={contentUrl}
               alt={name || "Reklama"}
               className={cn(
-                "w-full h-full object-cover transition-transform duration-500",
-                isHovered && "scale-105"
+                "w-full h-full object-contain transition-transform duration-500",
+                isHovered && "scale-[1.02]"
               )}
             />
           )
@@ -117,7 +169,7 @@ export function FeedTileAdCard({
 
         {/* Overlay gradient on hover */}
         <div className={cn(
-          "absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent",
+          "absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent",
           "opacity-0 group-hover:opacity-100 transition-opacity duration-300"
         )} />
 

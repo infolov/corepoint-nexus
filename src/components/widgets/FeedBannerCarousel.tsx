@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -92,8 +92,56 @@ export function FeedBannerCarousel({
     return null;
   }
 
+  // Load image dimensions for responsive sizing
+  const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Size constraints
+  const MIN_HEIGHT = 80;
+  const MAX_HEIGHT = 350;
+
+  // Observe container width
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setContainerWidth(entry.contentRect.width);
+      }
+    });
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  // Load image dimensions
+  useEffect(() => {
+    if (!currentBanner?.imageUrl) {
+      setImageDimensions(null);
+      return;
+    }
+    const img = new Image();
+    img.onload = () => {
+      setImageDimensions({ width: img.naturalWidth, height: img.naturalHeight });
+    };
+    img.src = currentBanner.imageUrl;
+  }, [currentBanner?.imageUrl]);
+
+  // Calculate constrained height
+  const getConstrainedHeight = () => {
+    if (!imageDimensions || containerWidth === 0) {
+      return 150; // Default fallback
+    }
+    const aspectRatio = imageDimensions.width / imageDimensions.height;
+    let height = containerWidth / aspectRatio;
+    height = Math.max(MIN_HEIGHT, Math.min(MAX_HEIGHT, height));
+    return Math.round(height);
+  };
+
+  const bannerHeight = getConstrainedHeight();
+
   return (
     <div
+      ref={containerRef}
       className={cn(
         "relative w-full overflow-hidden rounded-lg bg-muted/30",
         className
@@ -103,14 +151,19 @@ export function FeedBannerCarousel({
     >
       {/* Banner Content */}
       <div
-        className="relative aspect-[4/1] sm:aspect-[5/1] md:aspect-[6/1] cursor-pointer"
+        className="relative cursor-pointer transition-all duration-300"
+        style={{
+          height: bannerHeight,
+          minHeight: MIN_HEIGHT,
+          maxHeight: MAX_HEIGHT,
+        }}
         onClick={handleClick}
       >
         {currentBanner.imageUrl ? (
           <img
             src={currentBanner.imageUrl}
             alt="Reklama"
-            className="w-full h-full object-cover transition-opacity duration-300"
+            className="w-full h-full object-contain transition-opacity duration-300"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-r from-primary/10 to-primary/5">

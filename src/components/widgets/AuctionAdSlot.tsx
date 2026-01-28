@@ -284,14 +284,18 @@ export function AuctionAdSlot({
             isTransitioning ? "opacity-80" : "opacity-100",
             className
           )}
-          style={containerStyles}
+          style={{
+            ...containerStyles,
+            minHeight: 80,
+            maxHeight: 400,
+          }}
           onClick={handleClick}
         >
           {ad.contentUrl ? (
             <img
               src={ad.contentUrl}
               alt={ad.name}
-              className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+              className="w-full h-full object-contain transition-transform duration-200 group-hover:scale-[1.02]"
               loading="lazy"
             />
           ) : (
