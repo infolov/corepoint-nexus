@@ -2,15 +2,17 @@ import { useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, Pause, Volume2, Calendar, MapPin, Loader2 } from "lucide-react";
+import { Play, Pause, Volume2, Calendar, MapPin, Loader2, FileText } from "lucide-react";
 import { useDailySummary } from "@/hooks/use-daily-summary";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 export function DailySummaryCard() {
   const { nationalSummary, regionalSummary, loading, error } = useDailySummary();
   const [activeTab, setActiveTab] = useState<"national" | "regional">("national");
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioLoading, setAudioLoading] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const currentSummary = activeTab === "national" ? nationalSummary : regionalSummary;
@@ -56,7 +58,7 @@ export function DailySummaryCard() {
     }
   };
 
-  // Cleanup audio on unmount or tab change
+  // Cleanup audio on tab change
   const stopAudio = () => {
     if (audioRef.current) {
       audioRef.current.pause();
@@ -68,6 +70,7 @@ export function DailySummaryCard() {
   const handleTabChange = (tab: "national" | "regional") => {
     stopAudio();
     setActiveTab(tab);
+    setIsExpanded(false);
   };
 
   if (loading) {
@@ -86,7 +89,7 @@ export function DailySummaryCard() {
   }
 
   if (error || (!nationalSummary && !regionalSummary)) {
-    return null; // Don't show card if no summaries available
+    return null;
   }
 
   const today = new Date().toLocaleDateString("pl-PL", {
@@ -98,10 +101,10 @@ export function DailySummaryCard() {
   return (
     <Card className="w-full bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Volume2 className="h-5 w-5 text-primary" />
-            Podsumowanie dnia
+            Skrót dnia
           </CardTitle>
           <Badge variant="secondary" className="text-xs">
             <Calendar className="h-3 w-3 mr-1" />
@@ -118,7 +121,7 @@ export function DailySummaryCard() {
               onClick={() => handleTabChange("national")}
               className="text-xs"
             >
-              🇵🇱 Polska
+              🇵🇱 Wszystkie
             </Button>
             <Button
               variant={activeTab === "regional" ? "default" : "outline"}
@@ -136,12 +139,29 @@ export function DailySummaryCard() {
       <CardContent className="space-y-4">
         {currentSummary ? (
           <>
-            <p className="text-sm text-muted-foreground line-clamp-4 whitespace-pre-line">
-              {currentSummary.summary_text.slice(0, 300)}
-              {currentSummary.summary_text.length > 300 && "..."}
-            </p>
+            <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
+              <p className="text-sm text-muted-foreground whitespace-pre-line">
+                {currentSummary.summary_text.slice(0, 250)}
+                {currentSummary.summary_text.length > 250 && !isExpanded && "..."}
+              </p>
+              
+              <CollapsibleContent>
+                <p className="text-sm text-muted-foreground whitespace-pre-line">
+                  {currentSummary.summary_text.slice(250)}
+                </p>
+              </CollapsibleContent>
+              
+              {currentSummary.summary_text.length > 250 && (
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="sm" className="mt-2 text-xs">
+                    <FileText className="h-3 w-3 mr-1" />
+                    {isExpanded ? "Zwiń" : "Rozwiń pełny tekst"}
+                  </Button>
+                </CollapsibleTrigger>
+              )}
+            </Collapsible>
             
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               {currentSummary.audio_url && (
                 <Button
                   onClick={togglePlayback}
@@ -168,7 +188,7 @@ export function DailySummaryCard() {
           </>
         ) : (
           <p className="text-sm text-muted-foreground">
-            Podsumowanie {activeTab === "national" ? "krajowe" : "regionalne"} nie jest jeszcze dostępne.
+            Podsumowanie {activeTab === "national" ? "ogólne" : "regionalne"} nie jest jeszcze dostępne.
           </p>
         )}
       </CardContent>
