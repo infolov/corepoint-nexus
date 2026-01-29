@@ -26,7 +26,18 @@ export type AdPlacementSlug =
   | "feed-tile"            // Kafelek w Feedzie
   | "feed-carousel"        // Karuzela w Feedzie
   | "footer"               // Stopka
-  | "sponsored-article";   // Artykuł Sponsorowany
+  | "sponsored-article"    // Artykuł Sponsorowany
+  // Category-specific top banners
+  | "category-top-wiadomosci"
+  | "category-top-swiat"
+  | "category-top-biznes"
+  | "category-top-finanse"
+  | "category-top-prawo"
+  | "category-top-tech-nauka"
+  | "category-top-motoryzacja"
+  | "category-top-sport"
+  | "category-top-kultura"
+  | "category-top-lifestyle";
 
 interface AuctionAdSlotProps {
   variant?: AdVariant;

@@ -5,6 +5,7 @@ import { Footer } from "@/components/layout/Footer";
 import { CategoryBar } from "@/components/navigation/CategoryBar";
 import { NewsCard } from "@/components/news/NewsCard";
 import { AuctionAdSlot } from "@/components/widgets/AuctionAdSlot";
+import { CategoryTopBanner } from "@/components/widgets/CategoryTopBanner";
 import { FeedBannerCarousel, formatBannersForCarousel } from "@/components/widgets/FeedBannerCarousel";
 import { FeedTileAdCard } from "@/components/widgets/FeedTileAdCard";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
@@ -698,9 +699,9 @@ export default function Category() {
       <CategoryBar activeCategory={activeCategory} />
       
       <main className="w-full px-2 sm:px-4 md:container py-3 sm:py-4 md:py-6">
-        {/* Top Ad Banner */}
+        {/* Category-specific Top Ad Banner with fallback to homepage banner */}
         <div className="mb-4 sm:mb-6">
-          <AuctionAdSlot variant="horizontal" className="w-full" slotIndex={0} />
+          <CategoryTopBanner categorySlug={currentCategorySlug} className="w-full" />
         </div>
 
         {/* Page Title */}
