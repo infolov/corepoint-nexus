@@ -18,6 +18,18 @@ const POLISH_VOIVODESHIPS = [
   "świętokrzyskie", "warmińsko-mazurskie", "wielkopolskie", "zachodniopomorskie"
 ];
 
+// Categories that support daily summaries
+const SUMMARY_CATEGORIES = [
+  { slug: "wiadomosci", name: "Wiadomości", keywords: ["wiadomości", "wiadomosci", "news", "polska", "polityka"] },
+  { slug: "swiat", name: "Świat", keywords: ["świat", "swiat", "world", "europa", "usa"] },
+  { slug: "biznes", name: "Biznes", keywords: ["biznes", "business", "gospodarka", "firma"] },
+  { slug: "finanse", name: "Finanse", keywords: ["finanse", "finance", "bank", "kredyt"] },
+  { slug: "tech-nauka", name: "Technologia i Nauka", keywords: ["tech", "technologia", "nauka", "ai", "kosmos"] },
+  { slug: "sport", name: "Sport", keywords: ["sport", "piłka", "mecz", "liga"] },
+  { slug: "kultura", name: "Kultura", keywords: ["kultura", "film", "muzyka", "kino"] },
+  { slug: "motoryzacja", name: "Motoryzacja", keywords: ["motoryzacja", "auto", "samochód", "paliwo"] },
+];
+
 interface Article {
   id: string;
   title: string;
@@ -26,6 +38,56 @@ interface Article {
   view_count: number;
   region: string | null;
   ai_summary: string | null;
+}
+
+interface ProcessedArticle {
+  id: string;
+  title: string;
+  ai_summary: string | null;
+  category: string | null;
+  source: string | null;
+}
+
+async function getTopArticlesForCategory(
+  supabase: SupabaseClient,
+  category: { slug: string; keywords: string[] },
+  limit: number = 5
+): Promise<(Article | ProcessedArticle)[]> {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  // First try processed_articles (RSS sourced)
+  const { data: processedData } = await supabase
+    .from("processed_articles")
+    .select("id, title, ai_summary, category, source")
+    .gte("created_at", yesterday.toISOString())
+    .or(category.keywords.map(k => `category.ilike.%${k}%`).join(","))
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  // Then try regular articles
+  const { data: articlesData } = await supabase
+    .from("articles")
+    .select("id, title, excerpt, category, view_count, region, ai_summary")
+    .eq("is_published", true)
+    .gte("created_at", yesterday.toISOString())
+    .or(category.keywords.map(k => `category.ilike.%${k}%`).join(","))
+    .order("view_count", { ascending: false })
+    .limit(limit);
+
+  // Combine and deduplicate
+  const combined = [...(processedData || []), ...(articlesData || [])];
+  const seen = new Set<string>();
+  const unique = combined.filter(a => {
+    const key = a.title.toLowerCase().substring(0, 50);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  return unique.slice(0, limit);
 }
 
 async function getTopArticles(
@@ -60,18 +122,71 @@ async function getTopArticles(
   return data || [];
 }
 
-async function generateSummaryText(articles: Article[], region: string | null): Promise<string> {
+async function getAllTopArticles(
+  supabase: SupabaseClient,
+  limit: number = 10
+): Promise<(Article | ProcessedArticle)[]> {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  // Get from processed_articles (RSS)
+  const { data: processedData } = await supabase
+    .from("processed_articles")
+    .select("id, title, ai_summary, category, source")
+    .gte("created_at", yesterday.toISOString())
+    .order("created_at", { ascending: false })
+    .limit(limit * 2);
+
+  // Get from articles
+  const { data: articlesData } = await supabase
+    .from("articles")
+    .select("id, title, excerpt, category, view_count, region, ai_summary")
+    .eq("is_published", true)
+    .gte("created_at", yesterday.toISOString())
+    .order("view_count", { ascending: false })
+    .limit(limit);
+
+  // Combine and deduplicate
+  const combined = [...(processedData || []), ...(articlesData || [])];
+  const seen = new Set<string>();
+  const unique = combined.filter(a => {
+    const key = a.title.toLowerCase().substring(0, 50);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  return unique.slice(0, limit);
+}
+
+async function generateSummaryText(
+  articles: (Article | ProcessedArticle)[], 
+  context: { region?: string | null; category?: { slug: string; name: string; keywords: string[] } | null }
+): Promise<string> {
   if (articles.length === 0) {
-    return region 
-      ? `Brak najważniejszych wiadomości z regionu ${region} na dzisiaj.`
-      : "Brak najważniejszych wiadomości krajowych na dzisiaj.";
+    if (context.category) {
+      return `Brak najważniejszych wiadomości z kategorii ${context.category.name} na dzisiaj.`;
+    }
+    if (context.region) {
+      return `Brak najważniejszych wiadomości z regionu ${context.region} na dzisiaj.`;
+    }
+    return "Brak najważniejszych wiadomości na dzisiaj.";
   }
 
-  const articlesList = articles.map((a, i) => 
-    `${i + 1}. ${a.title}${a.ai_summary ? ` - ${a.ai_summary}` : (a.excerpt ? ` - ${a.excerpt}` : "")}`
-  ).join("\n");
+  const articlesList = articles.map((a, i) => {
+    const summary = a.ai_summary || ('excerpt' in a ? a.excerpt : null) || "";
+    return `${i + 1}. ${a.title}${summary ? ` - ${summary}` : ""}`;
+  }).join("\n");
 
-  const regionText = region ? `regionu ${region}` : "Polski";
+  let contextText = "wszystkich kategorii";
+  if (context.category) {
+    contextText = `kategorii ${context.category.name}`;
+  } else if (context.region) {
+    contextText = `regionu ${context.region}`;
+  }
+
   const today = new Date().toLocaleDateString("pl-PL", { 
     weekday: "long", 
     day: "numeric", 
@@ -79,7 +194,7 @@ async function generateSummaryText(articles: Article[], region: string | null): 
     year: "numeric" 
   });
 
-  const prompt = `Jesteś polskim prezenterem wiadomości. Stwórz krótkie, profesjonalne podsumowanie dnia (${today}) dla ${regionText}.
+  const prompt = `Jesteś polskim prezenterem wiadomości. Stwórz krótkie, profesjonalne podsumowanie dnia (${today}) dla ${contextText}.
 
 Najważniejsze wiadomości do podsumowania:
 ${articlesList}
@@ -110,14 +225,14 @@ Podsumowanie:`;
 
     if (!response.ok) {
       console.error("AI API error:", await response.text());
-      return `Podsumowanie dnia ${today} dla ${regionText}:\n\n${articlesList}`;
+      return `Podsumowanie dnia ${today} dla ${contextText}:\n\n${articlesList}`;
     }
 
     const data = await response.json();
     return data.choices?.[0]?.message?.content || `Podsumowanie dnia ${today}:\n\n${articlesList}`;
   } catch (error) {
     console.error("Error generating summary:", error);
-    return `Podsumowanie dnia ${today} dla ${regionText}:\n\n${articlesList}`;
+    return `Podsumowanie dnia ${today} dla ${contextText}:\n\n${articlesList}`;
   }
 }
 
@@ -177,9 +292,10 @@ async function generateAudio(text: string, supabase: SupabaseClient, fileName: s
 
 async function createDailySummary(
   supabase: SupabaseClient,
-  region: string | null
+  options: { region?: string | null; category?: { slug: string; name: string; keywords: string[] } | null }
 ): Promise<void> {
   const today = new Date().toISOString().split("T")[0];
+  const { region = null, category = null } = options;
   
   // Check if summary already exists
   let existingQuery = supabase
@@ -193,40 +309,59 @@ async function createDailySummary(
     existingQuery = existingQuery.eq("region", region);
   }
 
+  if (category === null) {
+    existingQuery = existingQuery.is("category", null);
+  } else {
+    existingQuery = existingQuery.eq("category", category.slug);
+  }
+
   const { data: existing } = await existingQuery.single();
 
   if (existing) {
-    console.log(`Summary already exists for ${region || "national"} on ${today}`);
+    console.log(`Summary already exists for ${category?.name || region || "national"} on ${today}`);
     return;
   }
 
-  const articles = await getTopArticles(supabase, region);
+  let articles: (Article | ProcessedArticle)[];
+  
+  if (category) {
+    // Category-specific summary
+    articles = await getTopArticlesForCategory(supabase, category);
+  } else if (region) {
+    // Regional summary
+    articles = await getTopArticles(supabase, region);
+  } else {
+    // National/all summary
+    articles = await getAllTopArticles(supabase);
+  }
   
   if (articles.length === 0) {
-    console.log(`No articles found for ${region || "national"} on ${today}`);
+    console.log(`No articles found for ${category?.name || region || "national"} on ${today}`);
     return;
   }
 
-  const summaryText = await generateSummaryText(articles, region);
+  const summaryText = await generateSummaryText(articles, { region, category });
   
-  const audioFileName = `${today}-${region || "national"}.mp3`;
+  const fileNamePart = category?.slug || region || "national";
+  const audioFileName = `${today}-${fileNamePart}.mp3`;
   const audioUrl = await generateAudio(summaryText, supabase, audioFileName);
 
   const insertData: Record<string, unknown> = {
     summary_date: today,
     region: region,
+    category: category?.slug || null,
     summary_text: summaryText,
     audio_url: audioUrl,
     article_ids: articles.map(a => a.id),
-    view_count_total: articles.reduce((sum, a) => sum + a.view_count, 0),
+    view_count_total: articles.reduce((sum, a) => sum + ('view_count' in a ? a.view_count : 0), 0),
   };
 
   const { error } = await supabase.from("daily_summaries").insert(insertData);
 
   if (error) {
-    console.error(`Error saving summary for ${region || "national"}:`, error);
+    console.error(`Error saving summary for ${category?.name || region || "national"}:`, error);
   } else {
-    console.log(`Created summary for ${region || "national"} on ${today}`);
+    console.log(`Created summary for ${category?.name || region || "national"} on ${today}`);
   }
 }
 
@@ -239,7 +374,9 @@ serve(async (req) => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     
     let targetRegion: string | null = null;
+    let targetCategory: string | null = null;
     let generateAll = true;
+    let generateCategories = true;
     
     try {
       const body = await req.json();
@@ -247,26 +384,50 @@ serve(async (req) => {
         targetRegion = body.region;
         generateAll = false;
       }
+      if (body.category !== undefined) {
+        targetCategory = body.category;
+        generateAll = false;
+        generateCategories = false;
+      }
       if (body.all !== undefined) {
         generateAll = body.all;
+      }
+      if (body.categories !== undefined) {
+        generateCategories = body.categories;
       }
     } catch {
       // No body, generate all summaries
     }
 
-    const results: { region: string | null; status: string }[] = [];
+    const results: { type: string; name: string | null; status: string }[] = [];
 
     if (generateAll) {
-      await createDailySummary(supabase, null);
-      results.push({ region: null, status: "generated" });
+      // Generate main summary (all categories combined)
+      await createDailySummary(supabase, {});
+      results.push({ type: "national", name: null, status: "generated" });
 
+      // Generate category-specific summaries
+      if (generateCategories) {
+        for (const category of SUMMARY_CATEGORIES) {
+          await createDailySummary(supabase, { category });
+          results.push({ type: "category", name: category.name, status: "generated" });
+        }
+      }
+
+      // Generate regional summaries
       for (const voivodeship of POLISH_VOIVODESHIPS) {
-        await createDailySummary(supabase, voivodeship);
-        results.push({ region: voivodeship, status: "generated" });
+        await createDailySummary(supabase, { region: voivodeship });
+        results.push({ type: "regional", name: voivodeship, status: "generated" });
+      }
+    } else if (targetCategory) {
+      const category = SUMMARY_CATEGORIES.find(c => c.slug === targetCategory);
+      if (category) {
+        await createDailySummary(supabase, { category });
+        results.push({ type: "category", name: category.name, status: "generated" });
       }
     } else {
-      await createDailySummary(supabase, targetRegion);
-      results.push({ region: targetRegion, status: "generated" });
+      await createDailySummary(supabase, { region: targetRegion });
+      results.push({ type: "regional", name: targetRegion, status: "generated" });
     }
 
     return new Response(

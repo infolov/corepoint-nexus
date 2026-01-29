@@ -596,6 +596,7 @@ export type Database = {
         Row: {
           article_ids: string[]
           audio_url: string | null
+          category: string | null
           created_at: string
           id: string
           region: string | null
@@ -607,6 +608,7 @@ export type Database = {
         Insert: {
           article_ids?: string[]
           audio_url?: string | null
+          category?: string | null
           created_at?: string
           id?: string
           region?: string | null
@@ -618,6 +620,7 @@ export type Database = {
         Update: {
           article_ids?: string[]
           audio_url?: string | null
+          category?: string | null
           created_at?: string
           id?: string
           region?: string | null

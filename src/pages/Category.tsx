@@ -4,6 +4,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { CategoryBar } from "@/components/navigation/CategoryBar";
 import { NewsCard } from "@/components/news/NewsCard";
+import { CategoryDailySummary } from "@/components/news/CategoryDailySummary";
 import { AuctionAdSlot } from "@/components/widgets/AuctionAdSlot";
 import { CategoryTopBanner } from "@/components/widgets/CategoryTopBanner";
 import { FeedBannerCarousel, formatBannersForCarousel } from "@/components/widgets/FeedBannerCarousel";
@@ -708,6 +709,14 @@ export default function Category() {
         <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground mb-4 sm:mb-6">
           {pageTitle}
         </h1>
+
+        {/* Category Daily Summary */}
+        {currentCategorySlug && currentCategorySlug !== "all" && currentCategorySlug !== "lokalne" && (
+          <CategoryDailySummary 
+            categorySlug={currentCategorySlug} 
+            categoryName={categoryName} 
+          />
+        )}
 
         {/* Loading State */}
         {isLoadingData && filteredArticles.length === 0 && (
