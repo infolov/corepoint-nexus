@@ -232,15 +232,15 @@ export function Header() {
             {/* Weather - popup with weekly forecast */}
             <Popover>
               <PopoverTrigger asChild>
-                <button className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-nav-foreground/80 text-sm hover:bg-nav-foreground/10 rounded-lg transition-colors">
+              <button className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-nav-foreground/80 text-sm hover:bg-nav-foreground/10 rounded-lg transition-colors">
                   {weatherLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : weatherData ? <>
                       <MapPin className="h-4 w-4 text-primary" />
-                      <span className="font-medium">{weatherData.stacja}</span>
+                      <span className="font-medium">{location.city || weatherData.stacja}</span>
                       {getMainWeatherIcon(weatherData.suma_opadu, weatherData.temperatura, weatherData.wilgotnosc_wzgledna, "h-5 w-5")}
                       <span className="font-semibold">{Math.round(parseFloat(weatherData.temperatura))}°C</span>
                     </> : <>
                       <MapPin className="h-4 w-4" />
-                      <span className="text-xs text-nav-foreground/60">Warszawa</span>
+                      <span className="text-xs text-nav-foreground/60">{location.city || "Warszawa"}</span>
                       <Cloud className="h-5 w-5 text-muted-foreground" />
                       <span className="font-semibold">--°C</span>
                     </>}
@@ -249,10 +249,15 @@ export function Header() {
               <PopoverContent className="w-80 p-4" align="end">
                 <div className="space-y-4">
                   {/* Current weather */}
-                  <div className="flex items-center justify-between pb-3 border-b border-border">
-                    <div className="flex items-center gap-3">
-                      <MapPin className="h-4 w-4 text-primary" />
-                      <span className="font-semibold">{weatherData?.stacja || "Warszawa"}</span>
+                    <div className="flex items-center justify-between pb-3 border-b border-border">
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4 text-primary" />
+                          <span className="font-semibold">{location.city || weatherData?.stacja || "Warszawa"}</span>
+                        </div>
+                        {location.city && weatherData?.stacja && location.city !== weatherData.stacja && (
+                          <span className="text-xs text-muted-foreground ml-6">Stacja: {weatherData.stacja}</span>
+                        )}
                     </div>
                     <div className="flex items-center gap-2">
                       {weatherData ? getMainWeatherIcon(weatherData.suma_opadu, weatherData.temperatura, weatherData.wilgotnosc_wzgledna, "h-8 w-8") : <Cloud className="h-8 w-8 text-muted-foreground" />}
