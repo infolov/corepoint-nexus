@@ -37,7 +37,7 @@ export function useDailySummary(categorySlug?: string) {
           .eq("summary_date", today)
           .eq("category", categorySlug)
           .is("region", null)
-          .single();
+          .maybeSingle();
 
         if (categoryError && categoryError.code !== "PGRST116") {
           console.error("Error fetching category summary:", categoryError);
@@ -55,7 +55,7 @@ export function useDailySummary(categorySlug?: string) {
         .eq("summary_date", today)
         .is("region", null)
         .is("category", null)
-        .single();
+        .maybeSingle();
 
       if (nationalError && nationalError.code !== "PGRST116") {
         console.error("Error fetching national summary:", nationalError);
@@ -71,7 +71,7 @@ export function useDailySummary(categorySlug?: string) {
           .eq("summary_date", today)
           .eq("region", settings.voivodeship)
           .is("category", null)
-          .single();
+          .maybeSingle();
 
         if (regionalError && regionalError.code !== "PGRST116") {
           console.error("Error fetching regional summary:", regionalError);
@@ -124,7 +124,7 @@ export function useCategorySummary(categorySlug: string) {
         .eq("summary_date", today)
         .eq("category", categorySlug)
         .is("region", null)
-        .single();
+        .maybeSingle();
 
       if (fetchError && fetchError.code !== "PGRST116") {
         console.error("Error fetching category summary:", fetchError);
