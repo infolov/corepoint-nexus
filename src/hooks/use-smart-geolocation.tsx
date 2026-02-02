@@ -4,10 +4,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { polandDivisions, getVoivodeships, getPowiats, getGminas } from "@/data/poland-divisions";
 
+export interface Coordinates {
+  lat: number;
+  lng: number;
+}
+
 export interface UserLocation {
   voivodeship: string | null;
   county: string | null; // powiat
   city: string | null;
+  coordinates?: Coordinates | null;
   detectedAt?: string;
   method?: "browser" | "ip" | "manual";
 }
@@ -16,7 +22,7 @@ interface SmartGeolocationState {
   location: UserLocation;
   isDetecting: boolean;
   error: string | null;
-  detectionPhase: "idle" | "high_accuracy" | "network" | "ip_fallback" | "success" | "error";
+  detectionPhase: "idle" | "high_accuracy" | "low_accuracy" | "reverse_geocoding" | "ip_fallback" | "success" | "error";
 }
 
 type GeolocationErrorType = "PERMISSION_DENIED" | "POSITION_UNAVAILABLE" | "TIMEOUT" | "NOT_SUPPORTED" | "NOT_SECURE" | "UNKNOWN";
@@ -26,6 +32,12 @@ interface DetectionResult {
   location?: UserLocation;
   error?: GeolocationErrorType;
   message?: string;
+}
+
+interface ReverseGeocodingResult {
+  city: string | null;
+  county: string | null;
+  voivodeship: string | null;
 }
 
 // Region name mappings from English to Polish voivodeships
@@ -51,7 +63,43 @@ const regionMappings: Record<string, string> = {
   'lubusz': 'lubuskie',
 };
 
-// Map coordinates to nearest major cities - COMPREHENSIVE LIST
+// Polish voivodeship name mappings from Nominatim responses
+const voivodeshipMappings: Record<string, string> = {
+  'województwo zachodniopomorskie': 'zachodniopomorskie',
+  'województwo warmińsko-mazurskie': 'warmińsko-mazurskie',
+  'województwo pomorskie': 'pomorskie',
+  'województwo mazowieckie': 'mazowieckie',
+  'województwo małopolskie': 'małopolskie',
+  'województwo śląskie': 'śląskie',
+  'województwo dolnośląskie': 'dolnośląskie',
+  'województwo wielkopolskie': 'wielkopolskie',
+  'województwo łódzkie': 'łódzkie',
+  'województwo kujawsko-pomorskie': 'kujawsko-pomorskie',
+  'województwo lubelskie': 'lubelskie',
+  'województwo podkarpackie': 'podkarpackie',
+  'województwo podlaskie': 'podlaskie',
+  'województwo świętokrzyskie': 'świętokrzyskie',
+  'województwo opolskie': 'opolskie',
+  'województwo lubuskie': 'lubuskie',
+  'zachodniopomorskie': 'zachodniopomorskie',
+  'warmińsko-mazurskie': 'warmińsko-mazurskie',
+  'pomorskie': 'pomorskie',
+  'mazowieckie': 'mazowieckie',
+  'małopolskie': 'małopolskie',
+  'śląskie': 'śląskie',
+  'dolnośląskie': 'dolnośląskie',
+  'wielkopolskie': 'wielkopolskie',
+  'łódzkie': 'łódzkie',
+  'kujawsko-pomorskie': 'kujawsko-pomorskie',
+  'lubelskie': 'lubelskie',
+  'podkarpackie': 'podkarpackie',
+  'podlaskie': 'podlaskie',
+  'świętokrzyskie': 'świętokrzyskie',
+  'opolskie': 'opolskie',
+  'lubuskie': 'lubuskie',
+};
+
+// Map coordinates to nearest major cities - FALLBACK ONLY (used when reverse geocoding fails)
 const cityCoordinates: Array<{ name: string; voivodeship: string; powiat: string; lat: number; lng: number }> = [
   // ============ ZACHODNIOPOMORSKIE ============
   { name: "Szczecin", voivodeship: "zachodniopomorskie", powiat: "m. Szczecin", lat: 53.4285, lng: 14.5528 },
@@ -377,12 +425,62 @@ const getErrorMessage = (errorType: GeolocationErrorType): string => {
   }
 };
 
+// Reverse Geocoding using OpenStreetMap Nominatim API
+const reverseGeocode = async (lat: number, lng: number): Promise<ReverseGeocodingResult | null> => {
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=pl`,
+      {
+        headers: {
+          'User-Agent': 'CorePoint News App (contact@corepoint.pl)'
+        }
+      }
+    );
+    
+    if (!response.ok) {
+      console.error("Nominatim API error:", response.status);
+      return null;
+    }
+    
+    const data = await response.json();
+    
+    if (!data.address) {
+      return null;
+    }
+    
+    const address = data.address;
+    
+    // Extract city name - prioritize village/town/city
+    let city = address.village || address.town || address.city || address.municipality || address.suburb || null;
+    
+    // Extract county (powiat)
+    let county = address.county || null;
+    if (county) {
+      // Clean up "powiat" prefix if present
+      county = county.replace(/^powiat\s+/i, '');
+    }
+    
+    // Extract voivodeship
+    let voivodeship = address.state || null;
+    if (voivodeship) {
+      // Normalize voivodeship name
+      const normalizedVoivodeship = voivodeship.toLowerCase().trim();
+      voivodeship = voivodeshipMappings[normalizedVoivodeship] || null;
+    }
+    
+    return { city, county, voivodeship };
+  } catch (error) {
+    console.error("Reverse geocoding error:", error);
+    return null;
+  }
+};
+
 export function useSmartGeolocation() {
   const { user } = useAuth();
   const isDetectingRef = useRef(false);
   
   const [state, setState] = useState<SmartGeolocationState>({
-    location: { voivodeship: null, county: null, city: null },
+    location: { voivodeship: null, county: null, city: null, coordinates: null },
     isDetecting: false,
     error: null,
     detectionPhase: "idle",
@@ -394,6 +492,7 @@ export function useSmartGeolocation() {
       voivodeship: location.voivodeship,
       county: location.county,
       city: location.city,
+      coordinates: location.coordinates,
     }));
     localStorage.setItem("locationPrompted", "true");
 
@@ -427,7 +526,50 @@ export function useSmartGeolocation() {
     }
   }, [user]);
 
-  // Browser geolocation with specific options
+  // Two-step GPS detection with fallback
+  const detectWithGPS = useCallback((): Promise<{ coords: GeolocationCoordinates } | null> => {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        resolve(null);
+        return;
+      }
+
+      // Step 1: Try high accuracy first (5s timeout)
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          console.log("High accuracy GPS succeeded");
+          resolve(position);
+        },
+        (highAccuracyError) => {
+          console.log("High accuracy GPS failed:", highAccuracyError.code, "- trying low accuracy fallback");
+          
+          // Step 2: Fallback to low accuracy (network-based)
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              console.log("Low accuracy GPS succeeded");
+              resolve(position);
+            },
+            (lowAccuracyError) => {
+              console.error("Both GPS attempts failed:", lowAccuracyError.code);
+              resolve(null);
+            },
+            {
+              enableHighAccuracy: false,
+              timeout: 10000,
+              maximumAge: 30000,
+            }
+          );
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 5000,
+          maximumAge: 0,
+        }
+      );
+    });
+  }, []);
+
+  // Browser geolocation with specific options (legacy method for permission handling)
   const detectWithBrowserOptions = useCallback((
     options: PositionOptions
   ): Promise<DetectionResult> => {
@@ -438,26 +580,65 @@ export function useSmartGeolocation() {
       }
 
       navigator.geolocation.getCurrentPosition(
-        (position) => {
+        async (position) => {
           const { latitude, longitude } = position.coords;
-          const nearest = findNearestCity(latitude, longitude);
-          const exactMatch = findCityInDivisions(nearest.name);
+          const coordinates: Coordinates = { lat: latitude, lng: longitude };
           
-          const location: UserLocation = exactMatch ? {
-            voivodeship: exactMatch.voivodeship,
-            county: exactMatch.powiat,
-            city: exactMatch.city,
-            method: "browser",
-            detectedAt: new Date().toISOString(),
-          } : {
-            voivodeship: nearest.voivodeship,
-            county: nearest.powiat,
-            city: nearest.name,
-            method: "browser",
-            detectedAt: new Date().toISOString(),
-          };
+          // Try reverse geocoding first for precise location
+          setState(prev => ({ ...prev, detectionPhase: "reverse_geocoding" }));
+          const reverseResult = await reverseGeocode(latitude, longitude);
+          
+          if (reverseResult && (reverseResult.city || reverseResult.voivodeship)) {
+            const location: UserLocation = {
+              voivodeship: reverseResult.voivodeship,
+              county: reverseResult.county,
+              city: reverseResult.city,
+              coordinates,
+              method: "browser",
+              detectedAt: new Date().toISOString(),
+            };
+            resolve({ success: true, location });
+            return;
+          }
+          
+          // Fallback to proximity matching if reverse geocoding fails
+          console.log("Reverse geocoding failed, falling back to proximity matching");
+          const nearest = findNearestCity(latitude, longitude);
+          
+          if (nearest.distance < 60) {
+            const exactMatch = findCityInDivisions(nearest.name);
+            
+            const location: UserLocation = exactMatch ? {
+              voivodeship: exactMatch.voivodeship,
+              county: exactMatch.powiat,
+              city: exactMatch.city,
+              coordinates,
+              method: "browser",
+              detectedAt: new Date().toISOString(),
+            } : {
+              voivodeship: nearest.voivodeship,
+              county: nearest.powiat,
+              city: nearest.name,
+              coordinates,
+              method: "browser",
+              detectedAt: new Date().toISOString(),
+            };
 
-          resolve({ success: true, location });
+            resolve({ success: true, location });
+          } else {
+            // Too far from any known city, but we still have coordinates
+            resolve({
+              success: true,
+              location: {
+                voivodeship: null,
+                county: null,
+                city: null,
+                coordinates,
+                method: "browser",
+                detectedAt: new Date().toISOString(),
+              }
+            });
+          }
         },
         (error) => {
           let errorType: GeolocationErrorType;
@@ -512,9 +693,29 @@ export function useSmartGeolocation() {
         try {
           const result = await apiCall();
           if (result) {
-            // Use coordinates to find nearest city from our comprehensive database
-            if (result.lat && result.lon) {
-              const nearest = findNearestCity(result.lat, result.lon);
+            const coordinates: Coordinates | null = (result.lat && result.lon) 
+              ? { lat: result.lat, lng: result.lon } 
+              : null;
+            
+            // Try reverse geocoding for IP-based coordinates too
+            if (coordinates) {
+              const reverseResult = await reverseGeocode(coordinates.lat, coordinates.lng);
+              if (reverseResult && (reverseResult.city || reverseResult.voivodeship)) {
+                return {
+                  success: true,
+                  location: {
+                    voivodeship: reverseResult.voivodeship,
+                    county: reverseResult.county,
+                    city: reverseResult.city,
+                    coordinates,
+                    method: "ip",
+                    detectedAt: new Date().toISOString(),
+                  }
+                };
+              }
+              
+              // Fallback to proximity matching
+              const nearest = findNearestCity(coordinates.lat, coordinates.lng);
               
               if (nearest.distance < 60) {
                 return {
@@ -523,6 +724,7 @@ export function useSmartGeolocation() {
                     voivodeship: nearest.voivodeship,
                     county: nearest.powiat,
                     city: nearest.name,
+                    coordinates,
                     method: "ip",
                     detectedAt: new Date().toISOString(),
                   }
@@ -540,6 +742,7 @@ export function useSmartGeolocation() {
                   voivodeship: cityMatch.voivodeship,
                   county: cityMatch.powiat,
                   city: cityMatch.city,
+                  coordinates,
                   method: "ip",
                   detectedAt: new Date().toISOString(),
                 }
@@ -550,7 +753,14 @@ export function useSmartGeolocation() {
             if (voivodeship) {
               return {
                 success: true,
-                location: { voivodeship, county: null, city: null, method: "ip", detectedAt: new Date().toISOString() }
+                location: { 
+                  voivodeship, 
+                  county: null, 
+                  city: null, 
+                  coordinates,
+                  method: "ip", 
+                  detectedAt: new Date().toISOString() 
+                }
               };
             }
           }
@@ -586,76 +796,91 @@ export function useSmartGeolocation() {
     setState(prev => ({ ...prev, isDetecting: true, error: null, detectionPhase: "high_accuracy" }));
 
     try {
-      // Phase 1: High Accuracy GPS (6s timeout)
+      // Phase 1: Two-step GPS detection (high accuracy -> low accuracy fallback)
       toast.loading("Szukam sygnału GPS...", { id: "geolocation" });
       
-      const highAccuracyResult = await detectWithBrowserOptions({
-        enableHighAccuracy: true,
-        timeout: 6000,
-        maximumAge: 0,
-      });
+      const gpsResult = await detectWithGPS();
 
-      if (highAccuracyResult.success && highAccuracyResult.location) {
-        await saveLocation(highAccuracyResult.location);
+      if (gpsResult) {
+        const { latitude, longitude } = gpsResult.coords;
+        const coordinates: Coordinates = { lat: latitude, lng: longitude };
+        
+        // Use reverse geocoding for precise location name
+        setState(prev => ({ ...prev, detectionPhase: "reverse_geocoding" }));
+        toast.loading("Określam dokładną lokalizację...", { id: "geolocation" });
+        
+        const reverseResult = await reverseGeocode(latitude, longitude);
+        
+        if (reverseResult && (reverseResult.city || reverseResult.voivodeship)) {
+          const location: UserLocation = {
+            voivodeship: reverseResult.voivodeship,
+            county: reverseResult.county,
+            city: reverseResult.city,
+            coordinates,
+            method: "browser",
+            detectedAt: new Date().toISOString(),
+          };
+          
+          await saveLocation(location);
+          setState(prev => ({
+            ...prev,
+            location,
+            isDetecting: false,
+            detectionPhase: "success",
+          }));
+          
+          const displayName = location.city || location.county || location.voivodeship;
+          toast.success(`Wykryto lokalizację: ${displayName}`, { id: "geolocation" });
+          
+          isDetectingRef.current = false;
+          return location;
+        }
+        
+        // Fallback to proximity matching if reverse geocoding fails
+        console.log("Reverse geocoding failed, using proximity matching as fallback");
+        const nearest = findNearestCity(latitude, longitude);
+        const exactMatch = findCityInDivisions(nearest.name);
+        
+        const location: UserLocation = exactMatch ? {
+          voivodeship: exactMatch.voivodeship,
+          county: exactMatch.powiat,
+          city: exactMatch.city,
+          coordinates,
+          method: "browser",
+          detectedAt: new Date().toISOString(),
+        } : {
+          voivodeship: nearest.voivodeship,
+          county: nearest.powiat,
+          city: nearest.name,
+          coordinates,
+          method: "browser",
+          detectedAt: new Date().toISOString(),
+        };
+        
+        await saveLocation(location);
         setState(prev => ({
           ...prev,
-          location: highAccuracyResult.location!,
+          location,
           isDetecting: false,
           detectionPhase: "success",
         }));
         
-        const displayName = highAccuracyResult.location.city || 
-          highAccuracyResult.location.county || 
-          highAccuracyResult.location.voivodeship;
+        const displayName = location.city || location.county || location.voivodeship;
         toast.success(`Wykryto lokalizację: ${displayName}`, { id: "geolocation" });
         
         isDetectingRef.current = false;
-        return highAccuracyResult.location;
+        return location;
       }
 
-      // Check for permission denied - don't fallback, show error immediately
-      if (highAccuracyResult.error === "PERMISSION_DENIED") {
-        toast.error(getErrorMessage("PERMISSION_DENIED"), { id: "geolocation", duration: 6000 });
-        setState(prev => ({
-          ...prev,
-          isDetecting: false,
-          error: "PERMISSION_DENIED",
-          detectionPhase: "error",
-        }));
-        isDetectingRef.current = false;
-        return null;
-      }
-
-      // Phase 2: Network-based location (10s timeout)
-      setState(prev => ({ ...prev, detectionPhase: "network" }));
-      toast.loading("Przełączam na lokalizację sieciową...", { id: "geolocation" });
-
-      const networkResult = await detectWithBrowserOptions({
+      // Check for permission denied using legacy method
+      setState(prev => ({ ...prev, detectionPhase: "low_accuracy" }));
+      const permissionCheck = await detectWithBrowserOptions({
         enableHighAccuracy: false,
-        timeout: 10000,
-        maximumAge: 0,
+        timeout: 3000,
+        maximumAge: 60000,
       });
 
-      if (networkResult.success && networkResult.location) {
-        await saveLocation(networkResult.location);
-        setState(prev => ({
-          ...prev,
-          location: networkResult.location!,
-          isDetecting: false,
-          detectionPhase: "success",
-        }));
-        
-        const displayName = networkResult.location.city || 
-          networkResult.location.county || 
-          networkResult.location.voivodeship;
-        toast.success(`Wykryto lokalizację: ${displayName}`, { id: "geolocation" });
-        
-        isDetectingRef.current = false;
-        return networkResult.location;
-      }
-
-      // Check for permission denied again
-      if (networkResult.error === "PERMISSION_DENIED") {
+      if (permissionCheck.error === "PERMISSION_DENIED") {
         toast.error(getErrorMessage("PERMISSION_DENIED"), { id: "geolocation", duration: 6000 });
         setState(prev => ({
           ...prev,
@@ -665,6 +890,24 @@ export function useSmartGeolocation() {
         }));
         isDetectingRef.current = false;
         return null;
+      }
+
+      if (permissionCheck.success && permissionCheck.location) {
+        await saveLocation(permissionCheck.location);
+        setState(prev => ({
+          ...prev,
+          location: permissionCheck.location!,
+          isDetecting: false,
+          detectionPhase: "success",
+        }));
+        
+        const displayName = permissionCheck.location.city || 
+          permissionCheck.location.county || 
+          permissionCheck.location.voivodeship;
+        toast.success(`Wykryto lokalizację: ${displayName}`, { id: "geolocation" });
+        
+        isDetectingRef.current = false;
+        return permissionCheck.location;
       }
 
       // Phase 3: IP-based fallback
@@ -718,7 +961,7 @@ export function useSmartGeolocation() {
       isDetectingRef.current = false;
       return null;
     }
-  }, [detectWithBrowserOptions, detectWithIP, saveLocation]);
+  }, [detectWithGPS, detectWithBrowserOptions, detectWithIP, saveLocation]);
 
   // Clear error state
   const clearError = useCallback(() => {

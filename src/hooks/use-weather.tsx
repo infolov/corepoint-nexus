@@ -432,6 +432,7 @@ interface UseWeatherOptions {
   city?: string | null;
   voivodeship?: string | null;
   manualStationId?: string | null;
+  coordinates?: { lat: number; lng: number } | null;
 }
 
 export function useWeather(defaultStationId: string = "12375", options?: UseWeatherOptions) {
@@ -443,7 +444,7 @@ export function useWeather(defaultStationId: string = "12375", options?: UseWeat
   const [stationId, setStationId] = useState<string>(defaultStationId);
   const [isManualSelection, setIsManualSelection] = useState<boolean>(false);
 
-  // Get station based on manual selection, user location from options, or browser geolocation
+  // Get station based on manual selection, coordinates, city, or browser geolocation
   useEffect(() => {
     // If manual station is selected, use it
     if (options?.manualStationId) {
@@ -454,16 +455,28 @@ export function useWeather(defaultStationId: string = "12375", options?: UseWeat
 
     setIsManualSelection(false);
 
-    // First try to use city from options (user's saved location)
+    // PRIORITY 1: Use exact coordinates if available (most precise)
+    if (options?.coordinates) {
+      const nearest = findNearestStation(
+        options.coordinates.lat,
+        options.coordinates.lng
+      );
+      console.log(`Weather: Using coordinates (${options.coordinates.lat}, ${options.coordinates.lng}) -> Station: ${nearest.name}`);
+      setStationId(nearest.id);
+      return;
+    }
+
+    // PRIORITY 2: Try to use city from options (user's saved location)
     if (options?.city) {
       const stationByCity = findStationByCity(options.city);
       if (stationByCity) {
+        console.log(`Weather: Using city "${options.city}" -> Station: ${stationByCity.name}`);
         setStationId(stationByCity.id);
         return;
       }
     }
 
-    // Fallback to browser geolocation
+    // PRIORITY 3: Fallback to browser geolocation
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -471,16 +484,18 @@ export function useWeather(defaultStationId: string = "12375", options?: UseWeat
             position.coords.latitude,
             position.coords.longitude
           );
+          console.log(`Weather: Using browser geolocation -> Station: ${nearest.name}`);
           setStationId(nearest.id);
         },
         () => {
           // Geolocation denied or failed, use default (Warszawa)
+          console.log("Weather: Geolocation denied, using default (Warszawa)");
           setStationId(defaultStationId);
         },
         { timeout: 5000, maximumAge: 600000 } // 10 min cache
       );
     }
-  }, [defaultStationId, options?.city, options?.manualStationId]);
+  }, [defaultStationId, options?.city, options?.manualStationId, options?.coordinates?.lat, options?.coordinates?.lng]);
 
   const fetchWeather = async () => {
     try {

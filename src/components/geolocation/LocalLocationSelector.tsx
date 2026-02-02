@@ -117,7 +117,8 @@ export function LocalLocationSelector({ onLocationSet, compact = false }: LocalL
   const getDetectionLabel = () => {
     switch (detectionPhase) {
       case "high_accuracy": return "GPS...";
-      case "network": return "Sieć...";
+      case "low_accuracy": return "Sieć...";
+      case "reverse_geocoding": return "Adres...";
       case "ip_fallback": return "IP...";
       default: return "Wykryj";
     }
@@ -299,7 +300,8 @@ export function LocalLocationSelector({ onLocationSet, compact = false }: LocalL
                   <div className="font-medium">{getDetectionLabel()}</div>
                   <div className="text-xs text-muted-foreground">
                     {detectionPhase === "high_accuracy" && "Szukam sygnału GPS..."}
-                    {detectionPhase === "network" && "Lokalizacja sieciowa..."}
+                    {detectionPhase === "low_accuracy" && "Lokalizacja sieciowa..."}
+                    {detectionPhase === "reverse_geocoding" && "Określam dokładny adres..."}
                     {detectionPhase === "ip_fallback" && "Wykrywanie po IP..."}
                   </div>
                 </div>
