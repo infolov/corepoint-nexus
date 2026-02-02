@@ -4,7 +4,15 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Clock, Share2, ExternalLink, Loader2, ThumbsUp, ThumbsDown, Bookmark, BookmarkCheck, ChevronRight, Home } from "lucide-react";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { ArrowLeft, Clock, Share2, ExternalLink, Loader2, ThumbsUp, ThumbsDown, Bookmark, BookmarkCheck, Home } from "lucide-react";
 import { useRecentlyViewed } from "@/hooks/use-recently-viewed";
 import { ArticleSummary } from "@/components/article/ArticleSummary";
 import { useRSSArticles } from "@/hooks/use-rss-articles";
@@ -151,18 +159,32 @@ const Article = () => {
         </div>
 
         {/* Navigation Breadcrumbs */}
-        <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
-          <Link to="/" className="flex items-center gap-1 hover:text-foreground transition-colors">
-            <Home className="h-4 w-4" />
-            <span>Strona główna</span>
-          </Link>
-          <ChevronRight className="h-4 w-4" />
-          <Link to={`/kategoria/${article.category.toLowerCase()}`} className="hover:text-foreground transition-colors">
-            {article.category}
-          </Link>
-          <ChevronRight className="h-4 w-4" />
-          <span className="text-foreground truncate max-w-[200px]">{aiGeneratedTitle || article.title}</span>
-        </nav>
+        <Breadcrumb className="mb-6">
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link to="/" className="flex items-center gap-1">
+                  <Home className="h-4 w-4" />
+                  <span>Strona główna</span>
+                </Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link to={`/kategoria/${article.category.toLowerCase()}`}>
+                  {article.category}
+                </Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage className="truncate max-w-[200px]">
+                {aiGeneratedTitle || article.title}
+              </BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
 
         <div className="max-w-3xl mx-auto">
           {/* Main Article Content */}
