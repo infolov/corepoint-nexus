@@ -11,6 +11,7 @@ import { useRSSArticles } from "@/hooks/use-rss-articles";
 import { AuctionAdSlot } from "@/components/widgets/AuctionAdSlot";
 import { NewsCard } from "@/components/news/NewsCard";
 import { toast } from "sonner";
+import { useRelatedArticles } from "@/hooks/use-related-articles";
 const Article = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -117,10 +118,27 @@ const Article = () => {
   const sourceUrl = article?.sourceUrl || article?.url || article?.link;
   const source = article?.source || "Informacje.pl";
 
-  // Get related articles (same category, exclude current)
-  const relatedArticles = rssArticles
-    .filter(a => a.category === article.category && a.id !== id)
-    .slice(0, 4);
+  // Get related articles using intelligent matching (category + keywords + named entities)
+  const relatedArticles = useRelatedArticles({
+    currentArticle: article ? {
+      id: article.id || id || '',
+      title: article.title,
+      category: article.category,
+      image: article.image,
+      excerpt: article.excerpt || (article as any).description,
+      content: content
+    } : null,
+    allArticles: rssArticles.map(a => ({
+      id: a.id,
+      title: a.title,
+      category: a.category,
+      image: a.image,
+      timestamp: (a as any).timestamp,
+      source: (a as any).source,
+      excerpt: (a as any).excerpt || (a as any).description
+    })),
+    limit: 4
+  });
 
   return (
     <div className="min-h-screen bg-background">
