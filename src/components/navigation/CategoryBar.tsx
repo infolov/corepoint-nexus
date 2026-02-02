@@ -197,16 +197,16 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
     <>
       <div 
         ref={containerRef}
-        className="sticky top-16 z-40 bg-background/95 backdrop-blur-md border-b border-border/50 w-full"
+        className="sticky top-12 sm:top-14 md:top-16 z-40 bg-nav/95 backdrop-blur-md border-b border-nav-foreground/10 w-full"
       >
         <div className="w-full px-2 sm:px-4 md:container relative">
           {/* Left Arrow */}
           {showLeftArrow && (
             <button
               onClick={() => scroll("left")}
-              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-full px-2 bg-gradient-to-r from-background via-background to-transparent"
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-full px-2 bg-gradient-to-r from-nav via-nav to-transparent"
             >
-              <ChevronLeft className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
+              <ChevronLeft className="h-5 w-5 text-nav-foreground/60 hover:text-nav-foreground transition-colors" />
             </button>
           )}
 
@@ -214,7 +214,7 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
           <div
             ref={scrollRef}
             onScroll={checkScroll}
-            className="flex items-center gap-0.5 sm:gap-1 overflow-x-auto scrollbar-hide py-2 px-6 sm:px-8"
+            className="flex items-center gap-0.5 sm:gap-1 overflow-x-auto scrollbar-hide py-1.5 sm:py-2 px-6 sm:px-8"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" }}
           >
             {CATEGORIES.map((category) => {
@@ -232,12 +232,12 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
                   <button
                     onClick={() => handleCategoryClick(category)}
                     className={cn(
-                      "flex items-center gap-0.5 sm:gap-1 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap",
-                      "hover:bg-muted focus:outline-none",
+                      "flex items-center gap-0.5 sm:gap-1 px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap",
+                      "hover:bg-nav-foreground/10 focus:outline-none",
                       isActive
                         ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                        : "text-muted-foreground hover:text-foreground",
-                      isHovered && !isActive && "bg-muted ring-2 ring-primary/30"
+                        : "text-nav-foreground/80 hover:text-nav-foreground",
+                      isHovered && !isActive && "bg-nav-foreground/10 ring-2 ring-primary/30"
                     )}
                   >
                     {category.name}
@@ -257,9 +257,9 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
           {showRightArrow && (
             <button
               onClick={() => scroll("right")}
-              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-full px-2 bg-gradient-to-l from-background via-background to-transparent"
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-full px-2 bg-gradient-to-l from-nav via-nav to-transparent"
             >
-              <ChevronRight className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
+              <ChevronRight className="h-5 w-5 text-nav-foreground/60 hover:text-nav-foreground transition-colors" />
             </button>
           )}
         </div>
