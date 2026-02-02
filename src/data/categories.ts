@@ -355,7 +355,84 @@ export const CATEGORY_EXCLUSIONS: Record<string, string[]> = {
     // Lifestyle - wykluczenia
     "dieta", "fitness", "moda", "uroda", "wellness"
   ],
-  // Możemy dodać wykluczenia dla innych kategorii w przyszłości
+  
+  // Biznes - nie łap artykułów o transferach sportowych, box office filmów
+  biznes: [
+    // Sport - transfery to nie biznes ogólny
+    "transfer piłkarza", "okienko transferowe", "rekord transferowy", "kontrakt piłkarza",
+    "zarobki sportowca", "pensja zawodnika", "premier league", "la liga", "bundesliga",
+    // Kultura - box office to nie biznes ogólny  
+    "box office", "wpływy kinowe", "budżet filmu", "kasa filmowa",
+    // E-sport
+    "nagrody turniejowe", "pula nagród esport"
+  ],
+  
+  // Finanse - nie łap sportowych kontraktów
+  finanse: [
+    // Sport
+    "kontrakt sportowy", "transfer", "klauzula wykupu", "odstępne", "agent piłkarski",
+    "pensja piłkarza", "zarobki w sporcie",
+    // Kryptowaluty/NFT w kontekście rozrywki
+    "nft kolekcjonerskie", "tokeny fanów"
+  ],
+  
+  // Tech-nauka - nie łap recenzji gier, technologii w filmach
+  "tech-nauka": [
+    // Gaming/Rozrywka - to kultura, nie tech
+    "recenzja gry", "premiera gry", "playstation", "xbox", "nintendo", "steam",
+    "efekty specjalne", "cgi w filmie", "animacja filmowa",
+    // Sport
+    "var", "goal-line", "hawk-eye", "technologia w sporcie"
+  ],
+  
+  // Motoryzacja - nie łap sportów motorowych (to sport)
+  motoryzacja: [
+    // Sporty motorowe - to kategoria Sport
+    "grand prix", "pole position", "pit stop", "podium", "mistrzostwa świata f1",
+    "motogp", "rajd wrc", "wyścig", "tor wyścigowy", "żużel", "speedway",
+    "klasyfikacja generalna", "kierowca wyścigowy", "team principal"
+  ],
+  
+  // Kultura - nie łap sportu i lifestyle
+  kultura: [
+    // Sport
+    "mecz", "liga", "mistrzostwa", "reprezentacja", "bramka", "gol", "trener",
+    "transfer", "ekstraklasa", "puchar", "stadion",
+    // Lifestyle/zdrowie
+    "dieta", "odchudzanie", "trening", "siłownia", "fitness", "wellness"
+  ],
+  
+  // Lifestyle - nie łap sportu wyczynowego
+  lifestyle: [
+    // Sport wyczynowy (nie fitness/wellness)
+    "liga", "mistrzostwa", "reprezentacja", "mecz", "puchar", "transfer",
+    "ekstraklasa", "champions league", "mundial", "olimpiada wyczynowa"
+  ],
+  
+  // Sport - nie łap biznesu/finansów (chyba że transfery)
+  sport: [
+    // Biznes ogólny
+    "giełda", "akcje spółki", "pkb", "inflacja", "stopy procentowe", "nbp",
+    // Polityka  
+    "sejm", "senat", "rząd", "minister", "premier", "prezydent",
+    // Prawo ogólne (nie sportowe)
+    "kodeks cywilny", "kodeks karny", "sąd najwyższy", "trybunał konstytucyjny"
+  ],
+  
+  // Świat - nie łap sportu międzynarodowego
+  swiat: [
+    // Sport międzynarodowy to sport, nie świat
+    "mundial", "euro 2024", "liga mistrzów", "champions league", "puchar świata",
+    "mistrzostwa europy", "mistrzostwa świata", "olimpiada", "igrzyska"
+  ],
+  
+  // Wiadomości - nie łap sportu i rozrywki
+  wiadomosci: [
+    // Sport
+    "mecz", "liga", "ekstraklasa", "transfer", "bramka", "gol",
+    // Kultura
+    "premiera filmowa", "serial", "koncert", "album muzyczny", "box office"
+  ]
 };
 
 // Priorytet kategorii - wyższy numer = wyższy priorytet przy niejednoznacznych dopasowaniach
