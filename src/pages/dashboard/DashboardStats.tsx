@@ -10,12 +10,12 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { format, parseISO, subDays } from "date-fns";
 import { pl } from "date-fns/locale";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid } from "recharts";
 
 interface CampaignStat {
   date: string;
@@ -29,6 +29,17 @@ interface AggregatedStats {
   ctr: number;
   dailyStats: { date: string; impressions: number; clicks: number }[];
 }
+
+const chartConfig = {
+  impressions: {
+    label: "Wyświetlenia",
+    color: "hsl(var(--primary))",
+  },
+  clicks: {
+    label: "Kliknięcia",
+    color: "hsl(var(--chart-2))",
+  },
+};
 
 export default function DashboardStats() {
   const { user } = useAuth();
@@ -109,9 +120,9 @@ export default function DashboardStats() {
 
   // Mock device data for visualization
   const deviceData = [
-    { name: "Desktop", value: 65, color: "#3b82f6" },
-    { name: "Mobile", value: 30, color: "#10b981" },
-    { name: "Tablet", value: 5, color: "#f59e0b" },
+    { name: "Desktop", value: 65, color: "hsl(var(--primary))" },
+    { name: "Mobile", value: 30, color: "hsl(var(--chart-2))" },
+    { name: "Tablet", value: 5, color: "hsl(var(--chart-3))" },
   ];
 
   return (
@@ -212,48 +223,36 @@ export default function DashboardStats() {
               Brak danych do wyświetlenia
             </div>
           ) : (
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={stats.dailyStats}>
-                  <defs>
-                    <linearGradient id="impressionsGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-                    </linearGradient>
-                    <linearGradient id="clicksGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis dataKey="date" className="text-xs" />
-                  <YAxis className="text-xs" />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: "hsl(var(--card))", 
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px"
-                    }} 
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="impressions" 
-                    stroke="hsl(var(--primary))" 
-                    fillOpacity={1} 
-                    fill="url(#impressionsGradient)" 
-                    name="Wyświetlenia"
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="clicks" 
-                    stroke="#10b981" 
-                    fillOpacity={1} 
-                    fill="url(#clicksGradient)" 
-                    name="Kliknięcia"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
+            <ChartContainer config={chartConfig} className="h-[300px] w-full">
+              <AreaChart data={stats.dailyStats} accessibilityLayer>
+                <defs>
+                  <linearGradient id="fillImpressions" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--color-impressions)" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="var(--color-impressions)" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="fillClicks" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--color-clicks)" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="var(--color-clicks)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} />
+                <YAxis tickLine={false} axisLine={false} tickMargin={8} />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Area 
+                  type="monotone" 
+                  dataKey="impressions" 
+                  stroke="var(--color-impressions)" 
+                  fill="url(#fillImpressions)" 
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="clicks" 
+                  stroke="var(--color-clicks)" 
+                  fill="url(#fillClicks)" 
+                />
+              </AreaChart>
+            </ChartContainer>
           )}
         </CardContent>
       </Card>
@@ -269,7 +268,10 @@ export default function DashboardStats() {
             <div className="space-y-4">
               {deviceData.map((device) => (
                 <div key={device.name} className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${device.color}20` }}>
+                  <div 
+                    className="w-10 h-10 rounded-lg flex items-center justify-center"
+                    style={{ backgroundColor: `color-mix(in srgb, ${device.color} 20%, transparent)` }}
+                  >
                     {device.name === "Desktop" ? (
                       <Monitor className="h-5 w-5" style={{ color: device.color }} />
                     ) : (

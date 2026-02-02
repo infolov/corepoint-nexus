@@ -5,9 +5,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, TrendingUp, Users, CreditCard, BarChart3, Target, CheckCircle, Clock, XCircle } from "lucide-react";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from "recharts";
-import { format, subDays, startOfDay } from "date-fns";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { Loader2, TrendingUp, Users, CreditCard, Target, CheckCircle, Clock, XCircle } from "lucide-react";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell, BarChart, Bar } from "recharts";
+import { format, subDays } from "date-fns";
 import { pl } from "date-fns/locale";
 
 interface CampaignStats {
@@ -40,7 +41,49 @@ interface TopAdvertiser {
   totalSpent: number;
 }
 
-const COLORS = ["hsl(var(--primary))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))"];
+const activityChartConfig = {
+  impressions: {
+    label: "Wyświetlenia",
+    color: "hsl(var(--primary))",
+  },
+  clicks: {
+    label: "Kliknięcia",
+    color: "hsl(var(--chart-2))",
+  },
+};
+
+const campaignsChartConfig = {
+  campaigns: {
+    label: "Nowe kampanie",
+    color: "hsl(var(--primary))",
+  },
+};
+
+const creditsChartConfig = {
+  credits: {
+    label: "Kredyty",
+    color: "hsl(var(--chart-3))",
+  },
+};
+
+const pieChartConfig = {
+  pending: {
+    label: "Oczekujące",
+    color: "hsl(var(--chart-1))",
+  },
+  approved: {
+    label: "Zatwierdzone",
+    color: "hsl(var(--chart-2))",
+  },
+  rejected: {
+    label: "Odrzucone",
+    color: "hsl(var(--chart-3))",
+  },
+  completed: {
+    label: "Zakończone",
+    color: "hsl(var(--chart-4))",
+  },
+};
 
 export default function DashboardAdminStats() {
   const { user } = useAuth();
@@ -199,10 +242,10 @@ export default function DashboardAdminStats() {
   }
 
   const pieData = [
-    { name: "Oczekujące", value: campaignStats.pending, color: "hsl(var(--chart-1))" },
-    { name: "Zatwierdzone", value: campaignStats.approved, color: "hsl(var(--chart-2))" },
-    { name: "Odrzucone", value: campaignStats.rejected, color: "hsl(var(--chart-3))" },
-    { name: "Zakończone", value: campaignStats.completed, color: "hsl(var(--chart-4))" },
+    { name: "pending", displayName: "Oczekujące", value: campaignStats.pending, fill: "var(--color-pending)" },
+    { name: "approved", displayName: "Zatwierdzone", value: campaignStats.approved, fill: "var(--color-approved)" },
+    { name: "rejected", displayName: "Odrzucone", value: campaignStats.rejected, fill: "var(--color-rejected)" },
+    { name: "completed", displayName: "Zakończone", value: campaignStats.completed, fill: "var(--color-completed)" },
   ].filter(d => d.value > 0);
 
   return (
@@ -307,39 +350,45 @@ export default function DashboardAdminStats() {
                     <CardTitle className="text-base">Aktywność dzienna</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="h-[300px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={dailyStats}>
-                          <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                          <XAxis 
-                            dataKey="date" 
-                            tickFormatter={(date) => format(new Date(date), "dd.MM", { locale: pl })}
-                            className="text-xs"
-                          />
-                          <YAxis className="text-xs" />
-                          <Tooltip 
-                            labelFormatter={(date) => format(new Date(date), "dd MMMM yyyy", { locale: pl })}
-                            contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}
-                          />
-                          <Area 
-                            type="monotone" 
-                            dataKey="impressions" 
-                            name="Wyświetlenia"
-                            stroke="hsl(var(--primary))" 
-                            fill="hsl(var(--primary))" 
-                            fillOpacity={0.3}
-                          />
-                          <Area 
-                            type="monotone" 
-                            dataKey="clicks" 
-                            name="Kliknięcia"
-                            stroke="hsl(var(--chart-2))" 
-                            fill="hsl(var(--chart-2))" 
-                            fillOpacity={0.3}
-                          />
-                        </AreaChart>
-                      </ResponsiveContainer>
-                    </div>
+                    <ChartContainer config={activityChartConfig} className="h-[300px] w-full">
+                      <AreaChart data={dailyStats} accessibilityLayer>
+                        <defs>
+                          <linearGradient id="fillImpressionsAdmin" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="var(--color-impressions)" stopOpacity={0.3} />
+                            <stop offset="95%" stopColor="var(--color-impressions)" stopOpacity={0} />
+                          </linearGradient>
+                          <linearGradient id="fillClicksAdmin" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="var(--color-clicks)" stopOpacity={0.3} />
+                            <stop offset="95%" stopColor="var(--color-clicks)" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                        <XAxis 
+                          dataKey="date" 
+                          tickFormatter={(date) => format(new Date(date), "dd.MM", { locale: pl })}
+                          tickLine={false}
+                          axisLine={false}
+                          tickMargin={8}
+                        />
+                        <YAxis tickLine={false} axisLine={false} tickMargin={8} />
+                        <ChartTooltip 
+                          content={<ChartTooltipContent />}
+                          labelFormatter={(date) => format(new Date(date), "dd MMMM yyyy", { locale: pl })}
+                        />
+                        <Area 
+                          type="monotone" 
+                          dataKey="impressions" 
+                          stroke="var(--color-impressions)" 
+                          fill="url(#fillImpressionsAdmin)" 
+                        />
+                        <Area 
+                          type="monotone" 
+                          dataKey="clicks" 
+                          stroke="var(--color-clicks)" 
+                          fill="url(#fillClicksAdmin)" 
+                        />
+                      </AreaChart>
+                    </ChartContainer>
                   </CardContent>
                 </Card>
 
@@ -349,33 +398,32 @@ export default function DashboardAdminStats() {
                     <CardTitle className="text-base">Status kampanii</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="h-[300px]">
-                      {pieData.length > 0 ? (
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie
-                              data={pieData}
-                              cx="50%"
-                              cy="50%"
-                              innerRadius={60}
-                              outerRadius={100}
-                              paddingAngle={2}
-                              dataKey="value"
-                              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                            >
-                              {pieData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={entry.color} />
-                              ))}
-                            </Pie>
-                            <Tooltip />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      ) : (
-                        <div className="flex items-center justify-center h-full text-muted-foreground">
-                          Brak danych
-                        </div>
-                      )}
-                    </div>
+                    {pieData.length > 0 ? (
+                      <ChartContainer config={pieChartConfig} className="h-[300px] w-full">
+                        <PieChart accessibilityLayer>
+                          <ChartTooltip content={<ChartTooltipContent nameKey="displayName" />} />
+                          <Pie
+                            data={pieData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={60}
+                            outerRadius={100}
+                            paddingAngle={2}
+                            dataKey="value"
+                            nameKey="displayName"
+                            label={({ displayName, percent }) => `${displayName} ${(percent * 100).toFixed(0)}%`}
+                          >
+                            {pieData.map((entry) => (
+                              <Cell key={`cell-${entry.name}`} fill={entry.fill} />
+                            ))}
+                          </Pie>
+                        </PieChart>
+                      </ChartContainer>
+                    ) : (
+                      <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                        Brak danych
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </div>
@@ -387,24 +435,28 @@ export default function DashboardAdminStats() {
                   <CardTitle className="text-base">Nowe kampanie w czasie</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-[300px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={dailyStats}>
-                        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                        <XAxis 
-                          dataKey="date" 
-                          tickFormatter={(date) => format(new Date(date), "dd.MM", { locale: pl })}
-                          className="text-xs"
-                        />
-                        <YAxis className="text-xs" />
-                        <Tooltip 
-                          labelFormatter={(date) => format(new Date(date), "dd MMMM yyyy", { locale: pl })}
-                          contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}
-                        />
-                        <Bar dataKey="campaigns" name="Nowe kampanie" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
+                  <ChartContainer config={campaignsChartConfig} className="h-[300px] w-full">
+                    <BarChart data={dailyStats} accessibilityLayer>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis 
+                        dataKey="date" 
+                        tickFormatter={(date) => format(new Date(date), "dd.MM", { locale: pl })}
+                        tickLine={false}
+                        axisLine={false}
+                        tickMargin={8}
+                      />
+                      <YAxis tickLine={false} axisLine={false} tickMargin={8} />
+                      <ChartTooltip 
+                        content={<ChartTooltipContent />}
+                        labelFormatter={(date) => format(new Date(date), "dd MMMM yyyy", { locale: pl })}
+                      />
+                      <Bar 
+                        dataKey="campaigns" 
+                        fill="var(--color-campaigns)" 
+                        radius={[4, 4, 0, 0]} 
+                      />
+                    </BarChart>
+                  </ChartContainer>
                 </CardContent>
               </Card>
 
@@ -413,31 +465,35 @@ export default function DashboardAdminStats() {
                   <CardTitle className="text-base">Kredyty z kampanii</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-[300px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={dailyStats}>
-                        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                        <XAxis 
-                          dataKey="date" 
-                          tickFormatter={(date) => format(new Date(date), "dd.MM", { locale: pl })}
-                          className="text-xs"
-                        />
-                        <YAxis className="text-xs" />
-                        <Tooltip 
-                          labelFormatter={(date) => format(new Date(date), "dd MMMM yyyy", { locale: pl })}
-                          contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}
-                        />
-                        <Area 
-                          type="monotone" 
-                          dataKey="credits" 
-                          name="Kredyty"
-                          stroke="hsl(var(--chart-3))" 
-                          fill="hsl(var(--chart-3))" 
-                          fillOpacity={0.3}
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </div>
+                  <ChartContainer config={creditsChartConfig} className="h-[300px] w-full">
+                    <AreaChart data={dailyStats} accessibilityLayer>
+                      <defs>
+                        <linearGradient id="fillCreditsAdmin" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="var(--color-credits)" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="var(--color-credits)" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis 
+                        dataKey="date" 
+                        tickFormatter={(date) => format(new Date(date), "dd.MM", { locale: pl })}
+                        tickLine={false}
+                        axisLine={false}
+                        tickMargin={8}
+                      />
+                      <YAxis tickLine={false} axisLine={false} tickMargin={8} />
+                      <ChartTooltip 
+                        content={<ChartTooltipContent />}
+                        labelFormatter={(date) => format(new Date(date), "dd MMMM yyyy", { locale: pl })}
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="credits" 
+                        stroke="var(--color-credits)" 
+                        fill="url(#fillCreditsAdmin)" 
+                      />
+                    </AreaChart>
+                  </ChartContainer>
                 </CardContent>
               </Card>
             </TabsContent>
