@@ -456,12 +456,12 @@ export function useWeather(defaultStationId: string = "12375", options?: UseWeat
     setIsManualSelection(false);
 
     // PRIORITY 1: Use exact coordinates if available (most precise)
-    if (options?.coordinates) {
+    if (options?.coordinates && options.coordinates.lat && options.coordinates.lng) {
       const nearest = findNearestStation(
         options.coordinates.lat,
         options.coordinates.lng
       );
-      console.log(`Weather: Using coordinates (${options.coordinates.lat}, ${options.coordinates.lng}) -> Station: ${nearest.name}`);
+      console.log(`Weather: Using LocationContext coordinates (${options.coordinates.lat.toFixed(4)}, ${options.coordinates.lng.toFixed(4)}) -> Station: ${nearest.name}`);
       setStationId(nearest.id);
       return;
     }
@@ -476,7 +476,8 @@ export function useWeather(defaultStationId: string = "12375", options?: UseWeat
       }
     }
 
-    // PRIORITY 3: Fallback to browser geolocation
+    // PRIORITY 3: Fallback to browser geolocation ONLY if no LocationContext data
+    console.log("Weather: No LocationContext coordinates or city, falling back to browser geolocation");
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -484,7 +485,7 @@ export function useWeather(defaultStationId: string = "12375", options?: UseWeat
             position.coords.latitude,
             position.coords.longitude
           );
-          console.log(`Weather: Using browser geolocation -> Station: ${nearest.name}`);
+          console.log(`Weather: Using browser geolocation fallback -> Station: ${nearest.name}`);
           setStationId(nearest.id);
         },
         () => {

@@ -63,38 +63,22 @@ export function Header() {
     icon: string;
   }[]>([]);
 
-  // Fetch weekly forecast
+  // Fetch weekly forecast using LocationContext coordinates
   useEffect(() => {
     const fetchForecast = async () => {
       try {
-        // Get user location or default to Warsaw
-        const getCoords = (): Promise<{
-          lat: number;
-          lon: number;
-        }> => {
-          return new Promise(resolve => {
-            if (navigator.geolocation) {
-              navigator.geolocation.getCurrentPosition(pos => resolve({
-                lat: pos.coords.latitude,
-                lon: pos.coords.longitude
-              }), () => resolve({
-                lat: 52.2297,
-                lon: 21.0122
-              }), {
-                timeout: 5000
-              });
-            } else {
-              resolve({
-                lat: 52.2297,
-                lon: 21.0122
-              });
-            }
-          });
-        };
-        const {
-          lat,
-          lon
-        } = await getCoords();
+        // Use LocationContext coordinates if available, otherwise fallback to Warsaw
+        let lat = 52.2297;
+        let lon = 21.0122;
+        
+        if (location.coordinates) {
+          lat = location.coordinates.lat;
+          lon = location.coordinates.lng;
+          console.log(`Forecast: Using LocationContext coordinates (${lat}, ${lon})`);
+        } else {
+          console.log("Forecast: No coordinates in LocationContext, using Warsaw default");
+        }
+        
         const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=weather_code,temperature_2m_max&timezone=Europe/Warsaw&forecast_days=7`);
         const data = await response.json();
         const days = ["Nd", "Pn", "Wt", "Śr", "Cz", "Pt", "So"];
@@ -115,7 +99,7 @@ export function Header() {
       }
     };
     fetchForecast();
-  }, []);
+  }, [location.coordinates]);
   // Check if it's daytime (6:00 - 20:00)
   const isDaytime = (): boolean => {
     const hour = new Date().getHours();

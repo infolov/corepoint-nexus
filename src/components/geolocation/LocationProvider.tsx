@@ -51,12 +51,22 @@ export function LocationProvider({ children }: LocationProviderProps) {
       if (localSettings) {
         try {
           const parsed = JSON.parse(localSettings);
+          // Properly parse coordinates object
+          let coordinates: { lat: number; lng: number } | null = null;
+          if (parsed.coordinates && typeof parsed.coordinates === 'object') {
+            const lat = parseFloat(parsed.coordinates.lat);
+            const lng = parseFloat(parsed.coordinates.lng);
+            if (!isNaN(lat) && !isNaN(lng)) {
+              coordinates = { lat, lng };
+            }
+          }
           loadedLocation = {
             voivodeship: parsed.voivodeship || null,
             county: parsed.county || null,
             city: parsed.city || null,
-            coordinates: parsed.coordinates || null,
+            coordinates,
           };
+          console.log("LocationProvider: Loaded from localStorage:", loadedLocation);
         } catch (e) {
           console.error("Error parsing local settings:", e);
         }
@@ -80,6 +90,7 @@ export function LocationProvider({ children }: LocationProviderProps) {
               coordinates: loadedLocation.coordinates,
             };
             localStorage.setItem("userSettings", JSON.stringify(loadedLocation));
+            console.log("LocationProvider: Merged with DB data:", loadedLocation);
           }
         } catch (error) {
           console.error("Error loading location from database:", error);
