@@ -428,6 +428,8 @@ const getErrorMessage = (errorType: GeolocationErrorType): string => {
 // Reverse Geocoding using OpenStreetMap Nominatim API
 const reverseGeocode = async (lat: number, lng: number): Promise<ReverseGeocodingResult | null> => {
   try {
+    console.log(`Nominatim: Requesting reverse geocode for (${lat.toFixed(6)}, ${lng.toFixed(6)})`);
+    
     const response = await fetch(
       `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=pl`,
       {
@@ -443,15 +445,23 @@ const reverseGeocode = async (lat: number, lng: number): Promise<ReverseGeocodin
     }
     
     const data = await response.json();
+    console.log("Nominatim: Raw response:", JSON.stringify(data.address, null, 2));
     
     if (!data.address) {
+      console.warn("Nominatim: No address in response");
       return null;
     }
     
     const address = data.address;
     
-    // Extract city name - prioritize village/town/city
-    let city = address.village || address.town || address.city || address.municipality || address.suburb || null;
+    // Extract city name - prioritize village/town/city (most specific first)
+    let city = address.village || address.town || address.city || address.municipality || null;
+    
+    // If no city found, check for suburb as last resort (but not ideal)
+    if (!city && address.suburb) {
+      console.log(`Nominatim: Using suburb as city fallback: ${address.suburb}`);
+      city = address.suburb;
+    }
     
     // Extract county (powiat)
     let county = address.county || null;
@@ -467,6 +477,8 @@ const reverseGeocode = async (lat: number, lng: number): Promise<ReverseGeocodin
       const normalizedVoivodeship = voivodeship.toLowerCase().trim();
       voivodeship = voivodeshipMappings[normalizedVoivodeship] || null;
     }
+    
+    console.log(`Nominatim: Resolved to city="${city}", county="${county}", voivodeship="${voivodeship}"`);
     
     return { city, county, voivodeship };
   } catch (error) {
