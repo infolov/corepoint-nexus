@@ -16,7 +16,7 @@ import { useFeedTileAds } from "@/hooks/use-feed-tile-ads";
 import { Loader2 } from "lucide-react";
 import { useArticles, formatArticleForCard } from "@/hooks/use-articles";
 import { useRSSArticles, formatRSSArticleForCard } from "@/hooks/use-rss-articles";
-import { CATEGORIES, getCategoryBySlug, CATEGORY_KEYWORDS } from "@/data/categories";
+import { CATEGORIES, getCategoryBySlug, CATEGORY_KEYWORDS, CATEGORY_EXCLUSIONS, CATEGORY_PRIORITY } from "@/data/categories";
 
 // Grid layout constants - consistent with Index.tsx
 const ARTICLES_PER_GRID = 12;
@@ -590,10 +590,69 @@ export default function Category() {
     // Get category names to match
     const categoryNames = categoryMap[currentCategorySlug] || [currentCategorySlug];
     const keywords = CATEGORY_KEYWORDS[currentCategorySlug] || [];
+    const exclusions = CATEGORY_EXCLUSIONS?.[currentCategorySlug] || [];
+
+    // Helper function to check if article should be excluded from category
+    const shouldExclude = (article: { title?: string; category?: string }) => {
+      if (exclusions.length === 0) return false;
+      const titleLower = (article.title || "").toLowerCase();
+      const categoryLower = (article.category || "").toLowerCase();
+      
+      // Check if any exclusion keyword is present
+      return exclusions.some(exclusion => 
+        titleLower.includes(exclusion.toLowerCase()) || 
+        categoryLower.includes(exclusion.toLowerCase())
+      );
+    };
+
+    // Helper function to check if article belongs to a higher priority category
+    const belongsToHigherPriorityCategory = (article: { title?: string; category?: string }) => {
+      const currentPriority = CATEGORY_PRIORITY?.[currentCategorySlug] || 0;
+      const titleLower = (article.title || "").toLowerCase();
+      const articleCategoryLower = (article.category || "").toLowerCase();
+      
+      // Check each category with higher priority
+      for (const [catSlug, catPriority] of Object.entries(CATEGORY_PRIORITY || {})) {
+        if (catPriority <= currentPriority) continue;
+        if (catSlug === currentCategorySlug) continue;
+        
+        // Check if article matches this higher priority category
+        const higherCatKeywords = CATEGORY_KEYWORDS[catSlug] || [];
+        const higherCatNames = categoryMap[catSlug] || [catSlug];
+        
+        // Direct category match with higher priority category
+        const directMatch = higherCatNames.some(cat => 
+          articleCategoryLower === cat.toLowerCase() || 
+          articleCategoryLower.includes(cat.toLowerCase())
+        );
+        
+        if (directMatch) return true;
+        
+        // Keyword match with higher priority category
+        const keywordMatch = higherCatKeywords.some(keyword => 
+          titleLower.includes(keyword.toLowerCase())
+        );
+        
+        if (keywordMatch) return true;
+      }
+      
+      return false;
+    };
 
     // Filter by main category first
     let filtered = articles.filter(article => {
       const articleCategory = (article.category || "").toLowerCase();
+      const titleLower = (article.title || "").toLowerCase();
+      
+      // Check exclusions first - if article contains exclusion keywords, skip it
+      if (shouldExclude(article)) {
+        return false;
+      }
+      
+      // Check if article belongs to a higher priority category
+      if (belongsToHigherPriorityCategory(article)) {
+        return false;
+      }
       
       // Direct category match
       const directMatch = categoryNames.some(cat => 
@@ -604,7 +663,6 @@ export default function Category() {
       if (directMatch) return true;
       
       // Keyword match in title
-      const titleLower = (article.title || "").toLowerCase();
       return keywords.some(keyword => 
         titleLower.includes(keyword.toLowerCase())
       );

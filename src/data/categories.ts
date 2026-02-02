@@ -316,18 +316,62 @@ export function getAllCategorySlugs(): string[] {
 }
 
 // Helper: Mapowanie słów kluczowych dla kategorii (do filtrowania artykułów)
+// Słowa kluczowe są bardziej specyficzne, aby uniknąć fałszywych dopasowań
 export const CATEGORY_KEYWORDS: Record<string, string[]> = {
-  wiadomosci: ["Polska", "Polski", "Polskie", "Rząd", "Sejm", "Minister"],
-  swiat: ["USA", "Europa", "Chiny", "Rosja", "Ukraina", "Świat", "NATO", "UE"],
-  biznes: ["Gospodarka", "Firma", "Ceny", "Inflacja", "Rynek", "Praca"],
-  finanse: ["Kredyt", "Bank", "ZUS", "Emerytura", "Waluta", "PLN", "EUR"],
-  prawo: ["Ustawa", "Prawo", "Sąd", "VAT", "PIT", "CIT", "KSeF"],
-  "tech-nauka": ["AI", "Technologia", "Kosmos", "NASA", "Klimat", "Nauka", "Odkrycie"],
-  motoryzacja: ["Samochód", "Auto", "Paliwo", "Mandat", "Kierowca", "EV"],
-  sport: ["Piłka", "Mecz", "Liga", "Reprezentacja", "Trener", "Mistrz"],
-  kultura: ["Film", "Kino", "Serial", "Koncert", "Muzyka", "Artysta"],
-  lifestyle: ["Zdrowie", "Dieta", "Moda", "Podróż", "Rodzina", "Wellbeing"],
-  lokalne: ["Powiat", "Gmina", "Miasto", "Wójt", "Burmistrz", "Samorząd"],
+  wiadomosci: ["Polska", "Polski", "Polskie", "Rząd", "Sejm", "Minister", "Premier", "Prezydent"],
+  swiat: ["USA", "Europa", "Chiny", "Rosja", "Ukraina", "Świat", "NATO", "UE", "Biden", "Trump", "Putin"],
+  biznes: ["Gospodarka", "Firma", "Ceny", "Inflacja", "Rynek", "Praca", "Spółka", "Giełda", "PKB"],
+  finanse: ["Kredyt", "Bank", "ZUS", "Emerytura", "Waluta", "PLN", "EUR", "Stopy procentowe", "NBP"],
+  // Prawo - bardziej specyficzne terminy prawnicze (unikamy ogólnych jak "sąd", "prawo")
+  prawo: [
+    "Kodeks cywilny", "Kodeks karny", "Nowelizacja ustawy", "Dziennik Ustaw", 
+    "Sąd Najwyższy", "Trybunał Konstytucyjny", "Przepisy prawne", "Legislacja",
+    "VAT", "PIT", "CIT", "KSeF", "Urząd skarbowy", "Ordynacja podatkowa",
+    "Prawo pracy", "Prawo handlowe", "Zmiana przepisów", "Wchodzi w życie"
+  ],
+  "tech-nauka": ["AI", "Technologia", "Kosmos", "NASA", "Klimat", "Nauka", "Odkrycie", "ChatGPT", "SpaceX"],
+  motoryzacja: ["Samochód", "Auto", "Paliwo", "Mandat", "Kierowca", "EV", "Tesla", "Elektryk"],
+  sport: ["Piłka nożna", "Mecz", "Liga", "Reprezentacja", "Trener", "Mistrzostwa", "Ekstraklasa", "Champions League"],
+  kultura: ["Film", "Kino", "Serial", "Koncert", "Muzyka", "Artysta", "Netflix", "Premiera filmowa", "Oscar"],
+  lifestyle: ["Zdrowie", "Dieta", "Moda", "Podróż", "Rodzina", "Wellbeing", "Fitness"],
+  lokalne: ["Powiat", "Gmina", "Miasto", "Wójt", "Burmistrz", "Samorząd", "Rada miasta"],
+};
+
+// Słowa kluczowe wykluczające - jeśli artykuł zawiera te słowa, NIE przypisuj do danej kategorii
+// Zapobiega to fałszywym dopasowaniom (np. "sąd arbitrażowy FIFA" nie trafia do "prawo")
+export const CATEGORY_EXCLUSIONS: Record<string, string[]> = {
+  prawo: [
+    // Sport - wykluczenia
+    "mecz", "piłka", "liga", "ekstraklasa", "champions", "transfer", "trener", "bramka", "gol",
+    "reprezentacja", "mundial", "euro 2024", "mistrzostwa", "puchar", "stadion", "kibic",
+    "siatkarze", "koszykówka", "tenis", "formuła 1", "mma", "ufc", "ksw", "boks", "żużel",
+    "nba", "nhl", "wta", "atp", "plusliga", "fifa", "uefa", "pzpn",
+    // Kultura/rozrywka - wykluczenia  
+    "film", "kino", "serial", "netflix", "hbo", "aktor", "aktorka", "reżyser", "premiera filmowa",
+    "koncert", "festiwal", "album", "piosenkarz", "muzyka", "hollywood", "oscar", "cannes",
+    "celebryta", "influencer", "youtuber", "tiktoker",
+    // Motoryzacja - wykluczenia (prawo jazdy to nie "prawo")
+    "prawo jazdy", "egzamin na prawo jazdy",
+    // Lifestyle - wykluczenia
+    "dieta", "fitness", "moda", "uroda", "wellness"
+  ],
+  // Możemy dodać wykluczenia dla innych kategorii w przyszłości
+};
+
+// Priorytet kategorii - wyższy numer = wyższy priorytet przy niejednoznacznych dopasowaniach
+// Sport i Kultura mają wyższy priorytet niż Prawo dla artykułów o procesach sportowców/celebrytów
+export const CATEGORY_PRIORITY: Record<string, number> = {
+  sport: 10,
+  kultura: 9,
+  motoryzacja: 8,
+  "tech-nauka": 7,
+  biznes: 6,
+  finanse: 5,
+  lifestyle: 4,
+  swiat: 3,
+  wiadomosci: 2,
+  prawo: 1, // Najniższy priorytet - łapie tylko gdy artykuł jest wyraźnie prawniczy
+  lokalne: 0,
 };
 
 // Algorytm mieszania treści lokalnych
