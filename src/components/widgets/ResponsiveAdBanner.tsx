@@ -152,10 +152,10 @@ export function ResponsiveAdBanner({
     }
   }, [currentBanner]);
 
-  // Calculate constrained dimensions
+  // Calculate constrained dimensions - prioritize full width on mobile
   const getConstrainedDimensions = useCallback(() => {
     if (!imageDimensions || containerWidth === 0) {
-      // Fallback dimensions
+      // Fallback dimensions - always full width
       return {
         height: Math.min(maxHeight, 200),
         width: "100%",
@@ -163,8 +163,23 @@ export function ResponsiveAdBanner({
     }
 
     const { aspectRatio } = imageDimensions;
+    const isMobileWidth = containerWidth < 640;
     
-    // Calculate width based on container
+    // On mobile, always use full container width
+    if (isMobileWidth) {
+      let targetHeight = containerWidth / aspectRatio;
+      
+      // Apply height constraints
+      targetHeight = Math.max(targetHeight, minHeight);
+      targetHeight = Math.min(targetHeight, maxHeight);
+      
+      return {
+        height: Math.round(targetHeight),
+        width: "100%",
+      };
+    }
+    
+    // Desktop: existing logic with width constraints
     let targetWidth = Math.min(containerWidth, imageDimensions.width);
     targetWidth = Math.max(targetWidth, SIZE_CONSTRAINTS.minWidth);
     
@@ -186,7 +201,6 @@ export function ResponsiveAdBanner({
     if (targetWidth > containerWidth) {
       targetWidth = containerWidth;
       targetHeight = targetWidth / aspectRatio;
-      // Re-apply min height constraint
       targetHeight = Math.max(targetHeight, minHeight);
     }
     
@@ -207,7 +221,7 @@ export function ResponsiveAdBanner({
     <div
       ref={containerRef}
       className={cn(
-        "relative overflow-hidden rounded-lg",
+        "relative overflow-hidden rounded-lg w-full",
         isTile ? "bg-card border border-border" : "bg-muted/30",
         className
       )}
@@ -217,12 +231,11 @@ export function ResponsiveAdBanner({
       {/* Banner Content */}
       <div
         className={cn(
-          "relative cursor-pointer transition-all duration-300 mx-auto",
+          "relative cursor-pointer transition-all duration-300 w-full",
           isTile ? "group" : ""
         )}
         style={{
           height: dimensions.height,
-          width: dimensions.width,
           minHeight: minHeight,
           maxHeight: maxHeight,
         }}
@@ -233,12 +246,11 @@ export function ResponsiveAdBanner({
             src={currentBanner.imageUrl}
             alt="Reklama"
             className={cn(
-              "w-full h-full object-contain transition-all duration-300",
+              "w-full h-full transition-all duration-300",
+              // On mobile use object-cover to fill width, on desktop use object-contain
+              containerWidth < 640 ? "object-cover" : "object-contain",
               isTile && "group-hover:scale-[1.02]"
             )}
-            style={{
-              maxHeight: maxHeight,
-            }}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-r from-primary/10 to-primary/5">
