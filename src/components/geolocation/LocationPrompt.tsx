@@ -60,7 +60,8 @@ export function LocationPrompt({ open, onClose, onLocationSet }: LocationPromptP
   const getDetectionLabel = () => {
     switch (detectionPhase) {
       case "high_accuracy": return "GPS...";
-      case "network": return "Sieć...";
+      case "low_accuracy": return "Sieć...";
+      case "reverse_geocoding": return "Adres...";
       case "ip_fallback": return "IP...";
       default: return "Wykrywanie...";
     }

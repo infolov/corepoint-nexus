@@ -52,7 +52,11 @@ export function Header() {
   const {
     data: weatherData,
     isLoading: weatherLoading
-  } = useWeather("12375", { city: location.city, voivodeship: location.voivodeship });
+  } = useWeather("12375", { 
+    city: location.city, 
+    voivodeship: location.voivodeship,
+    coordinates: location.coordinates 
+  });
   const [forecast, setForecast] = useState<{
     day: string;
     temp: number;

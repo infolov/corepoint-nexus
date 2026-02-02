@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
-import { useSmartGeolocation, UserLocation } from "@/hooks/use-smart-geolocation";
+import { useSmartGeolocation, UserLocation, Coordinates } from "@/hooks/use-smart-geolocation";
 import { LocationPrompt } from "./LocationPrompt";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -34,6 +34,7 @@ export function LocationProvider({ children }: LocationProviderProps) {
     voivodeship: null,
     county: null,
     city: null,
+    coordinates: null,
   });
   const [loading, setLoading] = useState(true);
   const [hasPrompted, setHasPrompted] = useState(false);
@@ -45,7 +46,7 @@ export function LocationProvider({ children }: LocationProviderProps) {
       
       // First check localStorage
       const localSettings = localStorage.getItem("userSettings");
-      let loadedLocation: UserLocation = { voivodeship: null, county: null, city: null };
+      let loadedLocation: UserLocation = { voivodeship: null, county: null, city: null, coordinates: null };
       
       if (localSettings) {
         try {
@@ -54,6 +55,7 @@ export function LocationProvider({ children }: LocationProviderProps) {
             voivodeship: parsed.voivodeship || null,
             county: parsed.county || null,
             city: parsed.city || null,
+            coordinates: parsed.coordinates || null,
           };
         } catch (e) {
           console.error("Error parsing local settings:", e);
@@ -70,10 +72,12 @@ export function LocationProvider({ children }: LocationProviderProps) {
             .maybeSingle();
 
           if (!error && data) {
+            // Keep coordinates from localStorage if available
             loadedLocation = {
               voivodeship: data.voivodeship || null,
               county: data.county || null,
               city: data.city || null,
+              coordinates: loadedLocation.coordinates,
             };
             localStorage.setItem("userSettings", JSON.stringify(loadedLocation));
           }
@@ -101,7 +105,7 @@ export function LocationProvider({ children }: LocationProviderProps) {
     }
   }, [loading, hasPrompted]);
 
-  const hasLocation = !!(location.voivodeship || location.city);
+  const hasLocation = !!(location.voivodeship || location.city || location.coordinates);
 
   const handleLocationSet = useCallback((newLocation: UserLocation) => {
     setLocation(newLocation);
