@@ -1,24 +1,27 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useContext, createContext } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 
 interface UserSettings {
   language: string;
   voivodeship: string | null;
-  county: string | null;  // powiat
+  county: string | null;
   city: string | null;
-  locality: string | null; // gmina
+  locality: string | null;
 }
 
+const defaultSettings: UserSettings = {
+  language: "pl",
+  voivodeship: null,
+  county: null,
+  city: null,
+  locality: null,
+};
+
+// Standalone hook that works without context (for backward compatibility)
 export function useUserSettings() {
   const { user } = useAuth();
-  const [settings, setSettings] = useState<UserSettings>({
-    language: "pl",
-    voivodeship: null,
-    county: null,
-    city: null,
-    locality: null,
-  });
+  const [settings, setSettings] = useState<UserSettings>(defaultSettings);
   const [loading, setLoading] = useState(true);
 
   const loadSettings = useCallback(async () => {
@@ -59,7 +62,6 @@ export function useUserSettings() {
             locality: data.locality || null,
           };
           setSettings(dbSettings);
-          // Sync to localStorage
           localStorage.setItem("userSettings", JSON.stringify(dbSettings));
         }
       } catch (error) {
@@ -74,7 +76,7 @@ export function useUserSettings() {
     loadSettings();
   }, [loadSettings]);
 
-  // Listen for localStorage changes (from geolocation updates)
+  // Listen for localStorage changes
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === "userSettings" && e.newValue) {
@@ -101,7 +103,6 @@ export function useUserSettings() {
     loadSettings();
   };
 
-  // Helper to get UserLocation for auction engine
   const getUserLocation = () => ({
     voivodeship: settings.voivodeship || undefined,
     powiat: settings.county || undefined,
