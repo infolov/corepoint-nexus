@@ -106,6 +106,9 @@ export function LocationProvider({ children }: LocationProviderProps) {
     loadSavedLocation();
   }, [user]);
 
+  // Calculate hasLocation based on current location state
+  const hasLocation = !!(location.voivodeship || location.city || location.coordinates);
+
   // Show prompt on first visit if no location is set
   useEffect(() => {
     if (!loading && !hasLocation && !hasPrompted) {
@@ -114,9 +117,7 @@ export function LocationProvider({ children }: LocationProviderProps) {
       }, 1500);
       return () => clearTimeout(timer);
     }
-  }, [loading, hasPrompted]);
-
-  const hasLocation = !!(location.voivodeship || location.city || location.coordinates);
+  }, [loading, hasLocation, hasPrompted]);
 
   const handleLocationSet = useCallback((newLocation: UserLocation) => {
     setLocation(newLocation);
