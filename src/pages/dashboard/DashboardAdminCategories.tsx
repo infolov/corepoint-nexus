@@ -12,7 +12,10 @@ import {
   RefreshCw,
   Search,
   Eye,
-  EyeOff
+  EyeOff,
+  CheckSquare,
+  Square,
+  X
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -20,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
@@ -81,6 +85,8 @@ export default function DashboardAdminCategories() {
   const [editingCategory, setEditingCategory] = useState<CategoryWithSources | null>(null);
   const [saving, setSaving] = useState(false);
   const [togglingVisibility, setTogglingVisibility] = useState<string | null>(null);
+  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
+  const [bulkUpdating, setBulkUpdating] = useState(false);
 
   // Quick toggle visibility directly from the row
   const handleToggleVisibility = useCallback(async (category: CategoryWithSources) => {
@@ -98,6 +104,53 @@ export default function DashboardAdminCategories() {
       setTogglingVisibility(null);
     }
   }, [updateCategory]);
+
+  // Bulk selection handlers
+  const handleSelectCategory = useCallback((categoryId: string, checked: boolean) => {
+    setSelectedCategories(prev => {
+      const next = new Set(prev);
+      if (checked) {
+        next.add(categoryId);
+      } else {
+        next.delete(categoryId);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleSelectAll = useCallback(() => {
+    if (selectedCategories.size === categories.length) {
+      setSelectedCategories(new Set());
+    } else {
+      setSelectedCategories(new Set(categories.map(c => c.id)));
+    }
+  }, [categories, selectedCategories.size]);
+
+  const clearSelection = useCallback(() => {
+    setSelectedCategories(new Set());
+  }, []);
+
+  const handleBulkVisibilityChange = useCallback(async (makeVisible: boolean) => {
+    if (selectedCategories.size === 0) return;
+    
+    setBulkUpdating(true);
+    try {
+      const promises = Array.from(selectedCategories).map(id => 
+        updateCategory(id, { is_active: makeVisible })
+      );
+      await Promise.all(promises);
+      toast.success(
+        makeVisible 
+          ? `${selectedCategories.size} kategorii zostało pokazanych`
+          : `${selectedCategories.size} kategorii zostało ukrytych`
+      );
+      setSelectedCategories(new Set());
+    } catch (error) {
+      toast.error("Nie udało się zmienić widoczności kategorii");
+    } finally {
+      setBulkUpdating(false);
+    }
+  }, [selectedCategories, updateCategory]);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -261,15 +314,68 @@ export default function DashboardAdminCategories() {
         </div>
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Szukaj kategorii, słów kluczowych..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9"
-        />
+      {/* Search and Bulk Actions Bar */}
+      <div className="space-y-3">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Szukaj kategorii, słów kluczowych..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+
+        {/* Bulk Selection Bar */}
+        <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border">
+          <div className="flex items-center gap-3">
+            <Checkbox
+              checked={selectedCategories.size === categories.length && categories.length > 0}
+              onCheckedChange={handleSelectAll}
+              aria-label="Zaznacz wszystkie kategorie"
+            />
+            <span className="text-sm text-muted-foreground">
+              {selectedCategories.size === 0 
+                ? "Zaznacz kategorie do masowej zmiany widoczności"
+                : `Zaznaczono ${selectedCategories.size} z ${categories.length} kategorii`
+              }
+            </span>
+          </div>
+          
+          {selectedCategories.size > 0 && (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleBulkVisibilityChange(true)}
+                disabled={bulkUpdating}
+                className="gap-1.5"
+              >
+                <Eye className="h-4 w-4" />
+                Pokaż zaznaczone
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleBulkVisibilityChange(false)}
+                disabled={bulkUpdating}
+                className="gap-1.5"
+              >
+                <EyeOff className="h-4 w-4" />
+                Ukryj zaznaczone
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearSelection}
+                className="gap-1.5"
+              >
+                <X className="h-4 w-4" />
+                Wyczyść
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
 
       {error && (
@@ -307,6 +413,13 @@ export default function DashboardAdminCategories() {
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex items-start gap-3">
+                        {/* Bulk Selection Checkbox */}
+                        <Checkbox
+                          checked={selectedCategories.has(category.id)}
+                          onCheckedChange={(checked) => handleSelectCategory(category.id, checked as boolean)}
+                          aria-label={`Zaznacz kategorię ${category.name}`}
+                          className="mt-1"
+                        />
                         <CollapsibleTrigger asChild>
                           <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0 mt-0.5">
                             {isExpanded ? (
@@ -468,13 +581,21 @@ export default function DashboardAdminCategories() {
                                 key={child.id}
                                 className="flex items-center justify-between p-3 bg-muted/50 rounded-md"
                               >
-                                <div className="space-y-1">
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-medium text-sm">{child.name}</span>
-                                    {!child.is_active && (
-                                      <Badge variant="secondary" className="text-xs">Nieaktywna</Badge>
-                                    )}
-                                  </div>
+                                <div className="flex items-center gap-3">
+                                  {/* Subcategory Checkbox */}
+                                  <Checkbox
+                                    checked={selectedCategories.has(child.id)}
+                                    onCheckedChange={(checked) => handleSelectCategory(child.id, checked as boolean)}
+                                    aria-label={`Zaznacz podkategorię ${child.name}`}
+                                    className="h-4 w-4"
+                                  />
+                                  <div className="space-y-1">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-medium text-sm">{child.name}</span>
+                                      {!child.is_active && (
+                                        <Badge variant="secondary" className="text-xs">Nieaktywna</Badge>
+                                      )}
+                                    </div>
                                   <div className="flex items-center gap-3 text-xs text-muted-foreground">
                                     <span>
                                       <code className="bg-background px-1 rounded">{child.slug}</code>
@@ -487,6 +608,7 @@ export default function DashboardAdminCategories() {
                                       <Rss className="h-3 w-3" />
                                       {child.sourcesCount}
                                     </span>
+                                    </div>
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-3">
