@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { 
   Plus, 
   Edit, 
@@ -10,8 +10,11 @@ import {
   Rss, 
   Loader2,
   RefreshCw,
-  Search
+  Search,
+  Eye,
+  EyeOff
 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -77,6 +80,24 @@ export default function DashboardAdminCategories() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<CategoryWithSources | null>(null);
   const [saving, setSaving] = useState(false);
+  const [togglingVisibility, setTogglingVisibility] = useState<string | null>(null);
+
+  // Quick toggle visibility directly from the row
+  const handleToggleVisibility = useCallback(async (category: CategoryWithSources) => {
+    setTogglingVisibility(category.id);
+    try {
+      await updateCategory(category.id, { is_active: !category.is_active });
+      toast.success(
+        category.is_active 
+          ? `Kategoria "${category.name}" została ukryta` 
+          : `Kategoria "${category.name}" jest teraz widoczna`
+      );
+    } catch (error) {
+      toast.error("Nie udało się zmienić widoczności kategorii");
+    } finally {
+      setTogglingVisibility(null);
+    }
+  }, [updateCategory]);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -330,44 +351,75 @@ export default function DashboardAdminCategories() {
                             {category.sourcesCount} aktywnych źródeł
                           </TooltipContent>
                         </Tooltip>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => openEditDialog(category)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon" className="text-destructive">
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Usunąć kategorię?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Ta akcja jest nieodwracalna. Kategoria "{category.name}" 
-                                  oraz wszystkie jej źródła zostaną trwale usunięte.
-                                  {hasChildren && (
-                                    <span className="block mt-2 text-destructive">
-                                      Uwaga: Ta kategoria ma {children.length} podkategorii!
-                                    </span>
-                                  )}
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Anuluj</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => deleteCategory(category.id)}
-                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                >
-                                  Usuń
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                        <div className="flex items-center gap-3">
+                          {/* Visibility Toggle Switch */}
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex items-center gap-2">
+                                {category.is_active ? (
+                                  <Eye className="h-4 w-4 text-muted-foreground" />
+                                ) : (
+                                  <EyeOff className="h-4 w-4 text-muted-foreground" />
+                                )}
+                                <Switch
+                                  checked={category.is_active}
+                                  onCheckedChange={() => handleToggleVisibility(category)}
+                                  disabled={togglingVisibility === category.id}
+                                  aria-label={category.is_active ? "Ukryj kategorię" : "Pokaż kategorię"}
+                                />
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {category.is_active ? "Widoczna - kliknij aby ukryć" : "Ukryta - kliknij aby pokazać"}
+                            </TooltipContent>
+                          </Tooltip>
+
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => openEditDialog(category)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Czy na pewno chcesz usunąć kategorię?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    <span className="text-destructive font-medium">Ta akcja jest nieodwracalna.</span>
+                                    {" "}Kategoria "{category.name}" oraz wszystkie jej źródła zostaną trwale usunięte z bazy danych.
+                                    {hasChildren && (
+                                      <span className="block mt-2 p-2 bg-destructive/10 border border-destructive/20 rounded text-destructive">
+                                        ⚠️ Uwaga: Ta kategoria ma {children.length} podkategorii, które również zostaną usunięte!
+                                      </span>
+                                    )}
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={async () => {
+                                      try {
+                                        await deleteCategory(category.id);
+                                        toast.success(`Kategoria "${category.name}" została usunięta`);
+                                      } catch (error) {
+                                        toast.error("Nie udało się usunąć kategorii");
+                                      }
+                                    }}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Tak, usuń
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -437,44 +489,76 @@ export default function DashboardAdminCategories() {
                                     </span>
                                   </div>
                                 </div>
-                                <div className="flex items-center gap-1">
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8"
-                                    onClick={() => openEditDialog(child)}
-                                  >
-                                    <Edit className="h-3.5 w-3.5" />
-                                  </Button>
-                                  <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8 text-destructive"
-                                      >
-                                        <Trash2 className="h-3.5 w-3.5" />
-                                      </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                      <AlertDialogHeader>
-                                        <AlertDialogTitle>Usunąć podkategorię?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                          Ta akcja jest nieodwracalna. Podkategoria "{child.name}" 
-                                          oraz wszystkie jej źródła zostaną trwale usunięte.
-                                        </AlertDialogDescription>
-                                      </AlertDialogHeader>
-                                      <AlertDialogFooter>
-                                        <AlertDialogCancel>Anuluj</AlertDialogCancel>
-                                        <AlertDialogAction
-                                          onClick={() => deleteCategory(child.id)}
-                                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                <div className="flex items-center gap-3">
+                                  {/* Subcategory Visibility Toggle */}
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <div className="flex items-center gap-1.5">
+                                        {child.is_active ? (
+                                          <Eye className="h-3.5 w-3.5 text-muted-foreground" />
+                                        ) : (
+                                          <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />
+                                        )}
+                                        <Switch
+                                          checked={child.is_active}
+                                          onCheckedChange={() => handleToggleVisibility(child)}
+                                          disabled={togglingVisibility === child.id}
+                                          className="scale-90"
+                                          aria-label={child.is_active ? "Ukryj podkategorię" : "Pokaż podkategorię"}
+                                        />
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      {child.is_active ? "Widoczna - kliknij aby ukryć" : "Ukryta - kliknij aby pokazać"}
+                                    </TooltipContent>
+                                  </Tooltip>
+
+                                  <div className="flex items-center gap-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => openEditDialog(child)}
+                                    >
+                                      <Edit className="h-3.5 w-3.5" />
+                                    </Button>
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-8 w-8 text-destructive hover:text-destructive"
                                         >
-                                          Usuń
-                                        </AlertDialogAction>
-                                      </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                  </AlertDialog>
+                                          <Trash2 className="h-3.5 w-3.5" />
+                                        </Button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>Czy na pewno chcesz usunąć podkategorię?</AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                            <span className="text-destructive font-medium">Ta akcja jest nieodwracalna.</span>
+                                            {" "}Podkategoria "{child.name}" oraz wszystkie jej źródła zostaną trwale usunięte z bazy danych.
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                                          <AlertDialogAction
+                                            onClick={async () => {
+                                              try {
+                                                await deleteCategory(child.id);
+                                                toast.success(`Podkategoria "${child.name}" została usunięta`);
+                                              } catch (error) {
+                                                toast.error("Nie udało się usunąć podkategorii");
+                                              }
+                                            }}
+                                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                          >
+                                            Tak, usuń
+                                          </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                  </div>
                                 </div>
                               </div>
                             ))}
