@@ -1370,7 +1370,9 @@ export type Database = {
           daily_digest: boolean
           font_size: string | null
           id: string
+          local_ratio: number
           personalized: boolean
+          sport_ratio: number
           tags: string[] | null
           theme_preference: string | null
           updated_at: string
@@ -1383,7 +1385,9 @@ export type Database = {
           daily_digest?: boolean
           font_size?: string | null
           id?: string
+          local_ratio?: number
           personalized?: boolean
+          sport_ratio?: number
           tags?: string[] | null
           theme_preference?: string | null
           updated_at?: string
@@ -1396,7 +1400,9 @@ export type Database = {
           daily_digest?: boolean
           font_size?: string | null
           id?: string
+          local_ratio?: number
           personalized?: boolean
+          sport_ratio?: number
           tags?: string[] | null
           theme_preference?: string | null
           updated_at?: string
