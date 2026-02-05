@@ -56,6 +56,7 @@ export function ResponsiveAdBanner({
   const [isPaused, setIsPaused] = useState(false);
   const [imageDimensions, setImageDimensions] = useState<ImageDimensions | null>(null);
   const [containerWidth, setContainerWidth] = useState<number>(0);
+  const [imageLoadFailed, setImageLoadFailed] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const hasMultipleBanners = banners.length > 1;
@@ -86,6 +87,7 @@ export function ResponsiveAdBanner({
       return;
     }
 
+    setImageLoadFailed(false);
     const img = new Image();
     img.onload = () => {
       setImageDimensions({
@@ -96,6 +98,7 @@ export function ResponsiveAdBanner({
     };
     img.onerror = () => {
       setImageDimensions(null);
+      setImageLoadFailed(true);
     };
     img.src = currentBanner.imageUrl;
   }, [currentBanner?.imageUrl]);
@@ -210,7 +213,16 @@ export function ResponsiveAdBanner({
     };
   }, [imageDimensions, containerWidth, maxHeight, minHeight]);
 
-  if (banners.length === 0) {
+  // CRITICAL: Filter out banners with no valid content
+  const validBanners = banners.filter(b => b.imageUrl || b.text);
+  
+  // Hide completely if no valid banners or image load failed with no fallback text
+  if (validBanners.length === 0) {
+    return null;
+  }
+
+  // If current banner has no image and image load failed, and no text fallback, skip to next or hide
+  if (imageLoadFailed && !currentBanner?.text && validBanners.length <= 1) {
     return null;
   }
 
@@ -222,7 +234,7 @@ export function ResponsiveAdBanner({
       ref={containerRef}
       className={cn(
         "relative overflow-hidden rounded-lg w-full",
-        isTile ? "bg-card border border-border" : "bg-muted/30",
+        isTile ? "bg-card border border-border" : "",
         className
       )}
       onMouseEnter={() => setIsPaused(true)}
@@ -241,32 +253,34 @@ export function ResponsiveAdBanner({
         }}
         onClick={handleClick}
       >
-        {currentBanner.imageUrl ? (
+        {currentBanner.imageUrl && !imageLoadFailed ? (
           <img
             src={currentBanner.imageUrl}
             alt="Reklama"
             className={cn(
               "w-full h-full transition-all duration-300",
-              // On mobile use object-cover to fill width, on desktop use object-contain
               containerWidth < 640 ? "object-cover" : "object-contain",
               isTile && "group-hover:scale-[1.02]"
             )}
+            onError={() => setImageLoadFailed(true)}
           />
-        ) : (
+        ) : currentBanner.text ? (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-r from-primary/10 to-primary/5">
             <span className="text-sm sm:text-base md:text-lg font-medium text-foreground/80 text-center px-4">
-              {currentBanner.text || "Reklama"}
+              {currentBanner.text}
             </span>
           </div>
-        )}
+        ) : null}
 
-        {/* Sponsored label */}
-        <Badge
-          variant="secondary"
-          className="absolute top-2 left-2 bg-background/80 backdrop-blur-sm text-[10px] font-normal"
-        >
-          {isTile ? "Reklama" : "Sponsorowane"}
-        </Badge>
+        {/* Sponsored label - only show when there's content */}
+        {(currentBanner.imageUrl || currentBanner.text) && (
+          <Badge
+            variant="secondary"
+            className="absolute top-2 left-2 bg-background/80 backdrop-blur-sm text-[10px] font-normal"
+          >
+            {isTile ? "Reklama" : "Sponsorowane"}
+          </Badge>
+        )}
 
         {/* Local/National indicator */}
         {currentBanner.isLocal && (

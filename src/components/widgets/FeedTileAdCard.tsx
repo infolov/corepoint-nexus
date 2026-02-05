@@ -37,6 +37,7 @@ export function FeedTileAdCard({
   const [isHovered, setIsHovered] = useState(false);
   const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
   const [containerWidth, setContainerWidth] = useState(0);
+  const [imageLoadFailed, setImageLoadFailed] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
   // Observe container width for responsive sizing
@@ -57,9 +58,13 @@ export function FeedTileAdCard({
       setImageDimensions(null);
       return;
     }
+    setImageLoadFailed(false);
     const img = new Image();
     img.onload = () => {
       setImageDimensions({ width: img.naturalWidth, height: img.naturalHeight });
+    };
+    img.onerror = () => {
+      setImageLoadFailed(true);
     };
     img.src = contentUrl;
   }, [contentUrl]);
@@ -107,6 +112,11 @@ export function FeedTileAdCard({
     return Math.round(height);
   };
 
+  // CRITICAL: Hide completely if no content URL or image failed to load
+  if (!contentUrl || imageLoadFailed) {
+    return null;
+  }
+
   const isVideo = contentUrl?.match(/\.(mp4|webm)$/i);
   const mediaHeight = getConstrainedHeight();
 
@@ -141,30 +151,25 @@ export function FeedTileAdCard({
           maxHeight: TILE_CONSTRAINTS.maxHeight,
         }}
       >
-        {contentUrl ? (
-          isVideo ? (
-            <video
-              src={contentUrl}
-              className="w-full h-full object-contain"
-              autoPlay
-              muted
-              loop
-              playsInline
-            />
-          ) : (
-            <img
-              src={contentUrl}
-              alt={name || "Reklama"}
-              className={cn(
-                "w-full h-full object-contain transition-transform duration-500",
-                isHovered && "scale-[1.02]"
-              )}
-            />
-          )
+        {isVideo ? (
+          <video
+            src={contentUrl}
+            className="w-full h-full object-contain"
+            autoPlay
+            muted
+            loop
+            playsInline
+          />
         ) : (
-          <div className="w-full h-full bg-muted flex items-center justify-center">
-            <span className="text-muted-foreground">Brak obrazu</span>
-          </div>
+          <img
+            src={contentUrl}
+            alt={name || "Reklama"}
+            className={cn(
+              "w-full h-full object-contain transition-transform duration-500",
+              isHovered && "scale-[1.02]"
+            )}
+            onError={() => setImageLoadFailed(true)}
+          />
         )}
 
         {/* Overlay gradient on hover */}
