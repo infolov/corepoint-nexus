@@ -123,19 +123,20 @@ export function AuctionAdSlot({
   const [auctionResult, setAuctionResult] = useState<AuctionResult | null>(null);
   const [hasTrackedImpression, setHasTrackedImpression] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [hasAttemptedLoad, setHasAttemptedLoad] = useState(false);
   
   // Lazy loading hook
   const { ref: lazyRef, hasBeenVisible } = useLazyLoad<HTMLDivElement>({
     rootMargin: lazyRootMargin,
     triggerOnce: true,
-    initialVisible: !lazyLoad, // If lazy loading disabled, start visible
+    initialVisible: !lazyLoad,
   });
   
   // Responsive hooks
   const { width: windowWidth } = useWindowSize();
   const breakpoint = useBreakpoint();
 
-  // Determine effective variant (auto mode picks based on placement)
+  // Determine effective variant
   const effectiveVariant: AdVariant = auto ? "auto" : variant;
 
   // Calculate responsive ad size
@@ -162,12 +163,11 @@ export function AuctionAdSlot({
   }, [responsiveSize, prevSizeRef]);
 
   const config = variantConfig[effectiveVariant] || variantConfig.horizontal;
-  const { name, icon: Icon, defaultPlacementSlug } = config;
+  const { defaultPlacementSlug } = config;
   
-  // Use prop placementSlug if provided, otherwise fall back to default from variant config
   const placementSlug = placementSlugProp || defaultPlacementSlug;
 
-  // Build full user location from settings (voivodeship, powiat, city)
+  // Build full user location from settings
   const userLocation = {
     voivodeship: settings.voivodeship || undefined,
     powiat: settings.county || undefined,
@@ -180,7 +180,6 @@ export function AuctionAdSlot({
     trackImpression, 
     trackClick, 
     loading,
-    stats,
     cacheHit,
     isRevalidating,
   } = useAdAuction({ 
@@ -188,13 +187,13 @@ export function AuctionAdSlot({
     placementSlug 
   });
 
-  // Run auction when component becomes visible (lazy loading) or dependencies change
+  // Run auction when component becomes visible
   useEffect(() => {
-    // Only run auction when visible (for lazy loading) and data is ready
     if (!loading && hasBeenVisible) {
       const result = getNextAd(placementSlug);
       setAuctionResult(result);
       setHasTrackedImpression(false);
+      setHasAttemptedLoad(true);
     }
   }, [loading, placementSlug, hasBeenVisible]);
 
@@ -220,7 +219,7 @@ export function AuctionAdSlot({
   // Dynamic aspect ratio based on responsive size
   const aspectRatio = getAspectRatio(responsiveSize);
 
-  // Container styles with CLS prevention and smooth transitions
+  // Container styles with CLS prevention
   const containerStyles: React.CSSProperties = {
     minHeight: `${minHeight}px`,
     aspectRatio,
@@ -247,45 +246,58 @@ export function AuctionAdSlot({
     </div>
   );
 
-  // Lazy loading placeholder (shown before content enters viewport)
-  const LazyPlaceholder = () => (
-    <div
-      className={cn(
-        "relative bg-gradient-to-br from-muted/30 to-muted/10 rounded-lg overflow-hidden flex items-center justify-center border border-border/30 animate-pulse",
-        className
-      )}
-      style={containerStyles}
-    >
-      <div className="text-center p-4">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground/40 mx-auto mb-2" />
-        <p className="text-[10px] text-muted-foreground/40">
-          Ładowanie reklamy...
-        </p>
-      </div>
-      <span className="absolute top-1 right-2 text-[10px] text-muted-foreground/30">
-        AD
-      </span>
-      {showDev && (
-        <div className="absolute top-1 left-1 z-10 flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold text-white bg-yellow-600">
-          <Maximize2 className="h-2.5 w-2.5" />
-          <span>LAZY: {responsiveSize.width}×{responsiveSize.height}</span>
-        </div>
-      )}
-    </div>
-  );
-
-  // Show lazy placeholder if not yet visible
+  // CRITICAL: If lazy loading is enabled and we haven't been visible yet,
+  // render an invisible placeholder for the IntersectionObserver
   if (lazyLoad && !hasBeenVisible) {
-    return (
-      <div ref={lazyRef}>
-        <LazyPlaceholder />
-      </div>
-    );
+    return <div ref={lazyRef} className="h-0 w-full" aria-hidden="true" />;
+  }
+
+  // CRITICAL: If we've attempted to load but have no valid ad result,
+  // or if the ad has no content (no image/text), hide completely
+  if (hasAttemptedLoad && !loading) {
+    const hasValidAd = auctionResult && 
+      (auctionResult.ad.contentUrl || auctionResult.ad.contentText);
+    
+    if (!hasValidAd) {
+      // In dev mode, show a minimal debug indicator (collapsed)
+      if (showDev) {
+        return (
+          <div ref={lazyRef} className="relative">
+            <div 
+              className="h-6 bg-black/80 text-white text-[9px] px-2 font-mono flex items-center gap-2 rounded opacity-50 hover:opacity-100 transition-opacity cursor-help"
+              title="Ad slot hidden - no valid ad available"
+            >
+              <Bug className="h-3 w-3 text-yellow-400" />
+              <span>Empty slot: {placementSlug}</span>
+              <span className={cn(
+                "px-1 rounded",
+                cacheHit ? "bg-emerald-600" : "bg-orange-600"
+              )}>
+                {cacheHit ? "📦" : "🌐"}
+              </span>
+            </div>
+          </div>
+        );
+      }
+      
+      // Production: completely hidden, no space taken
+      return null;
+    }
+  }
+
+  // Still loading - show nothing to prevent CLS
+  if (loading || !hasAttemptedLoad) {
+    return <div ref={lazyRef} className="h-0 w-full" aria-hidden="true" />;
   }
 
   // Show active campaign from auction
   if (auctionResult) {
     const { ad, finalScore, debugInfo } = auctionResult;
+
+    // Double-check ad has displayable content
+    if (!ad.contentUrl && !ad.contentText) {
+      return null;
+    }
 
     return (
       <div ref={lazyRef} className="relative">
@@ -308,6 +320,13 @@ export function AuctionAdSlot({
               alt={ad.name}
               className="w-full h-full object-contain transition-transform duration-200 group-hover:scale-[1.02]"
               loading="lazy"
+              onError={(e) => {
+                // Hide the entire ad if image fails to load
+                const container = e.currentTarget.closest('[data-ad-container]');
+                if (container) {
+                  (container as HTMLElement).style.display = 'none';
+                }
+              }}
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
@@ -320,7 +339,6 @@ export function AuctionAdSlot({
             AD
           </span>
           
-          {/* Dev mode breakpoint badge */}
           {showDev && <DevBadge />}
         </div>
 
@@ -343,75 +361,19 @@ export function AuctionAdSlot({
               <span className="text-red-400">-{(debugInfo.frequencyPenalty / (debugInfo.baseScore + debugInfo.targetingBonus) * 100).toFixed(0)}% freq</span>
             )}
             <span className="text-cyan-400">Size: {responsiveSize.label}</span>
-            {lazyLoad && <span className="text-purple-400">⚡Lazy</span>}
-            {/* Cache info */}
             <span className={cn(
               "px-1 rounded",
               cacheHit ? "bg-emerald-600" : "bg-orange-600"
             )}>
               {cacheHit ? "📦 Cache" : "🌐 Fresh"}
             </span>
-            {isRevalidating && <span className="text-yellow-400 animate-pulse">↻ Revalidating</span>}
+            {isRevalidating && <span className="text-yellow-400 animate-pulse">↻</span>}
           </div>
         )}
       </div>
     );
   }
 
-  // Fallback placeholder when no active campaign
-  return (
-    <div ref={lazyRef} className="relative">
-      <div
-        className={cn(
-          "relative bg-gradient-to-br from-muted to-muted/50 rounded-lg overflow-hidden flex items-center justify-center border border-border/50 transition-opacity duration-300",
-          isTransitioning ? "opacity-80" : "opacity-100",
-          className
-        )}
-        style={containerStyles}
-      >
-        <div className="text-center p-4">
-          <div className="flex items-center justify-center gap-1.5 text-muted-foreground text-xs uppercase tracking-wider mb-1">
-            <Icon className="h-3 w-3" />
-            <span>{name}</span>
-          </div>
-          <p className="text-sm text-muted-foreground/70">
-            Twoja reklama może być tutaj
-          </p>
-          {auto && (
-            <p className="text-[10px] text-muted-foreground/50 mt-1">
-              {responsiveSize.label}
-            </p>
-          )}
-        </div>
-        <span className="absolute top-1 right-2 text-[10px] text-muted-foreground/50">
-          AD
-        </span>
-        
-        {/* Dev mode breakpoint badge */}
-        {showDev && <DevBadge />}
-      </div>
-
-      {/* Dev Overlay - Stats */}
-      {showDev && (
-        <div className="absolute bottom-0 left-0 right-0 bg-black/80 text-white text-[10px] p-1.5 font-mono flex items-center gap-2 flex-wrap">
-          <Bug className="h-3 w-3 text-yellow-400 flex-shrink-0" />
-          <span>No ads available</span>
-          <span>Pool: {stats.total}</span>
-          <span className="text-blue-400">N:{stats.national}</span>
-          <span className="text-green-400">L:{stats.local}</span>
-          <span className="text-cyan-400">Size: {responsiveSize.label}</span>
-          <span className="text-purple-400">minH: {minHeight}px</span>
-          {lazyLoad && <span className="text-purple-400">⚡Lazy</span>}
-          {/* Cache info */}
-          <span className={cn(
-            "px-1 rounded",
-            cacheHit ? "bg-emerald-600" : "bg-orange-600"
-          )}>
-            {cacheHit ? "📦 Cache" : "🌐 Fresh"}
-          </span>
-          {isRevalidating && <span className="text-yellow-400 animate-pulse">↻ Revalidating</span>}
-        </div>
-      )}
-    </div>
-  );
+  // Fallback: no ad available - hide completely
+  return null;
 }
