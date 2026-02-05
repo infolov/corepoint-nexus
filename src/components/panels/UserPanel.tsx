@@ -45,7 +45,7 @@ export function UserPanel({ onSignOut, onSettingsClick, className }: UserPanelPr
         <div className={cn("grid gap-2", hasDashboardAccess ? "grid-cols-2" : "grid-cols-1")}>
           {hasDashboardAccess && (
             <Link to="/dashboard">
-              <Button variant="gradient" className="w-full h-12 text-senior">
+              <Button variant="gradient" className="w-full h-12 text-senior text-white [&_svg]:text-white">
                 <LayoutDashboard className="h-5 w-5 mr-2" />
                 Panel
               </Button>
@@ -121,7 +121,7 @@ export function UserPanel({ onSignOut, onSettingsClick, className }: UserPanelPr
       {/* Auth buttons */}
       <div className="space-y-2">
         <Link to="/login" className="block">
-          <Button variant="gradient" className="w-full h-12 text-senior">
+          <Button variant="gradient" className="w-full h-12 text-senior text-white [&_svg]:text-white">
             <User className="h-5 w-5 mr-2" />
             Zaloguj się
           </Button>
