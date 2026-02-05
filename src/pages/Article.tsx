@@ -17,9 +17,10 @@ import { useRecentlyViewed } from "@/hooks/use-recently-viewed";
 import { ArticleSummary } from "@/components/article/ArticleSummary";
 import { useRSSArticles } from "@/hooks/use-rss-articles";
 import { AuctionAdSlot } from "@/components/widgets/AuctionAdSlot";
-import { NewsCard } from "@/components/news/NewsCard";
 import { toast } from "sonner";
 import { useRelatedArticles } from "@/hooks/use-related-articles";
+import { RecommendedArticles } from "@/components/article/RecommendedArticles";
+import { NextArticlePreview } from "@/components/article/NextArticlePreview";
 const Article = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -317,27 +318,49 @@ const Article = () => {
           </article>
         </div>
 
+        {/* Ad slot between article and recommendations */}
+        <div className="max-w-3xl mx-auto mt-8">
+          <AuctionAdSlot 
+            variant="horizontal" 
+            placementSlug="article-bottom" 
+            className="w-full" 
+            slotIndex={3} 
+          />
+        </div>
 
-        {/* Related Articles Section */}
+        {/* Recommended Articles Section */}
         {relatedArticles.length > 0 && (
-          <section className="mt-12">
-            <h2 className="text-xl font-bold mb-6">Powiązane artykuły</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {relatedArticles.map((relatedArticle) => (
-                <NewsCard
-                  key={relatedArticle.id}
-                  id={relatedArticle.id}
-                  title={relatedArticle.title}
-                  image={relatedArticle.image}
-                  category={relatedArticle.category}
-                  timestamp={(relatedArticle as any).timestamp || "Dzisiaj"}
-                  source={(relatedArticle as any).source || "Informacje.pl"}
-                  variant="msn-slot"
-                />
-              ))}
-            </div>
-          </section>
+          <RecommendedArticles 
+            articles={relatedArticles.map(a => ({
+              ...a,
+              timestamp: (a as any).timestamp,
+              source: (a as any).source
+            }))} 
+          />
         )}
+
+        {/* Next Article Preview - Engagement Loop */}
+        {relatedArticles.length > 0 && (
+          <div className="max-w-3xl mx-auto">
+            <NextArticlePreview 
+              article={relatedArticles[0] ? {
+                ...relatedArticles[0],
+                excerpt: (relatedArticles[0] as any).excerpt,
+                timestamp: (relatedArticles[0] as any).timestamp
+              } : null} 
+            />
+          </div>
+        )}
+
+        {/* Bottom ad slot */}
+        <div className="mt-8">
+          <AuctionAdSlot 
+            variant="horizontal" 
+            placementSlug="footer" 
+            className="w-full" 
+            slotIndex={4} 
+          />
+        </div>
       </main>
       
       <Footer />
