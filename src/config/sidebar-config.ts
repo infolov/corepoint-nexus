@@ -16,8 +16,14 @@ import {
   Settings, 
   Activity,
   Eye,
+  Heart,
+  Bookmark,
+  History,
+  Bell,
+  BookOpen,
   type LucideIcon
 } from "lucide-react";
+import { UserRole } from "@/hooks/use-user-role";
 
 export interface NavItem {
   title: string;
@@ -29,81 +35,141 @@ export interface NavItem {
 export interface NavSection {
   heading?: string;
   items: NavItem[];
-  // Optional: restrict section visibility
-  requireAdmin?: boolean;
-  requirePublisher?: boolean;
 }
 
-export const sidebarConfig: NavSection[] = [
+// Configuration for each role's sidebar
+export type RoleSidebarConfig = Record<UserRole, NavSection[]>;
+
+// User dashboard sidebar
+const userSidebarConfig: NavSection[] = [
   {
-    // Main dashboard items - no heading for primary section
     items: [
-      { title: "Panel główny", href: "/dashboard", icon: LayoutDashboard },
-      { title: "Statystyki", href: "/dashboard/stats", icon: BarChart3 },
-      { title: "Moje Kampanie", href: "/dashboard/campaigns", icon: Megaphone },
-      { title: "Kalendarz", href: "/dashboard/calendar", icon: Calendar },
-      { title: "Podgląd reklam", href: "/dashboard/preview", icon: Eye },
+      { title: "Panel główny", href: "/dashboard/user", icon: LayoutDashboard },
+      { title: "Zainteresowania", href: "/interests", icon: Heart },
+      { title: "Zapisane", href: "/zapisane", icon: Bookmark },
+      { title: "Historia", href: "/historia", icon: History },
+      { title: "Powiadomienia", href: "/notifications/settings", icon: Bell },
+    ]
+  },
+  {
+    heading: "Konto",
+    items: [
+      { title: "Ustawienia", href: "/dashboard/user/settings", icon: Settings },
+      { title: "Zostań partnerem", href: "/dashboard/user/partner-application", icon: Building2 },
+    ]
+  }
+];
+
+// Partner dashboard sidebar
+const partnerSidebarConfig: NavSection[] = [
+  {
+    items: [
+      { title: "Panel główny", href: "/dashboard/partner", icon: LayoutDashboard },
+      { title: "Statystyki", href: "/dashboard/partner/stats", icon: BarChart3 },
+      { title: "Moje Kampanie", href: "/dashboard/partner/campaigns", icon: Megaphone },
+      { title: "Kalendarz", href: "/dashboard/partner/calendar", icon: Calendar },
+      { title: "Podgląd reklam", href: "/dashboard/partner/preview", icon: Eye },
     ]
   },
   {
     heading: "Zasoby",
     items: [
-      { title: "Miejsca reklamowe", href: "/dashboard/placements", icon: Target },
-      { title: "Kredyty i Płatności", href: "/dashboard/credits", icon: CreditCard },
+      { title: "Miejsca reklamowe", href: "/dashboard/partner/placements", icon: Target },
+      { title: "Kredyty i Płatności", href: "/dashboard/partner/credits", icon: CreditCard },
     ]
   },
   {
-    heading: "Wydawca",
-    requirePublisher: true,
+    heading: "Konto",
     items: [
-      { title: "Panel Wydawcy", href: "/dashboard/publisher", icon: FileEdit },
-    ]
-  },
-  {
-    heading: "Administracja",
-    requireAdmin: true,
-    items: [
-      {
-        title: "Użytkownicy i Partnerzy",
-        href: "#",
-        icon: Users,
-        children: [
-          { title: "Lista użytkowników", href: "/dashboard/admin/users", icon: Users },
-          { title: "Partnerzy", href: "/dashboard/admin/partners", icon: Building2 },
-          { title: "Dziennikarze", href: "/dashboard/admin/journalists", icon: UserCheck },
-          { title: "Zgłoszenia", href: "/dashboard/admin/applications", icon: FileText },
-        ]
-      },
-      {
-        title: "Zarządzanie Treścią",
-        href: "#",
-        icon: FolderTree,
-        children: [
-          { title: "Kategorie", href: "/dashboard/admin/categories", icon: FolderTree },
-          { title: "Fact Check", href: "/dashboard/admin/factcheck", icon: Shield },
-          { title: "Karuzele", href: "/dashboard/admin/carousels", icon: LayoutGrid },
-        ]
-      },
-      {
-        title: "System",
-        href: "#",
-        icon: Settings,
-        children: [
-          { title: "Kampanie (Global)", href: "/dashboard/admin/campaigns", icon: Megaphone },
-          { title: "Miejsca (Global)", href: "/dashboard/admin/placements", icon: Target },
-          { title: "Statystyki platformy", href: "/dashboard/admin/stats", icon: BarChart3 },
-          { title: "Ustawienia", href: "/dashboard/admin/settings", icon: Settings },
-          { title: "Logi", href: "/dashboard/admin/logs", icon: Activity },
-        ]
-      }
+      { title: "Ustawienia", href: "/dashboard/partner/settings", icon: Settings },
     ]
   }
 ];
 
+// Publisher dashboard sidebar
+const publisherSidebarConfig: NavSection[] = [
+  {
+    items: [
+      { title: "Panel główny", href: "/dashboard/publisher", icon: LayoutDashboard },
+      { title: "Moje artykuły", href: "/dashboard/publisher/articles", icon: BookOpen },
+      { title: "Nowy artykuł", href: "/dashboard/publisher/articles/new", icon: FileEdit },
+      { title: "Statystyki", href: "/dashboard/publisher/stats", icon: BarChart3 },
+    ]
+  },
+  {
+    heading: "Zasoby",
+    items: [
+      { title: "Dziennikarze", href: "/dashboard/publisher/journalists", icon: UserCheck },
+    ]
+  },
+  {
+    heading: "Konto",
+    items: [
+      { title: "Ustawienia", href: "/dashboard/publisher/settings", icon: Settings },
+    ]
+  }
+];
+
+// Admin dashboard sidebar
+const adminSidebarConfig: NavSection[] = [
+  {
+    items: [
+      { title: "Panel główny", href: "/dashboard/admin", icon: LayoutDashboard },
+      { title: "Statystyki platformy", href: "/dashboard/admin/stats", icon: BarChart3 },
+    ]
+  },
+  {
+    heading: "Użytkownicy i Partnerzy",
+    items: [
+      { title: "Lista użytkowników", href: "/dashboard/admin/users", icon: Users },
+      { title: "Partnerzy", href: "/dashboard/admin/partners", icon: Building2 },
+      { title: "Dziennikarze", href: "/dashboard/admin/journalists", icon: UserCheck },
+      { title: "Zgłoszenia", href: "/dashboard/admin/applications", icon: FileText },
+    ]
+  },
+  {
+    heading: "Zarządzanie treścią",
+    items: [
+      { title: "Kategorie", href: "/dashboard/admin/categories", icon: FolderTree },
+      { title: "Fact Check", href: "/dashboard/admin/factcheck", icon: Shield },
+      { title: "Karuzele", href: "/dashboard/admin/carousels", icon: LayoutGrid },
+    ]
+  },
+  {
+    heading: "System",
+    items: [
+      { title: "Kampanie (Global)", href: "/dashboard/admin/campaigns", icon: Megaphone },
+      { title: "Miejsca (Global)", href: "/dashboard/admin/placements", icon: Target },
+      { title: "Ustawienia", href: "/dashboard/admin/settings", icon: Settings },
+      { title: "Logi", href: "/dashboard/admin/logs", icon: Activity },
+    ]
+  }
+];
+
+// Export the configuration for each role
+export const roleSidebarConfigs: RoleSidebarConfig = {
+  user: userSidebarConfig,
+  partner: partnerSidebarConfig,
+  publisher: publisherSidebarConfig,
+  admin: adminSidebarConfig,
+};
+
+// Get sidebar config for a specific role
+export function getSidebarConfigForRole(role: UserRole): NavSection[] {
+  return roleSidebarConfigs[role] || userSidebarConfig;
+}
+
 // Helper function to check if a path is active (exact or starts with for nested routes)
 export function isPathActive(currentPath: string, href: string): boolean {
-  if (href === "/dashboard") {
-    return currentPath === "/dashboard";
+  // Handle external links to main site
+  if (!href.startsWith("/dashboard")) {
+    return currentPath === href;
+  }
+  
+  // For dashboard routes, check exact match or prefix match
+  const basePath = href.split("/").slice(0, 4).join("/"); // e.g., /dashboard/partner
+  if (href === basePath) {
+    return currentPath === href;
   }
   return currentPath === href || currentPath.startsWith(href + "/");
 }

@@ -3,23 +3,19 @@ import { Link, useNavigate, Outlet, useLocation } from "react-router-dom";
 import { 
   Menu,
   ChevronRight,
-  ShieldAlert,
-  AlertTriangle,
-  X
+  AlertTriangle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useUserRole } from "@/hooks/use-user-role";
 import { useDemo } from "@/contexts/DemoContext";
-import { cn } from "@/lib/utils";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Card, CardContent } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 
 export default function Dashboard() {
   const { user, loading, signOut } = useAuth();
-  const { isAdmin, isAdvertiser, isPublisher, hasDashboardAccess, loading: roleLoading } = useUserRole();
+  const { isAdmin, isPartner, isPublisher, getDashboardPath, loading: roleLoading } = useUserRole();
   const { isDemoMode, demoUser, exitDemoMode } = useDemo();
   const navigate = useNavigate();
   const location = useLocation();
@@ -34,12 +30,16 @@ export default function Dashboard() {
     }
   }, [user, loading, navigate, isDemoMode]);
 
-  // Redirect regular users to home page - they don't have dashboard access
+  // Redirect to role-specific dashboard on initial load
   useEffect(() => {
-    if (!loading && !roleLoading && user && !hasDashboardAccess && !isDemoMode) {
-      navigate("/");
+    if (!loading && !roleLoading && user && !isDemoMode) {
+      const targetPath = getDashboardPath();
+      // Only redirect if we're at the base /dashboard path
+      if (location.pathname === "/dashboard") {
+        navigate(targetPath, { replace: true });
+      }
     }
-  }, [user, loading, roleLoading, hasDashboardAccess, navigate, isDemoMode]);
+  }, [user, loading, roleLoading, navigate, isDemoMode, getDashboardPath, location.pathname]);
 
   // Close mobile sidebar on route change
   useEffect(() => {
@@ -66,26 +66,7 @@ export default function Dashboard() {
 
   if (!effectiveUser) return null;
 
-  // Show access denied for regular users (non-demo)
-  if (!isDemoMode && !hasDashboardAccess) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="max-w-md w-full border-destructive">
-          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <ShieldAlert className="h-16 w-16 text-destructive mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Brak dostępu do panelu</h2>
-            <p className="text-muted-foreground mb-6">
-              Panel jest dostępny tylko dla partnerów reklamowych i administratorów. 
-              Jeśli chcesz prowadzić kampanie reklamowe, skontaktuj się z nami.
-            </p>
-            <Button onClick={() => navigate("/")} variant="default">
-              Wróć do strony głównej
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  // All logged in users now have dashboard access (to their role-specific dashboard)
 
   const sidebarProps = {
     user: effectiveUser,

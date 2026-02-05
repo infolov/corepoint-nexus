@@ -4,8 +4,7 @@ import {
   LogOut,
   User,
   Settings,
-  ChevronDown,
-  type LucideIcon
+  ChevronDown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -17,12 +16,13 @@ import {
 } from "@/components/ui/collapsible";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
-  sidebarConfig, 
+  getSidebarConfigForRole, 
   isPathActive, 
   hasActiveChild,
   type NavItem,
   type NavSection 
 } from "@/config/sidebar-config";
+import { useUserRole, UserRole } from "@/hooks/use-user-role";
 
 interface DashboardSidebarProps {
   user: {
@@ -48,21 +48,17 @@ export function DashboardSidebar({
 }: DashboardSidebarProps) {
   const location = useLocation();
   const currentPath = location.pathname;
-
-  // Filter sections based on user permissions
-  const visibleSections = useMemo(() => {
-    return sidebarConfig.filter(section => {
-      if (section.requireAdmin && !isAdmin) return false;
-      if (section.requirePublisher && !isPublisher && !isAdmin) return false;
-      return true;
-    });
-  }, [isAdmin, isPublisher]);
+  const { getPrimaryRole } = useUserRole();
+  
+  // Get the primary role and corresponding sidebar config
+  const primaryRole = getPrimaryRole();
+  const sidebarConfig = getSidebarConfigForRole(primaryRole);
 
   // Calculate which groups should be initially open based on current path
   const initialOpenGroups = useMemo(() => {
     const openGroups: Record<string, boolean> = {};
     
-    visibleSections.forEach(section => {
+    sidebarConfig.forEach(section => {
       section.items.forEach(item => {
         if (item.children && hasActiveChild(currentPath, item)) {
           openGroups[item.title] = true;
@@ -71,7 +67,7 @@ export function DashboardSidebar({
     });
     
     return openGroups;
-  }, [currentPath, visibleSections]);
+  }, [currentPath, sidebarConfig]);
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(initialOpenGroups);
 
@@ -80,6 +76,16 @@ export function DashboardSidebar({
       ...prev,
       [groupKey]: !prev[groupKey],
     }));
+  };
+
+  // Get role label for display
+  const getRoleLabel = () => {
+    switch (primaryRole) {
+      case "admin": return "Administrator";
+      case "publisher": return "Wydawca";
+      case "partner": return "Partner";
+      default: return "Użytkownik";
+    }
   };
 
   // Render a single nav item (leaf node)
@@ -194,6 +200,7 @@ export function DashboardSidebar({
               )}
             </div>
             <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+            <p className="text-xs text-primary font-medium">{getRoleLabel()}</p>
           </div>
         </div>
       </div>
@@ -201,24 +208,7 @@ export function DashboardSidebar({
       {/* Navigation */}
       <ScrollArea className="flex-1">
         <nav className="p-4 space-y-1">
-          {visibleSections.map((section, index) => renderSection(section, index))}
-
-          {/* Account Settings - always visible as standalone link */}
-          <div className="pt-4">
-            <Link
-              to="/dashboard/settings"
-              onClick={onClose}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                isPathActive(currentPath, "/dashboard/settings")
-                  ? "bg-primary text-primary-foreground" 
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
-              )}
-            >
-              <Settings className="h-4 w-4 flex-shrink-0" />
-              <span>Ustawienia konta</span>
-            </Link>
-          </div>
+          {sidebarConfig.map((section, index) => renderSection(section, index))}
         </nav>
       </ScrollArea>
 
