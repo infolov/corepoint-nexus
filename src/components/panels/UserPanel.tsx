@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom";
-import { User, LayoutDashboard, LogOut, Settings, Bookmark, History, ChevronRight, Heart, KeyRound } from "lucide-react";
+import { User, LayoutDashboard, LogOut, Settings, Bookmark, History, ChevronRight, Heart, KeyRound, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useUserRole } from "@/hooks/use-user-role";
 import { cn } from "@/lib/utils";
+import { ContentRatioSlider } from "@/components/settings/ContentRatioSlider";
 
 interface UserPanelProps {
   onSignOut: () => void;
@@ -54,6 +55,15 @@ export function UserPanel({ onSignOut, onSettingsClick, className }: UserPanelPr
             <LogOut className="h-5 w-5 mr-2" />
             Wyloguj
           </Button>
+        </div>
+
+        {/* Preferences section with content ratio */}
+        <div className="p-4 rounded-xl bg-muted/30 border border-border">
+          <div className="flex items-center gap-2 mb-4">
+            <SlidersHorizontal className="h-4 w-4 text-primary" />
+            <h3 className="text-sm font-semibold">Preferencje feedu</h3>
+          </div>
+          <ContentRatioSlider />
         </div>
 
         {/* User links */}

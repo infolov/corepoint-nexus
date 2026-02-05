@@ -14,6 +14,9 @@ import { useDisplayMode } from "@/hooks/use-display-mode";
 import { useAuth } from "@/hooks/use-auth";
 import { useCarouselBanners } from "@/hooks/use-carousel-banners";
 import { useFeedTileAds } from "@/hooks/use-feed-tile-ads";
+import { useLocalNews, formatLocalArticleForCard } from "@/hooks/use-local-news";
+import { useContentRatio, interleaveArticlesByRatio } from "@/hooks/use-content-ratio";
+import { useUserSettings } from "@/hooks/use-user-settings";
 import { Loader2 } from "lucide-react";
 import { useArticles, formatArticleForCard } from "@/hooks/use-articles";
 import { useRSSArticles, formatRSSArticleForCard } from "@/hooks/use-rss-articles";
@@ -60,11 +63,21 @@ const Index = () => {
     refetch: refetchRSS,
     lastUpdated: rssLastUpdated
   } = useRSSArticles();
-  const {
-    user
-  } = useAuth();
+  const { user } = useAuth();
   const { getCarouselForPosition } = useCarouselBanners();
   const { getAdForPosition, trackImpression, trackClick } = useFeedTileAds();
+  
+  // Content ratio preferences (Local/Sport)
+  const { preferences: contentRatioPrefs } = useContentRatio();
+  const { settings: userSettings } = useUserSettings();
+  
+  // Local news for personalized feed
+  const { 
+    articles: localNewsArticles, 
+    loading: localNewsLoading,
+    hasLocation 
+  } = useLocalNews({ limit: 100 });
+  
   const [userPreferences, setUserPreferences] = useState<string[]>([]);
   const [recentCategories, setRecentCategories] = useState<string[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -334,8 +347,79 @@ const Index = () => {
     return scoredArticles.map(s => s.article);
   }, [allArticles, user, userPreferences, recentCategories]);
 
+  // Filter sport articles from all articles
+  const sportArticles = useMemo(() => {
+    return allArticles.filter(article => {
+      const category = article.category?.toLowerCase() || "";
+      return category.includes("sport");
+    });
+  }, [allArticles]);
+
+  // Format local articles for display
+  const formattedLocalArticles = useMemo(() => {
+    return localNewsArticles.map(article => ({
+      ...formatLocalArticleForCard(article),
+      viewCount: 50,
+      pubDateMs: article.pubDateMs,
+    }));
+  }, [localNewsArticles]);
+
+  // Determine if we should use the interleaved feed (when "all" is selected and user is logged in)
+  // Falls back to national news (all articles) if no location is detected
+  const interleavedFeed = useMemo(() => {
+    // Only interleave when viewing "all" category
+    if (activeCategory !== "all") {
+      return null;
+    }
+
+    // Get local articles - fallback to national (wiadomosci) if no location
+    let localPool = formattedLocalArticles;
+    if (!hasLocation || localPool.length === 0) {
+      // Fallback: use national news (wiadomosci category) as "local"
+      localPool = allArticles.filter(article => {
+        const category = article.category?.toLowerCase() || "";
+        return category.includes("wiadomości") || category.includes("wiadomosci");
+      });
+    }
+
+    // Get sport articles
+    const sportPool = sportArticles;
+
+    if (localPool.length === 0 && sportPool.length === 0) {
+      return null;
+    }
+
+    // Interleave based on user's ratio preference
+    const totalNeeded = visibleGrids * ARTICLES_PER_GRID;
+    return interleaveArticlesByRatio(
+      localPool,
+      sportPool,
+      totalNeeded,
+      contentRatioPrefs.localRatio
+    );
+  }, [
+    activeCategory, 
+    formattedLocalArticles, 
+    sportArticles, 
+    allArticles, 
+    visibleGrids, 
+    contentRatioPrefs.localRatio,
+    hasLocation
+  ]);
+
   // Generate enough articles for infinite scroll by cycling
   const getArticlesForDisplay = useMemo(() => {
+    // Use interleaved feed if available (only for "all" category)
+    if (interleavedFeed && interleavedFeed.length > 0) {
+      const totalNeeded = visibleGrids * ARTICLES_PER_GRID;
+      const result = [];
+      for (let i = 0; i < totalNeeded; i++) {
+        result.push(interleavedFeed[i % interleavedFeed.length]);
+      }
+      return result;
+    }
+
+    // Otherwise use personalized or all articles
     const articlesToUse = user ? personalizedArticles : allArticles;
     if (articlesToUse.length === 0) return [];
     
@@ -345,7 +429,7 @@ const Index = () => {
       result.push(articlesToUse[i % articlesToUse.length]);
     }
     return result;
-  }, [allArticles, personalizedArticles, visibleGrids, user]);
+  }, [allArticles, personalizedArticles, interleavedFeed, visibleGrids, user]);
 
   // Split feed articles into grids of 12
   const articleGrids = [];
