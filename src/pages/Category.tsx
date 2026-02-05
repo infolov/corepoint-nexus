@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
-import { useParams, useSearchParams, Link } from "react-router-dom";
+import { useParams, useSearchParams, Link, Navigate } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { CategoryBar } from "@/components/navigation/CategoryBar";
@@ -13,6 +13,7 @@ import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import { useDisplayMode } from "@/hooks/use-display-mode";
 import { useCarouselBanners } from "@/hooks/use-carousel-banners";
 import { useFeedTileAds } from "@/hooks/use-feed-tile-ads";
+import { useCategoryStatus } from "@/hooks/use-category-status";
 import { Loader2 } from "lucide-react";
 import { useArticles, formatArticleForCard } from "@/hooks/use-articles";
 import { useRSSArticles, formatRSSArticleForCard } from "@/hooks/use-rss-articles";
@@ -38,6 +39,14 @@ export default function Category() {
   const subFromQuery = searchParams.get("sub");
   const subSubFromQuery = searchParams.get("subsub") || subsubcategory;
   
+  // Determine current category/subcategory/subsubcategory
+  const currentCategorySlug = category || "all";
+  const currentSubcategorySlug = subcategory || subFromQuery || null;
+  const currentSubSubcategorySlug = subSubFromQuery || null;
+
+  // Check if category is active in database
+  const { isActive: isCategoryActive, loading: categoryStatusLoading, checked: categoryStatusChecked } = useCategoryStatus(currentCategorySlug);
+
   const { settings: displaySettings } = useDisplayMode();
   const isCompact = displaySettings.mode === "compact" || displaySettings.dataSaver;
   
@@ -56,10 +65,7 @@ export default function Category() {
   const { getCarouselForPosition } = useCarouselBanners();
   const { getAdForPosition, trackImpression, trackClick } = useFeedTileAds();
 
-  // Determine current category/subcategory/subsubcategory
-  const currentCategorySlug = category || "all";
-  const currentSubcategorySlug = subcategory || subFromQuery || null;
-  const currentSubSubcategorySlug = subSubFromQuery || null;
+  // Flag to redirect to home if category is hidden (will be checked after all hooks)
   
   // Get category info for display
   const categoryInfo = getCategoryBySlug(currentCategorySlug);
@@ -749,6 +755,11 @@ export default function Category() {
     : subcategoryName 
       ? `${categoryName} › ${subcategoryName}`
       : categoryName;
+
+  // Redirect to home if category is hidden (after all hooks are called)
+  if (categoryStatusChecked && !isCategoryActive && currentCategorySlug !== "all") {
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <div className="min-h-screen bg-background w-full overflow-x-clip">
