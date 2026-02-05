@@ -114,7 +114,7 @@ export function UserPanel({ onSignOut, onSettingsClick, className }: UserPanelPr
         </div>
         <h3 className="font-semibold text-foreground text-senior mb-1">Witaj!</h3>
         <p className="text-sm text-muted-foreground">
-          Zaloguj się, aby personalizować treści i zarządzać reklamami
+          Zaloguj się, aby personalizować treści
         </p>
       </div>
 

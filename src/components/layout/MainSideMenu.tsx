@@ -5,6 +5,7 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { UserPanel } from "@/components/panels/UserPanel";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/use-auth";
 
 interface MainSideMenuProps {
   trigger: React.ReactNode;
@@ -58,6 +59,9 @@ export function MainSideMenu({
   onSignOut,
   onSettingsClick,
 }: MainSideMenuProps) {
+  const { user } = useAuth();
+  const isLoggedIn = !!user;
+
   // Location display logic: prioritize city > county > voivodeship
   const getLocationLabel = () => {
     if (userSettings.city) return userSettings.city;
@@ -76,8 +80,6 @@ export function MainSideMenu({
     }
     return parts.length > 0 ? parts.join(", ") : null;
   };
-
-  const hasLocation = userSettings.city || userSettings.county || userSettings.voivodeship;
 
   return (
     <Sheet>
@@ -99,59 +101,65 @@ export function MainSideMenu({
             <UserPanel onSignOut={onSignOut} onSettingsClick={onSettingsClick} />
           </div>
 
-          <Separator className="my-2" />
+          {isLoggedIn && (
+            <>
+              <Separator className="my-2" />
 
-          {/* Preferences Section */}
-          <div className="py-2">
-            <p className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Preferencje
-            </p>
-            
-            <div className="space-y-1">
-              {/* Location */}
-              <SettingsRow
-                icon={<MapPin className="h-5 w-5 text-blue-600 dark:text-blue-400" />}
-                iconBgClass="bg-blue-100 dark:bg-blue-900/30"
-                label={getLocationLabel()}
-                subtitle={getLocationSubtitle()}
-                onClick={onSettingsClick}
-              />
+              {/* Preferences Section */}
+              <div className="py-2">
+                <p className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Preferencje
+                </p>
+                
+                <div className="space-y-1">
+                  {/* Location */}
+                  <SettingsRow
+                    icon={<MapPin className="h-5 w-5 text-blue-600 dark:text-blue-400" />}
+                    iconBgClass="bg-blue-100 dark:bg-blue-900/30"
+                    label={getLocationLabel()}
+                    subtitle={getLocationSubtitle()}
+                    onClick={onSettingsClick}
+                  />
 
-              {/* Account Settings */}
-              <SettingsRow
-                icon={<Settings className="h-5 w-5 text-gray-600 dark:text-gray-400" />}
-                iconBgClass="bg-gray-100 dark:bg-gray-800"
-                label="Ustawienia konta"
-                onClick={onSettingsClick}
-              />
+                  {/* Account Settings */}
+                  <SettingsRow
+                    icon={<Settings className="h-5 w-5 text-gray-600 dark:text-gray-400" />}
+                    iconBgClass="bg-gray-100 dark:bg-gray-800"
+                    label="Ustawienia konta"
+                    onClick={onSettingsClick}
+                  />
 
-              {/* Theme Toggle */}
-              <SettingsRow
-                icon={
-                  isDark 
-                    ? <Moon className="h-5 w-5 text-indigo-600 dark:text-indigo-400" /> 
-                    : <Sun className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                }
-                iconBgClass={isDark ? "bg-indigo-100 dark:bg-indigo-900/30" : "bg-amber-100 dark:bg-amber-900/30"}
-                label={isDark ? "Tryb ciemny" : "Tryb jasny"}
-                subtitle="Zmień wygląd aplikacji"
-                onClick={toggleTheme}
-              />
-            </div>
-          </div>
+                  {/* Theme Toggle */}
+                  <SettingsRow
+                    icon={
+                      isDark 
+                        ? <Moon className="h-5 w-5 text-indigo-600 dark:text-indigo-400" /> 
+                        : <Sun className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                    }
+                    iconBgClass={isDark ? "bg-indigo-100 dark:bg-indigo-900/30" : "bg-amber-100 dark:bg-amber-900/30"}
+                    label={isDark ? "Tryb ciemny" : "Tryb jasny"}
+                    subtitle="Zmień wygląd aplikacji"
+                    onClick={toggleTheme}
+                  />
+                </div>
+              </div>
+            </>
+          )}
         </ScrollArea>
 
-        {/* Sticky Footer - Logout */}
-        <div className="p-4 border-t border-border bg-background">
-          <Button 
-            variant="outline" 
-            className="w-full h-12 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
-            onClick={onSignOut}
-          >
-            <LogOut className="h-5 w-5 mr-2" />
-            Wyloguj się
-          </Button>
-        </div>
+        {/* Sticky Footer - Logout (only for logged-in users) */}
+        {isLoggedIn && (
+          <div className="p-4 border-t border-border bg-background">
+            <Button 
+              variant="outline" 
+              className="w-full h-12 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+              onClick={onSignOut}
+            >
+              <LogOut className="h-5 w-5 mr-2" />
+              Wyloguj się
+            </Button>
+          </div>
+        )}
       </SheetContent>
     </Sheet>
   );
