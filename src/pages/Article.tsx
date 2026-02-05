@@ -269,36 +269,21 @@ const Article = () => {
             </div>
 
             {/* Source Link */}
-            <div className="p-5 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 rounded-xl">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
-                    <span className="text-sm font-bold text-primary-foreground">
-                      {source.substring(0, 2).toUpperCase()}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Źródło artykułu</p>
-                    <p className="font-semibold text-foreground">{source}</p>
-                  </div>
-                </div>
-                
+            <div className="pt-4 mt-4 border-t border-border/50">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <ExternalLink className="h-3.5 w-3.5 flex-shrink-0" />
+                <span>Źródło:</span>
                 {sourceUrl ? (
                   <a 
                     href={sourceUrl} 
                     target="_blank" 
                     rel="noopener noreferrer"
+                    className="text-foreground hover:text-primary hover:underline transition-colors"
                   >
-                    <Button size="default" className="gap-2">
-                      <ExternalLink className="h-4 w-4" />
-                      Czytaj oryginał
-                    </Button>
+                    {source}
                   </a>
                 ) : (
-                  <Button size="default" variant="secondary" disabled>
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Brak odnośnika
-                  </Button>
+                  <span className="text-foreground">{source}</span>
                 )}
               </div>
             </div>
