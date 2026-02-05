@@ -83,7 +83,7 @@ const Article = () => {
   // Find article: cache first, then RSS
   const rssArticle = rssArticles.find((a) => a.id === id);
   const article = cachedArticle || rssArticle;
-
+  
   // Track article view for logged-in users
   useEffect(() => {
     if (article && id) {
@@ -91,8 +91,11 @@ const Article = () => {
     }
   }, [id, article?.category]);
 
-  // Show loading only if no article found yet and RSS is still loading
-  if (!article && rssLoading) {
+  // Show loading while RSS is still loading and no article in cache
+  // Also show loading if RSS loaded but has 0 articles (still fetching from edge function)
+  const isStillLoading = rssLoading || (rssArticles.length === 0 && !cachedArticle);
+  
+  if (isStillLoading && !cachedArticle) {
     return (
       <div className="min-h-screen bg-background">
         <Header />

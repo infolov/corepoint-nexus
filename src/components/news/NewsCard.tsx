@@ -235,7 +235,7 @@ export function NewsCard({
   // MSN-style compact list item (for sidebar/data saver)
   if (variant === "compact") {
     return renderWithContextMenu(
-      <a href={articleUrl} target="_blank" rel="noopener noreferrer" className="block" onClick={handleArticleClick}>
+      <a href={articleUrl} className="block" onClick={handleArticleClick}>
         <article className={cn(
           "group flex gap-3 py-3 px-3 -mx-3",
           "border-b border-border/50 last:border-0",
@@ -275,7 +275,7 @@ export function NewsCard({
   // MSN-style horizontal card
   if (variant === "horizontal") {
     return renderWithContextMenu(
-      <a href={articleUrl} target="_blank" rel="noopener noreferrer" className="block" onClick={handleArticleClick}>
+      <a href={articleUrl} className="block" onClick={handleArticleClick}>
         <article className={cn(
           "group flex gap-4 p-2 -m-2 rounded-xl",
           "hover:bg-muted/50 transition-all duration-200",
@@ -314,7 +314,7 @@ export function NewsCard({
   // MSN-style hero card (large featured card)
   if (variant === "hero") {
     return renderWithContextMenu(
-      <a href={articleUrl} target="_blank" rel="noopener noreferrer" className="block h-full" onClick={handleArticleClick}>
+      <a href={articleUrl} className="block h-full" onClick={handleArticleClick}>
         <article className={cn(
           "group relative overflow-hidden",
           "rounded-2xl",
@@ -376,7 +376,7 @@ export function NewsCard({
   // MSN-style slot card (for slots 2-5 in sidebar)
   if (variant === "msn-slot") {
     return renderWithContextMenu(
-      <a href={articleUrl} target="_blank" rel="noopener noreferrer" className="block" onClick={handleArticleClick}>
+      <a href={articleUrl} className="block" onClick={handleArticleClick}>
         <article className={cn(
           "group rounded-xl overflow-hidden relative",
           "h-[95px] lg:h-[98px] bg-muted",
@@ -433,7 +433,7 @@ export function NewsCard({
 
   // MSN-style default card (grid item) - title below image on all devices
   return renderWithContextMenu(
-    <a href={articleUrl} target="_blank" rel="noopener noreferrer" className="block" onClick={handleArticleClick}>
+    <a href={articleUrl} className="block" onClick={handleArticleClick}>
       <article className={cn(
         "group rounded-xl overflow-hidden bg-card",
         "flex flex-col",
