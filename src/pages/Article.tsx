@@ -83,6 +83,34 @@ const Article = () => {
   // Find article: cache first, then RSS
   const rssArticle = rssArticles.find((a) => a.id === id);
   const article = cachedArticle || rssArticle;
+
+  // Get article content - try multiple fields for RSS articles
+  const content = article?.content || article?.fullContent || article?.description || article?.excerpt || article?.title || "";
+  const sourceUrl = article?.sourceUrl || article?.url || article?.link;
+  const source = article?.source || "Informacje.pl";
+
+  // Get related articles using intelligent matching (category + keywords + named entities)
+  // MUST be called before any early returns to follow Rules of Hooks
+  const relatedArticles = useRelatedArticles({
+    currentArticle: article ? {
+      id: article.id || id || '',
+      title: article.title,
+      category: article.category,
+      image: article.image,
+      excerpt: article.excerpt || (article as any).description,
+      content: content
+    } : null,
+    allArticles: rssArticles.map(a => ({
+      id: a.id,
+      title: a.title,
+      category: a.category,
+      image: a.image,
+      timestamp: (a as any).timestamp,
+      source: (a as any).source,
+      excerpt: (a as any).excerpt || (a as any).description
+    })),
+    limit: 4
+  });
   
   // Track article view for logged-in users
   useEffect(() => {
@@ -124,32 +152,6 @@ const Article = () => {
       </div>
     );
   }
-  // Get article content - try multiple fields for RSS articles
-  const content = article?.content || article?.fullContent || article?.description || article?.excerpt || article?.title || "";
-  const sourceUrl = article?.sourceUrl || article?.url || article?.link;
-  const source = article?.source || "Informacje.pl";
-
-  // Get related articles using intelligent matching (category + keywords + named entities)
-  const relatedArticles = useRelatedArticles({
-    currentArticle: article ? {
-      id: article.id || id || '',
-      title: article.title,
-      category: article.category,
-      image: article.image,
-      excerpt: article.excerpt || (article as any).description,
-      content: content
-    } : null,
-    allArticles: rssArticles.map(a => ({
-      id: a.id,
-      title: a.title,
-      category: a.category,
-      image: a.image,
-      timestamp: (a as any).timestamp,
-      source: (a as any).source,
-      excerpt: (a as any).excerpt || (a as any).description
-    })),
-    limit: 4
-  });
 
   return (
     <div className="min-h-screen bg-background">
