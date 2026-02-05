@@ -3,7 +3,8 @@ import { createPortal } from "react-dom";
 import { ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { CATEGORIES, Category, SubCategory } from "@/data/categories";
+import { useNavigationCategories } from "@/hooks/use-navigation-categories";
+import { Category, SubCategory } from "@/data/categories";
 import { useNavigate } from "react-router-dom";
 
 interface CategoryBarProps {
@@ -22,6 +23,7 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
   const isMobile = useIsMobile();
   const navigate = useNavigate();
+  const { categories: CATEGORIES } = useNavigationCategories();
 
   const checkScroll = () => {
     if (scrollRef.current) {
@@ -127,8 +129,7 @@ export function CategoryBar({ activeCategory = "all", onCategoryChange }: Catego
 
   const hasSubcategories = (category: Category) => 
     category.subcategories && category.subcategories.length > 0;
-
-  const currentHoveredCategory = CATEGORIES.find(c => c.slug === hoveredCategory);
+  const currentHoveredCategory = CATEGORIES.find((c: Category) => c.slug === hoveredCategory);
 
   const dropdownContent = !isMobile && currentHoveredCategory && hasSubcategories(currentHoveredCategory) && (
     <div 
