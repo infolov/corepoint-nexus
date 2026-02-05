@@ -28,10 +28,10 @@ export default function Login() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [newUserId, setNewUserId] = useState<string | null>(null);
 
-  // Redirect if already logged in
+  // Redirect if already logged in - will be handled by Dashboard's useEffect
   useEffect(() => {
     if (!authLoading && user) {
-      navigate("/");
+      navigate("/dashboard");
     }
   }, [user, authLoading, navigate]);
 
@@ -67,7 +67,7 @@ export default function Login() {
         }
 
         toast.success("Zalogowano pomyślnie!");
-        navigate("/");
+        navigate("/dashboard");
       } else {
         // Register regular user
         const redirectUrl = `${window.location.origin}/`;
@@ -128,10 +128,10 @@ export default function Login() {
       }
 
       toast.success("Świetnie! Twoje konto jest gotowe.");
-      navigate("/");
+      navigate("/dashboard");
     } catch (error) {
       console.error("Error saving interests:", error);
-      navigate("/");
+      navigate("/dashboard");
     } finally {
       setLoading(false);
     }
@@ -139,7 +139,7 @@ export default function Login() {
 
   const handleSkipInterests = () => {
     toast.success("Konto utworzone! Możesz zmienić zainteresowania później.");
-    navigate("/");
+    navigate("/dashboard");
   };
 
   const handleBackToForm = () => {
@@ -150,7 +150,7 @@ export default function Login() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/`,
+        redirectTo: `${window.location.origin}/dashboard`,
       },
     });
 

@@ -13,13 +13,14 @@ interface UserPanelProps {
 
 export function UserPanel({ onSignOut, onSettingsClick, className }: UserPanelProps) {
   const { user } = useAuth();
-  const { hasDashboardAccess, isAdmin, isAdvertiser, loading: roleLoading } = useUserRole();
+  const { isAdmin, isPartner, isPublisher, getDashboardPath, loading: roleLoading } = useUserRole();
 
   if (user) {
     // Determine role label
     const getRoleLabel = () => {
       if (isAdmin) return "Administrator";
-      if (isAdvertiser) return "Partner";
+      if (isPublisher) return "Wydawca";
+      if (isPartner) return "Partner";
       return "Użytkownik";
     };
 
@@ -41,16 +42,14 @@ export function UserPanel({ onSignOut, onSettingsClick, className }: UserPanelPr
           </div>
         </div>
 
-        {/* Quick actions - Show dashboard only for partners and admins */}
-        <div className={cn("grid gap-2", hasDashboardAccess ? "grid-cols-2" : "grid-cols-1")}>
-          {hasDashboardAccess && (
-            <Link to="/dashboard">
-              <Button variant="gradient" className="w-full h-12 text-senior text-white [&_svg]:text-white">
-                <LayoutDashboard className="h-5 w-5 mr-2" />
-                Panel
-              </Button>
-            </Link>
-          )}
+        {/* Quick actions - Dashboard link for all logged in users */}
+        <div className="grid grid-cols-2 gap-2">
+          <Link to={getDashboardPath()}>
+            <Button variant="gradient" className="w-full h-12 text-senior text-white [&_svg]:text-white">
+              <LayoutDashboard className="h-5 w-5 mr-2" />
+              Panel
+            </Button>
+          </Link>
           <Button variant="outline" className="w-full h-12 text-senior" onClick={onSignOut}>
             <LogOut className="h-5 w-5 mr-2" />
             Wyloguj

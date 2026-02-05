@@ -2,18 +2,20 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./use-auth";
 
-export type UserRole = "user" | "advertiser" | "publisher" | "admin";
+export type UserRole = "user" | "partner" | "publisher" | "admin";
 
 interface UserRoleState {
   roles: UserRole[];
   isAdmin: boolean;
-  isAdvertiser: boolean;
+  isPartner: boolean;
   isPublisher: boolean;
   isUser: boolean;
   hasAnyRole: boolean;
   hasDashboardAccess: boolean;
   loading: boolean;
   refetch: () => void;
+  getPrimaryRole: () => UserRole;
+  getDashboardPath: () => string;
 }
 
 export function useUserRole(): UserRoleState {
@@ -59,22 +61,47 @@ export function useUserRole(): UserRoleState {
   }, [user, authLoading, fetchUserRoles]);
 
   const isAdmin = roles.includes("admin");
-  const isAdvertiser = roles.includes("advertiser");
+  const isPartner = roles.includes("partner");
   const isPublisher = roles.includes("publisher");
   const isUser = roles.includes("user") || roles.length === 0; // Default to user if no roles
   
-  // Admin, advertiser (partner), and publisher have dashboard access
-  const hasDashboardAccess = isAdmin || isAdvertiser || isPublisher;
+  // All roles have dashboard access (each to their own dashboard)
+  const hasDashboardAccess = true;
+
+  // Get primary role for routing (priority: admin > publisher > partner > user)
+  const getPrimaryRole = (): UserRole => {
+    if (isAdmin) return "admin";
+    if (isPublisher) return "publisher";
+    if (isPartner) return "partner";
+    return "user";
+  };
+
+  // Get the appropriate dashboard path based on role
+  const getDashboardPath = (): string => {
+    const primaryRole = getPrimaryRole();
+    switch (primaryRole) {
+      case "admin":
+        return "/dashboard/admin";
+      case "publisher":
+        return "/dashboard/publisher";
+      case "partner":
+        return "/dashboard/partner";
+      default:
+        return "/dashboard/user";
+    }
+  };
 
   return {
     roles,
     isAdmin,
-    isAdvertiser,
+    isPartner,
     isPublisher,
-    isUser: isUser && !isAdmin && !isAdvertiser && !isPublisher, // Pure user without other roles
+    isUser: !isAdmin && !isPartner && !isPublisher, // Pure user without other roles
     hasAnyRole: roles.length > 0,
     hasDashboardAccess,
     loading: loading || authLoading,
     refetch: fetchUserRoles,
+    getPrimaryRole,
+    getDashboardPath,
   };
 }
