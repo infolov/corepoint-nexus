@@ -8,8 +8,9 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
-const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY")!;
+const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY") || "";
+const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY") || "";
+const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") || "";
 
 const POLISH_VOIVODESHIPS = [
   "dolnośląskie", "kujawsko-pomorskie", "lubelskie", "lubuskie",
@@ -55,14 +56,14 @@ async function getTopArticlesForCategory(
 ): Promise<(Article | ProcessedArticle)[]> {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const yesterday = new Date(today);
-  yesterday.setDate(yesterday.getDate() - 1);
+  const lookbackDate = new Date(today);
+  lookbackDate.setDate(lookbackDate.getDate() - 3);
 
   // First try processed_articles (RSS sourced)
   const { data: processedData } = await supabase
     .from("processed_articles")
     .select("id, title, ai_summary, category, source")
-    .gte("created_at", yesterday.toISOString())
+    .gte("created_at", lookbackDate.toISOString())
     .or(category.keywords.map(k => `category.ilike.%${k}%`).join(","))
     .order("created_at", { ascending: false })
     .limit(limit);
@@ -72,7 +73,7 @@ async function getTopArticlesForCategory(
     .from("articles")
     .select("id, title, excerpt, category, view_count, region, ai_summary")
     .eq("is_published", true)
-    .gte("created_at", yesterday.toISOString())
+    .gte("created_at", lookbackDate.toISOString())
     .or(category.keywords.map(k => `category.ilike.%${k}%`).join(","))
     .order("view_count", { ascending: false })
     .limit(limit);
@@ -97,12 +98,14 @@ async function getTopArticles(
 ): Promise<Article[]> {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+  const lookbackDate = new Date(today);
+  lookbackDate.setDate(lookbackDate.getDate() - 3);
 
   let query = supabase
     .from("articles")
     .select("id, title, excerpt, category, view_count, region, ai_summary")
     .eq("is_published", true)
-    .gte("created_at", today.toISOString())
+    .gte("created_at", lookbackDate.toISOString())
     .order("view_count", { ascending: false })
     .limit(limit);
 
@@ -128,14 +131,14 @@ async function getAllTopArticles(
 ): Promise<(Article | ProcessedArticle)[]> {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const yesterday = new Date(today);
-  yesterday.setDate(yesterday.getDate() - 1);
+  const lookbackDate = new Date(today);
+  lookbackDate.setDate(lookbackDate.getDate() - 3);
 
   // Get from processed_articles (RSS)
   const { data: processedData } = await supabase
     .from("processed_articles")
     .select("id, title, ai_summary, category, source")
-    .gte("created_at", yesterday.toISOString())
+    .gte("created_at", lookbackDate.toISOString())
     .order("created_at", { ascending: false })
     .limit(limit * 2);
 
@@ -144,7 +147,7 @@ async function getAllTopArticles(
     .from("articles")
     .select("id, title, excerpt, category, view_count, region, ai_summary")
     .eq("is_published", true)
-    .gte("created_at", yesterday.toISOString())
+    .gte("created_at", lookbackDate.toISOString())
     .order("view_count", { ascending: false })
     .limit(limit);
 
@@ -209,8 +212,38 @@ Wymagania:
 
 Podsumowanie:`;
 
+  const fallbackText = `Podsumowanie dnia ${today} dla ${contextText}:\n\n${articlesList}`;
+
+  // Try Gemini API directly first (own key, no credit limits)
+  if (GEMINI_API_KEY) {
+    try {
+      const geminiResponse = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { maxOutputTokens: 1000 },
+          }),
+        }
+      );
+
+      if (geminiResponse.ok) {
+        const geminiData = await geminiResponse.json();
+        const text = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) return text;
+      } else {
+        console.error("Gemini API error:", await geminiResponse.text());
+      }
+    } catch (err) {
+      console.error("Gemini API fetch error:", err);
+    }
+  }
+
+  // Fallback to Lovable AI gateway
   try {
-    const response = await fetch("https://api.lovable.dev/v1/chat/completions", {
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${LOVABLE_API_KEY}`,
@@ -224,15 +257,15 @@ Podsumowanie:`;
     });
 
     if (!response.ok) {
-      console.error("AI API error:", await response.text());
-      return `Podsumowanie dnia ${today} dla ${contextText}:\n\n${articlesList}`;
+      console.error("Lovable AI API error:", await response.text());
+      return fallbackText;
     }
 
     const data = await response.json();
-    return data.choices?.[0]?.message?.content || `Podsumowanie dnia ${today}:\n\n${articlesList}`;
+    return data.choices?.[0]?.message?.content || fallbackText;
   } catch (error) {
     console.error("Error generating summary:", error);
-    return `Podsumowanie dnia ${today} dla ${contextText}:\n\n${articlesList}`;
+    return fallbackText;
   }
 }
 
