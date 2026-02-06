@@ -285,7 +285,7 @@ export const CATEGORIES: Category[] = [
 export const DAILY_SUMMARY_SECTIONS = [
   { name: "Polska", slug: "polska", categories: ["wiadomosci"] },
   { name: "Świat", slug: "swiat", categories: ["swiat"] },
-  { name: "MIX", slug: "mix", categories: ["biznes", "tech-nauka", "sport"] },
+  { name: "Sport", slug: "sport", categories: ["sport"] },
 ] as const;
 
 // Typy alertów dla paska alertów

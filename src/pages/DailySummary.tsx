@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
-import { Newspaper, ChevronRight, Globe, MapPin, Zap, ArrowLeft, Volume2, Pause, Play, Loader2, FileText } from "lucide-react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { Newspaper, ChevronRight, Globe, MapPin, Trophy, ArrowLeft, Volume2, Pause, Play, Loader2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -12,7 +12,6 @@ import { DAILY_SUMMARY_SECTIONS } from "@/data/categories";
 import { DateNavigator } from "@/components/widgets/DateNavigator";
 import { useDailySummary, useAvailableSummaryDates } from "@/hooks/use-daily-summary";
 import { useRSSArticles } from "@/hooks/use-rss-articles";
-import { useRef } from "react";
 
 interface SummaryArticle {
   id: string;
@@ -24,7 +23,7 @@ interface SummaryArticle {
   source?: string;
 }
 
-type SummarySection = "polska" | "swiat" | "mix";
+type SummarySection = "polska" | "swiat" | "sport";
 
 export default function DailySummary() {
   const navigate = useNavigate();
@@ -33,7 +32,7 @@ export default function DailySummary() {
   const [articles, setArticles] = useState<Record<SummarySection, SummaryArticle[]>>({
     polska: [],
     swiat: [],
-    mix: [],
+    sport: [],
   });
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<SummarySection>("polska");
@@ -68,7 +67,7 @@ export default function DailySummary() {
       setLoading(true);
 
       try {
-        const [polskaData, swiatData, mixData] = await Promise.all([
+        const [polskaData, swiatData, sportData] = await Promise.all([
           supabase
             .from("articles")
             .select("id, title, category, excerpt, image")
@@ -93,7 +92,7 @@ export default function DailySummary() {
             .from("articles")
             .select("id, title, category, excerpt, image")
             .eq("is_published", true)
-            .in("category", ["Biznes", "biznes", "Technologia", "technologia", "Sport", "sport"])
+            .in("category", ["Sport", "sport"])
             .gte("created_at", `${selectedDate}T00:00:00`)
             .lte("created_at", `${selectedDate}T23:59:59`)
             .order("view_count", { ascending: false })
@@ -112,10 +111,9 @@ export default function DailySummary() {
           }));
         };
 
-        // If no DB articles, try to use RSS articles
         let formattedPolska = formatArticles(polskaData.data);
         let formattedSwiat = formatArticles(swiatData.data);
-        let formattedMix = formatArticles(mixData.data);
+        let formattedSport = formatArticles(sportData.data);
 
         // Supplement with RSS if empty (for today only)
         if (selectedDate === today && rssArticles.length > 0) {
@@ -133,11 +131,9 @@ export default function DailySummary() {
                 source: (a as any).source,
               }));
           }
-          if (formattedMix.length === 0) {
-            formattedMix = rssArticles
-              .filter(a => ["biznes", "technologia", "sport", "nauka", "tech"].some(cat => 
-                a.category?.toLowerCase().includes(cat)
-              ))
+          if (formattedSport.length === 0) {
+            formattedSport = rssArticles
+              .filter(a => a.category?.toLowerCase().includes("sport"))
               .slice(0, 10)
               .map(a => ({
                 id: a.id,
@@ -154,7 +150,7 @@ export default function DailySummary() {
         const result = {
           polska: formattedPolska,
           swiat: formattedSwiat,
-          mix: formattedMix,
+          sport: formattedSport,
         };
 
         // Cache the result
@@ -216,7 +212,6 @@ export default function DailySummary() {
   };
 
   const handleArticleClick = (article: SummaryArticle) => {
-    // Cache article data for instant load on article page
     localStorage.setItem(`article_${article.id}`, JSON.stringify({
       id: article.id,
       title: article.title,
@@ -234,12 +229,15 @@ export default function DailySummary() {
         return <MapPin className="h-5 w-5" />;
       case "swiat":
         return <Globe className="h-5 w-5" />;
-      case "mix":
-        return <Zap className="h-5 w-5" />;
+      case "sport":
+        return <Trophy className="h-5 w-5" />;
     }
   };
 
   const currentArticles = articles[activeSection];
+
+  // Update schedule info
+  const updateSchedule = "Aktualizacje: 7:30 · 12:30 · 18:30";
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -256,7 +254,7 @@ export default function DailySummary() {
         </Link>
 
         {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-3 mb-2">
           <div className="p-3 rounded-xl bg-primary/10">
             <Newspaper className="h-8 w-8 text-primary" />
           </div>
@@ -265,6 +263,7 @@ export default function DailySummary() {
             <p className="text-muted-foreground">Top 10 najważniejszych artykułów</p>
           </div>
         </div>
+        <p className="text-xs text-muted-foreground mb-6 ml-[60px]">{updateSchedule}</p>
 
         {/* Date Navigator */}
         <div className="mb-6 p-4 bg-card rounded-xl border border-border">
@@ -308,7 +307,7 @@ export default function DailySummary() {
 
         {/* Section tabs */}
         <div className="flex gap-2 mb-8 bg-muted rounded-xl p-1.5 max-w-md">
-          {(["polska", "swiat", "mix"] as SummarySection[]).map((section) => {
+          {(["polska", "swiat", "sport"] as SummarySection[]).map((section) => {
             const sectionConfig = DAILY_SUMMARY_SECTIONS.find(s => s.slug === section);
             return (
               <button
@@ -328,7 +327,7 @@ export default function DailySummary() {
           })}
         </div>
 
-        {/* Articles grid - FIXED: Now clickable with proper navigation */}
+        {/* Articles grid */}
         <div className="grid gap-4 md:gap-6">
           {loading || summaryLoading ? (
             Array.from({ length: 10 }).map((_, i) => (

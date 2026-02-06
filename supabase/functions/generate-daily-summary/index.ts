@@ -297,7 +297,7 @@ async function createDailySummary(
   const today = new Date().toISOString().split("T")[0];
   const { region = null, category = null } = options;
   
-  // Check if summary already exists
+  // Check if summary already exists (for upsert)
   let existingQuery = supabase
     .from("daily_summaries")
     .select("id")
@@ -315,12 +315,8 @@ async function createDailySummary(
     existingQuery = existingQuery.eq("category", category.slug);
   }
 
-  const { data: existing } = await existingQuery.single();
-
-  if (existing) {
-    console.log(`Summary already exists for ${category?.name || region || "national"} on ${today}`);
-    return;
-  }
+  const { data: existing } = await existingQuery.maybeSingle();
+  const existingId = existing?.id || null;
 
   let articles: (Article | ProcessedArticle)[];
   
@@ -346,7 +342,7 @@ async function createDailySummary(
   const audioFileName = `${today}-${fileNamePart}.mp3`;
   const audioUrl = await generateAudio(summaryText, supabase, audioFileName);
 
-  const insertData: Record<string, unknown> = {
+  const summaryData: Record<string, unknown> = {
     summary_date: today,
     region: region,
     category: category?.slug || null,
@@ -354,14 +350,30 @@ async function createDailySummary(
     audio_url: audioUrl,
     article_ids: articles.map(a => a.id),
     view_count_total: articles.reduce((sum, a) => sum + ('view_count' in a ? a.view_count : 0), 0),
+    updated_at: new Date().toISOString(),
   };
 
-  const { error } = await supabase.from("daily_summaries").insert(insertData);
+  if (existingId) {
+    // Update existing summary (for scheduled re-runs at 7:30, 12:30, 18:30)
+    const { error } = await supabase
+      .from("daily_summaries")
+      .update(summaryData)
+      .eq("id", existingId);
 
-  if (error) {
-    console.error(`Error saving summary for ${category?.name || region || "national"}:`, error);
+    if (error) {
+      console.error(`Error updating summary for ${category?.name || region || "national"}:`, error);
+    } else {
+      console.log(`Updated summary for ${category?.name || region || "national"} on ${today}`);
+    }
   } else {
-    console.log(`Created summary for ${category?.name || region || "national"} on ${today}`);
+    // Insert new summary
+    const { error } = await supabase.from("daily_summaries").insert(summaryData);
+
+    if (error) {
+      console.error(`Error saving summary for ${category?.name || region || "national"}:`, error);
+    } else {
+      console.log(`Created summary for ${category?.name || region || "national"} on ${today}`);
+    }
   }
 }
 
