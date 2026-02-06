@@ -1106,15 +1106,50 @@ export default function DashboardCampaignCreator() {
                 </Card>
               )}
 
-              {selectedPlacementData?.dimensions && (
-                <Card className="bg-muted/50">
-                  <CardContent className="p-4">
-                    <p className="text-sm">
-                      <strong>Zalecane wymiary:</strong> {selectedPlacementData.dimensions}
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
+              {/* Banner Specifications */}
+              <Card className="bg-muted/50 border-border">
+                <CardContent className="p-4 space-y-3">
+                  <p className="text-sm font-semibold flex items-center gap-2">
+                    <ImageIcon className="h-4 w-4 text-primary" />
+                    Specyfikacja kreacji reklamowej
+                  </p>
+                  
+                  {selectedPlacementData?.dimensions && (
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Zalecane wymiary:</span>{" "}
+                      <span className="font-medium">{selectedPlacementData.dimensions}</span>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                    <div className="space-y-1.5">
+                      <p className="text-muted-foreground font-medium">Wymiary banerów</p>
+                      <ul className="space-y-1 text-muted-foreground">
+                        <li>• Min: <span className="text-foreground font-medium">300 × 250 px</span></li>
+                        <li>• Max: <span className="text-foreground font-medium">1920 × 1080 px</span></li>
+                      </ul>
+                    </div>
+                    <div className="space-y-1.5">
+                      <p className="text-muted-foreground font-medium">Rozmiar pliku</p>
+                      <ul className="space-y-1 text-muted-foreground">
+                        <li>• Obrazy: max <span className="text-foreground font-medium">5 MB</span></li>
+                        <li>• Wideo/animacje: max <span className="text-foreground font-medium">15 MB</span></li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div className="text-sm">
+                    <p className="text-muted-foreground font-medium mb-1">Akceptowane formaty</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {["JPG", "PNG", "GIF", "WebP", "APNG", "MP4", "WebM"].map((fmt) => (
+                        <Badge key={fmt} variant="secondary" className="text-xs font-mono">
+                          {fmt}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
               <Card className="bg-blue-500/10 border-blue-500/20">
                 <CardContent className="p-4">
