@@ -1115,39 +1115,45 @@ export default function DashboardCampaignCreator() {
                   </p>
                   
                   {selectedPlacementData?.dimensions && (
-                    <div className="text-sm">
-                      <span className="text-muted-foreground">Zalecane wymiary:</span>{" "}
-                      <span className="font-medium">{selectedPlacementData.dimensions}</span>
+                    <div className="text-sm p-2.5 rounded-md bg-primary/5 border border-primary/10">
+                      <span className="text-muted-foreground">📐 Optymalny rozmiar dla tego slotu:</span>{" "}
+                      <span className="font-semibold text-primary">{selectedPlacementData.dimensions}</span>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Kreacja o tych wymiarach będzie wyświetlana najlepiej w wybranym miejscu reklamowym.
+                      </p>
                     </div>
                   )}
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
                     <div className="space-y-1.5">
-                      <p className="text-muted-foreground font-medium">Wymiary banerów</p>
+                      <p className="text-muted-foreground font-medium">Dopuszczalne wymiary</p>
                       <ul className="space-y-1 text-muted-foreground">
                         <li>• Min: <span className="text-foreground font-medium">300 × 250 px</span></li>
                         <li>• Max: <span className="text-foreground font-medium">1920 × 1080 px</span></li>
                       </ul>
                     </div>
                     <div className="space-y-1.5">
-                      <p className="text-muted-foreground font-medium">Rozmiar pliku</p>
+                      <p className="text-muted-foreground font-medium">Max rozmiar pliku</p>
                       <ul className="space-y-1 text-muted-foreground">
-                        <li>• Obrazy: max <span className="text-foreground font-medium">5 MB</span></li>
-                        <li>• Wideo/animacje: max <span className="text-foreground font-medium">15 MB</span></li>
+                        <li>• Obrazy: <span className="text-foreground font-medium">5 MB</span></li>
+                        <li>• Wideo/animacje: <span className="text-foreground font-medium">15 MB</span></li>
                       </ul>
+                    </div>
+                    <div className="space-y-1.5">
+                      <p className="text-muted-foreground font-medium">Akceptowane formaty</p>
+                      <div className="flex flex-wrap gap-1">
+                        {["JPG", "PNG", "GIF", "WebP", "APNG", "MP4", "WebM"].map((fmt) => (
+                          <Badge key={fmt} variant="secondary" className="text-[10px] font-mono px-1.5 py-0">
+                            {fmt}
+                          </Badge>
+                        ))}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="text-sm">
-                    <p className="text-muted-foreground font-medium mb-1">Akceptowane formaty</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {["JPG", "PNG", "GIF", "WebP", "APNG", "MP4", "WebM"].map((fmt) => (
-                        <Badge key={fmt} variant="secondary" className="text-xs font-mono">
-                          {fmt}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Kreacja zostanie automatycznie dopasowana do slotu. Dla najlepszego efektu użyj optymalnego rozmiaru.
+                  </p>
                 </CardContent>
               </Card>
 
