@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useAdmin } from "@/hooks/use-admin";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,8 +20,13 @@ import {
   BarChart3,
   MousePointerClick,
   MapPin,
+  Upload,
+  Globe,
+  Image as ImageIcon,
+  Loader2,
 } from "lucide-react";
 import { CampaignReachIndicator } from "@/components/admin/CampaignReachIndicator";
+import { AdminCampaignCreateDialog } from "@/components/admin/AdminCampaignCreateDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -67,6 +72,7 @@ interface Placement {
   id: string;
   name: string;
   slug: string;
+  dimensions: string | null;
   is_active: boolean;
 }
 
@@ -137,7 +143,14 @@ export default function DashboardAdminCampaigns() {
     end_date: "",
     total_credits: 0,
     placement_id: "",
+    status: "",
+    is_global: true,
+    region: "",
+    target_powiat: "",
   });
+  const [editFile, setEditFile] = useState<File | null>(null);
+  const [editFilePreview, setEditFilePreview] = useState<string | null>(null);
+  const editFileInputRef = useRef<HTMLInputElement>(null);
   
   // Delete state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -153,7 +166,7 @@ export default function DashboardAdminCampaigns() {
   const fetchPlacements = async () => {
     const { data, error } = await supabase
       .from("ad_placements")
-      .select("id, name, slug, is_active")
+      .select("id, name, slug, dimensions, is_active")
       .order("name");
 
     if (!error && data) {
@@ -310,36 +323,92 @@ export default function DashboardAdminCampaigns() {
       end_date: campaign.end_date,
       total_credits: campaign.total_credits,
       placement_id: campaign.placement_id,
+      status: campaign.status,
+      is_global: campaign.is_global,
+      region: campaign.region || "",
+      target_powiat: campaign.target_powiat || "",
     });
+    setEditFile(null);
+    setEditFilePreview(campaign.content_url || null);
     setEditDialogOpen(true);
   };
 
+  const handleEditFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const imageTypes = ["image/jpeg", "image/png", "image/gif", "image/webp", "image/apng"];
+    const videoTypes = ["video/mp4", "video/webm"];
+    if (![...imageTypes, ...videoTypes].includes(file.type)) {
+      toast.error("Nieobsługiwany format pliku.");
+      return;
+    }
+    const isVideo = videoTypes.includes(file.type);
+    const maxSize = isVideo ? 15 * 1024 * 1024 : 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error(`Plik jest za duży. Max: ${isVideo ? "15MB" : "5MB"}.`);
+      return;
+    }
+    setEditFile(file);
+    setEditFilePreview(URL.createObjectURL(file));
+  };
+
   const handleEdit = async () => {
-    if (!editCampaign) return;
+    if (!editCampaign || !user) return;
 
     setProcessing(true);
-    
-    const { error } = await supabase
-      .from("ad_campaigns")
-      .update({
-        name: editForm.name,
-        target_url: editForm.target_url || null,
-        content_text: editForm.content_text || null,
-        start_date: editForm.start_date,
-        end_date: editForm.end_date,
-        total_credits: editForm.total_credits,
-        placement_id: editForm.placement_id,
-      })
-      .eq("id", editCampaign.id);
+    try {
+      let contentUrl = editCampaign.content_url;
 
-    if (error) {
-      console.error("Error updating campaign:", error);
-      toast.error("Błąd podczas aktualizacji kampanii");
-    } else {
-      toast.success("Kampania została zaktualizowana");
-      setEditDialogOpen(false);
-      setEditCampaign(null);
-      fetchCampaigns();
+      // Upload new file if selected
+      if (editFile) {
+        const fileExt = editFile.name.split(".").pop();
+        const fileName = `admin/${user.id}/${Date.now()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from("ad-campaigns")
+          .upload(fileName, editFile);
+        if (uploadError) {
+          toast.error("Błąd podczas przesyłania pliku");
+          setProcessing(false);
+          return;
+        }
+        const { data: { publicUrl } } = supabase.storage
+          .from("ad-campaigns")
+          .getPublicUrl(fileName);
+        contentUrl = publicUrl;
+      }
+
+      const { error } = await supabase
+        .from("ad_campaigns")
+        .update({
+          name: editForm.name,
+          target_url: editForm.target_url || null,
+          content_text: editForm.content_text || null,
+          content_url: contentUrl,
+          start_date: editForm.start_date,
+          end_date: editForm.end_date,
+          total_credits: editForm.total_credits,
+          placement_id: editForm.placement_id,
+          status: editForm.status,
+          is_global: editForm.is_global,
+          region: editForm.is_global ? null : editForm.region || null,
+          target_powiat: editForm.is_global ? null : editForm.target_powiat || null,
+        })
+        .eq("id", editCampaign.id);
+
+      if (error) {
+        console.error("Error updating campaign:", error);
+        toast.error("Błąd podczas aktualizacji kampanii");
+      } else {
+        toast.success("Kampania została zaktualizowana");
+        setEditDialogOpen(false);
+        setEditCampaign(null);
+        setEditFile(null);
+        setEditFilePreview(null);
+        fetchCampaigns();
+      }
+    } catch (err) {
+      console.error("Error:", err);
+      toast.error("Wystąpił błąd");
     }
     
     setProcessing(false);
@@ -499,24 +568,27 @@ export default function DashboardAdminCampaigns() {
       </div>
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-4">
           <CardTitle>
             {selectedPlacementFilter === "all" 
               ? "Wszystkie kampanie reklamowe" 
               : `Kampanie: ${placements.find(p => p.id === selectedPlacementFilter)?.name || ""}`
             }
           </CardTitle>
-          {selectedPlacementFilter !== "all" && (
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => setSelectedPlacementFilter("all")}
-              className="gap-2"
-            >
-              <X className="h-4 w-4" />
-              Wyczyść filtr
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            <AdminCampaignCreateDialog placements={placements} onCreated={fetchCampaigns} />
+            {selectedPlacementFilter !== "all" && (
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => setSelectedPlacementFilter("all")}
+                className="gap-2"
+              >
+                <X className="h-4 w-4" />
+                Wyczyść filtr
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -865,7 +937,7 @@ export default function DashboardAdminCampaigns() {
 
       {/* Edit Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edytuj kampanię</DialogTitle>
             <DialogDescription>
@@ -873,23 +945,63 @@ export default function DashboardAdminCampaigns() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-name">Nazwa kampanii</Label>
-              <Input
-                id="edit-name"
-                value={editForm.name}
-                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-              />
+            {/* Name & Status */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-name">Nazwa kampanii</Label>
+                <Input
+                  id="edit-name"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <Select value={editForm.status} onValueChange={(v) => setEditForm({ ...editForm, status: v })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Aktywna</SelectItem>
+                    <SelectItem value="pending">Oczekująca</SelectItem>
+                    <SelectItem value="rejected">Odrzucona</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-target-url">Link docelowy</Label>
-              <Input
-                id="edit-target-url"
-                value={editForm.target_url}
-                onChange={(e) => setEditForm({ ...editForm, target_url: e.target.value })}
-                placeholder="https://..."
-              />
+
+            {/* Link & Placement */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-target-url">Link docelowy</Label>
+                <Input
+                  id="edit-target-url"
+                  value={editForm.target_url}
+                  onChange={(e) => setEditForm({ ...editForm, target_url: e.target.value })}
+                  placeholder="https://..."
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Miejsce reklamowe</Label>
+                <Select 
+                  value={editForm.placement_id} 
+                  onValueChange={(value) => setEditForm({ ...editForm, placement_id: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Wybierz placement" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {placements.map(placement => (
+                      <SelectItem key={placement.id} value={placement.id}>
+                        {placement.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
+
+            {/* Content text */}
             {editCampaign?.ad_type === "text" && (
               <div className="space-y-2">
                 <Label htmlFor="edit-content-text">Treść tekstowa</Label>
@@ -901,6 +1013,67 @@ export default function DashboardAdminCampaigns() {
                 />
               </div>
             )}
+
+            {/* Image preview & upload */}
+            {editCampaign?.ad_type !== "text" && (
+              <div className="space-y-2">
+                <Label>Kreacja reklamowa</Label>
+                <div className="border-2 border-dashed border-border rounded-lg p-4">
+                  {editFilePreview ? (
+                    <div className="relative">
+                      <img
+                        src={editFilePreview}
+                        alt="Podgląd kreacji"
+                        className="max-h-48 mx-auto object-contain rounded"
+                      />
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-1 right-1 h-7 w-7"
+                        onClick={() => {
+                          if (editFilePreview?.startsWith("blob:")) URL.revokeObjectURL(editFilePreview);
+                          setEditFile(null);
+                          setEditFilePreview(null);
+                          if (editFileInputRef.current) editFileInputRef.current.value = "";
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div
+                      className="flex flex-col items-center gap-2 cursor-pointer py-4"
+                      onClick={() => editFileInputRef.current?.click()}
+                    >
+                      <Upload className="h-8 w-8 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">Kliknij, aby zmienić kreację</p>
+                    </div>
+                  )}
+                  <input
+                    ref={editFileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/gif,image/webp,image/apng,video/mp4,video/webm"
+                    onChange={handleEditFileSelect}
+                    className="hidden"
+                  />
+                  {editFilePreview && (
+                    <div className="flex justify-center mt-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => editFileInputRef.current?.click()}
+                        className="gap-2"
+                      >
+                        <Upload className="h-3 w-3" />
+                        Zmień kreację
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Dates */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="edit-start-date">Data rozpoczęcia</Label>
@@ -921,24 +1094,48 @@ export default function DashboardAdminCampaigns() {
                 />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-placement">Miejsce reklamowe</Label>
-              <Select 
-                value={editForm.placement_id} 
-                onValueChange={(value) => setEditForm({ ...editForm, placement_id: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Wybierz placement" />
-                </SelectTrigger>
-                <SelectContent>
-                  {placements.map(placement => (
-                    <SelectItem key={placement.id} value={placement.id}>
-                      {placement.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+
+            {/* Targeting */}
+            <div className="space-y-3 p-3 rounded-lg border border-border bg-muted/30">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {editForm.is_global ? (
+                    <Globe className="h-4 w-4 text-primary" />
+                  ) : (
+                    <MapPin className="h-4 w-4 text-blue-500" />
+                  )}
+                  <Label className="text-sm">Zasięg: {editForm.is_global ? "Ogólnopolski" : "Regionalny"}</Label>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={editForm.is_global}
+                  onChange={(e) => setEditForm({ ...editForm, is_global: e.target.checked })}
+                  className="h-4 w-4"
+                />
+              </div>
+              {!editForm.is_global && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Województwo</Label>
+                    <Input
+                      value={editForm.region}
+                      onChange={(e) => setEditForm({ ...editForm, region: e.target.value })}
+                      placeholder="Np. mazowieckie"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Powiat</Label>
+                    <Input
+                      value={editForm.target_powiat}
+                      onChange={(e) => setEditForm({ ...editForm, target_powiat: e.target.value })}
+                      placeholder="Np. krakowski"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
+
+            {/* Credits */}
             <div className="space-y-2">
               <Label htmlFor="edit-credits">Kredyty</Label>
               <Input
@@ -955,8 +1152,12 @@ export default function DashboardAdminCampaigns() {
               Anuluj
             </Button>
             <Button onClick={handleEdit} disabled={processing || !editForm.name.trim()}>
-              <Save className="h-4 w-4 mr-2" />
-              Zapisz zmiany
+              {processing ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4 mr-2" />
+              )}
+              {processing ? "Zapisywanie..." : "Zapisz zmiany"}
             </Button>
           </DialogFooter>
         </DialogContent>
