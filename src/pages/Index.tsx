@@ -6,7 +6,7 @@ import { NewsCard } from "@/components/news/NewsCard";
 import { AuctionAdSlot } from "@/components/widgets/AuctionAdSlot";
 import { FeedBannerCarousel, formatBannersForCarousel } from "@/components/widgets/FeedBannerCarousel";
 import { FeedTileAdCard } from "@/components/widgets/FeedTileAdCard";
-import { DailySummaryCard } from "@/components/news/DailySummaryCard";
+
 import { DailySummaryFloatingButton } from "@/components/widgets/DailySummaryFloatingButton";
 import { AlertTicker } from "@/components/widgets/AlertTicker";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
@@ -448,11 +448,6 @@ const Index = () => {
 
 
       <main className="w-full px-2 sm:px-4 md:container py-3 sm:py-4 md:py-6">
-        {/* Daily Summary Card */}
-        <div className="mb-6">
-          <DailySummaryCard />
-        </div>
-
         {/* Top Ad Banner - Using Auction Engine */}
         <div className="mb-4">
           <AuctionAdSlot variant="horizontal" placementSlug="top-banner" className="w-full" slotIndex={0} />
