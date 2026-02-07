@@ -1,7 +1,8 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { useParams, useSearchParams, Link, Navigate } from "react-router-dom";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
+// Header i Footer renderowane globalnie przez MainLayout
+// import { Header } from "@/components/layout/Header";
+// import { Footer } from "@/components/layout/Footer";
 import { CategoryBar } from "@/components/navigation/CategoryBar";
 import { NewsCard } from "@/components/news/NewsCard";
 import { CategoryDailySummary } from "@/components/news/CategoryDailySummary";
@@ -762,8 +763,7 @@ export default function Category() {
   }
 
   return (
-    <div className="min-h-screen bg-background w-full overflow-x-clip">
-      <Header />
+    <div className="w-full">
       
       {/* Floating Category Bar */}
       <CategoryBar activeCategory={activeCategory} />
@@ -920,8 +920,6 @@ export default function Category() {
           </div>
         )}
       </main>
-
-      <Footer />
     </div>
   );
 }

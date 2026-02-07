@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
+// Header i Footer renderowane globalnie przez MainLayout
+// import { Header } from "@/components/layout/Header";
+// import { Footer } from "@/components/layout/Footer";
 import { InterestsSelector } from "@/components/auth/InterestsSelector";
 import { ArrowLeft, Loader2, Heart } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
@@ -91,8 +92,7 @@ export default function Interests() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
+    <div>
 
       <main className="container py-8">
         <div className="max-w-lg mx-auto">
@@ -125,8 +125,6 @@ export default function Interests() {
           </div>
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }

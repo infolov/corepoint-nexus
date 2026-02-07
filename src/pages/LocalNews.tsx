@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
+// Header i Footer renderowane globalnie przez MainLayout
+// import { Header } from "@/components/layout/Header";
+// import { Footer } from "@/components/layout/Footer";
 import { CategoryBar } from "@/components/navigation/CategoryBar";
 import { NewsCard } from "@/components/news/NewsCard";
 import { useLocalNews, formatLocalArticleForCard } from "@/hooks/use-local-news";
@@ -101,8 +102,7 @@ export default function LocalNews() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
+    <div>
       <CategoryBar activeCategory={activeCategory} onCategoryChange={handleCategoryChange} />
       
       <main className="container py-6">
@@ -311,8 +311,6 @@ export default function LocalNews() {
           <AuctionAdSlot variant="horizontal" placementSlug="footer" className="w-full" slotIndex={3} />
         </div>
       </main>
-      
-      <Footer />
     </div>
   );
 }

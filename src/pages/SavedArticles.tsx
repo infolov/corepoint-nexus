@@ -1,7 +1,8 @@
 import { useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
+// Header i Footer renderowane globalnie przez MainLayout
+// import { Header } from "@/components/layout/Header";
+// import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Bookmark, BookmarkX, Loader2, ExternalLink } from "lucide-react";
@@ -30,8 +31,7 @@ export default function SavedArticles() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
+    <div>
 
       <main className="container py-8">
         <div className="max-w-4xl mx-auto">
@@ -136,8 +136,6 @@ export default function SavedArticles() {
           )}
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }

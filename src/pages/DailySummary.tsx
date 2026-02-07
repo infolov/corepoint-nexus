@@ -4,8 +4,9 @@ import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
+// Header i Footer renderowane globalnie przez MainLayout
+// import { Header } from "@/components/layout/Header";
+// import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DAILY_SUMMARY_SECTIONS } from "@/data/categories";
@@ -240,8 +241,7 @@ export default function DailySummary() {
   const updateSchedule = "Aktualizacje: 7:30 · 12:30 · 18:30";
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Header />
+    <div className="flex flex-col">
       
       <main className="flex-1 w-full px-4 md:container py-6 md:py-10">
         {/* Back link */}
@@ -407,8 +407,6 @@ export default function DailySummary() {
           )}
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }

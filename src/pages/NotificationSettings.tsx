@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
+// Header i Footer renderowane globalnie przez MainLayout
+// import { Header } from "@/components/layout/Header";
+// import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -141,8 +142,7 @@ export default function NotificationSettings() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
+    <div>
 
       <main className="container py-8">
         <div className="max-w-2xl mx-auto">
@@ -281,8 +281,6 @@ export default function NotificationSettings() {
           </div>
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }

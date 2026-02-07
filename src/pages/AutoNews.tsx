@@ -8,8 +8,9 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { RefreshCw, Clock, ExternalLink, Newspaper, Loader2, CheckCircle, XCircle, AlertCircle, ChevronDown, AlertTriangle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
+// Header i Footer renderowane globalnie przez MainLayout
+// import { Header } from '@/components/layout/Header';
+// import { Footer } from '@/components/layout/Footer';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { VerificationStatus, VerificationLog } from '@/hooks/use-processed-articles';
@@ -206,8 +207,7 @@ export default function AutoNews() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Header />
+    <div className="flex flex-col">
       
       <main className="flex-1 container mx-auto px-4 py-8">
         {/* Header Section */}
@@ -368,8 +368,6 @@ export default function AutoNews() {
           </div>
         )}
       </main>
-      
-      <Footer />
     </div>
   );
 }

@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock, User, Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
+// Header i Footer renderowane globalnie przez MainLayout
+// import { Header } from "@/components/layout/Header";
+// import { Footer } from "@/components/layout/Footer";
 import { InterestsSelector } from "@/components/auth/InterestsSelector";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -168,8 +169,7 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <Header />
+    <div className="flex flex-col">
 
       <main className="flex-1 flex items-center justify-center py-12 px-4">
         <div className="w-full max-w-md">
@@ -402,7 +402,6 @@ export default function Login() {
         </div>
       </main>
 
-      <Footer />
     </div>
   );
 }
