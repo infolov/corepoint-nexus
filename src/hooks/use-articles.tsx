@@ -99,6 +99,11 @@ export function useArticles(options: UseArticlesOptions = {}) {
 
 // Helper to format article for NewsCard component
 export function formatArticleForCard(article: Article) {
+  // Auto-expire badges: suppress "new"/"hot"/"trending" on articles older than 3 days
+  const articleAge = Date.now() - new Date(article.created_at).getTime();
+  const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
+  const badge = articleAge > THREE_DAYS_MS ? undefined : (article.badge as "hot" | "trending" | "new" | undefined);
+
   return {
     id: article.id,
     title: article.title,
@@ -107,7 +112,7 @@ export function formatArticleForCard(article: Article) {
     category: article.category,
     image: article.image,
     timestamp: formatTimestamp(article.created_at),
-    badge: article.badge as "hot" | "trending" | "new" | undefined,
+    badge,
     source: "INFORMACJE.PL",
   };
 }

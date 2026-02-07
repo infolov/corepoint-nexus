@@ -72,16 +72,16 @@ export function DailySummaryFloatingButton() {
         };
 
         setArticles({
-          polska: formatArticles(polskaData.data) || getMockArticles("polska"),
-          swiat: formatArticles(swiatData.data) || getMockArticles("swiat"),
-          mix: formatArticles(mixData.data) || getMockArticles("mix"),
+          polska: formatArticles(polskaData.data) || [],
+          swiat: formatArticles(swiatData.data) || [],
+          mix: formatArticles(mixData.data) || [],
         });
       } catch (error) {
         console.error("Error fetching summary:", error);
         setArticles({
-          polska: getMockArticles("polska"),
-          swiat: getMockArticles("swiat"),
-          mix: getMockArticles("mix"),
+          polska: [],
+          swiat: [],
+          mix: [],
         });
       } finally {
         setLoading(false);
@@ -91,32 +91,7 @@ export function DailySummaryFloatingButton() {
     fetchTopArticles();
   }, []);
 
-  const getMockArticles = (section: SummarySection): SummaryArticle[] => {
-    const mocks: Record<SummarySection, SummaryArticle[]> = {
-      polska: [
-        { id: "1", title: "Rząd przedstawił nowy budżet na 2025 rok", category: "Wiadomości" },
-        { id: "2", title: "Zmiany w systemie podatkowym od stycznia", category: "Wiadomości" },
-        { id: "3", title: "Nowe przepisy drogowe wchodzą w życie", category: "Wiadomości" },
-        { id: "4", title: "Rekordowa inflacja w grudniu", category: "Wiadomości" },
-        { id: "5", title: "Wybory samorządowe - najnowsze sondaże", category: "Wiadomości" },
-      ],
-      swiat: [
-        { id: "6", title: "Szczyt NATO w Waszyngtonie", category: "Świat" },
-        { id: "7", title: "Wybory prezydenckie w USA - wyniki", category: "Świat" },
-        { id: "8", title: "Konflikt na Bliskim Wschodzie eskaluje", category: "Świat" },
-        { id: "9", title: "UE wprowadza nowe sankcje", category: "Świat" },
-        { id: "10", title: "Chiny: rekordowy wzrost gospodarczy", category: "Świat" },
-      ],
-      mix: [
-        { id: "11", title: "GPW: rekordowe wzrosty indeksów", category: "Biznes" },
-        { id: "12", title: "OpenAI prezentuje nowy model GPT-5", category: "Technologia" },
-        { id: "13", title: "Polska wygrała mecz z Niemcami", category: "Sport" },
-        { id: "14", title: "Ceny mieszkań spadły o 10%", category: "Biznes" },
-        { id: "15", title: "Apple pokazuje nowego iPhone'a", category: "Technologia" },
-      ],
-    };
-    return mocks[section];
-  };
+  // No mock fallback - show empty state when no data available
 
   const getSectionIcon = (section: SummarySection) => {
     switch (section) {
