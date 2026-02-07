@@ -4,7 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
 // Cache configuration - TTL per category
@@ -110,6 +110,19 @@ async function updateCache(
   }
 }
 
+// Timeout wrapper for sub-function calls
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, fallback: T): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((resolve) => {
+      setTimeout(() => {
+        console.log(`Sub-function call timed out after ${timeoutMs}ms, using fallback`);
+        resolve(fallback);
+      }, timeoutMs);
+    }),
+  ]);
+}
+
 // Fetch from RSS edge function
 async function fetchFromRSS(): Promise<Article[]> {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -173,7 +186,7 @@ async function fetchFromScraper(): Promise<Article[]> {
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders });
   }
 
   const startTime = Date.now();
@@ -193,25 +206,34 @@ serve(async (req) => {
     let scraperArticles: Article[] = [];
     let fromCache = { rss: false, scraper: false };
 
-  // Handle RSS articles
+    // Handle RSS articles
     if (rssCache && rssCache.isFresh) {
       console.log('Using fresh RSS cache');
       rssArticles = rssCache.articles;
       fromCache.rss = true;
-    } else {
-      // Fetch fresh data from RSS
-      rssArticles = await fetchFromRSS();
+    } else if (rssCache) {
+      // Have stale cache - return it immediately and try refresh with timeout
+      console.log('Using stale RSS cache, attempting background refresh...');
+      rssArticles = rssCache.articles;
+      fromCache.rss = true;
       
-      // Update cache (don't await to speed up response)
+      // Try to refresh with 8s timeout, update cache in background
+      withTimeout(fetchFromRSS(), 8000, [] as Article[]).then(freshArticles => {
+        if (freshArticles.length > 0) {
+          updateCache(supabase, 'rss-aggregated', freshArticles, null).catch(err => 
+            console.error('Background cache update failed for RSS:', err)
+          );
+        }
+      }).catch(err => console.error('Background RSS refresh failed:', err));
+    } else {
+      // No cache at all - must wait for fetch (with timeout)
+      console.log('No RSS cache, fetching with timeout...');
+      rssArticles = await withTimeout(fetchFromRSS(), 10000, [] as Article[]);
+      
       if (rssArticles.length > 0) {
         updateCache(supabase, 'rss-aggregated', rssArticles, null).catch(err => 
           console.error('Background cache update failed for RSS:', err)
         );
-      } else if (rssCache) {
-        // Use stale cache as fallback
-        console.log('Using stale RSS cache as fallback');
-        rssArticles = rssCache.articles;
-        fromCache.rss = true;
       }
     }
 
@@ -220,20 +242,28 @@ serve(async (req) => {
       console.log('Using fresh scraper cache');
       scraperArticles = scraperCache.articles;
       fromCache.scraper = true;
-    } else {
-      // Fetch fresh data from scraper
-      scraperArticles = await fetchFromScraper();
+    } else if (scraperCache) {
+      // Have stale cache - return it immediately
+      console.log('Using stale scraper cache, attempting background refresh...');
+      scraperArticles = scraperCache.articles;
+      fromCache.scraper = true;
       
-      // Update cache (don't await to speed up response)
+      withTimeout(fetchFromScraper(), 8000, [] as Article[]).then(freshArticles => {
+        if (freshArticles.length > 0) {
+          updateCache(supabase, 'scraper-aggregated', freshArticles, null).catch(err => 
+            console.error('Background cache update failed for scraper:', err)
+          );
+        }
+      }).catch(err => console.error('Background scraper refresh failed:', err));
+    } else {
+      // No cache at all - must wait
+      console.log('No scraper cache, fetching with timeout...');
+      scraperArticles = await withTimeout(fetchFromScraper(), 10000, [] as Article[]);
+      
       if (scraperArticles.length > 0) {
         updateCache(supabase, 'scraper-aggregated', scraperArticles, null).catch(err => 
           console.error('Background cache update failed for scraper:', err)
         );
-      } else if (scraperCache) {
-        // Use stale scraper cache as fallback
-        console.log('Using stale scraper cache as fallback');
-        scraperArticles = scraperCache.articles;
-        fromCache.scraper = true;
       }
     }
 
