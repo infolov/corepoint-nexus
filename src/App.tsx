@@ -95,7 +95,7 @@ const App = () => (
                   <Route path="user/partner-application" element={<DashboardPartnerApplication />} />
                   
                   {/* Partner dashboard routes */}
-                  <Route path="partner" element={<DashboardPartner />} />
+                  <Route path="partner" element={<DashboardPublisher />} />
                   <Route path="partner/stats" element={<DashboardStats />} />
                   <Route path="partner/campaigns" element={<DashboardCampaigns />} />
                   <Route path="partner/campaigns/new" element={<DashboardCampaignCreator />} />
@@ -115,7 +115,7 @@ const App = () => (
                   
                   {/* Admin dashboard routes */}
                   <Route path="admin" element={<DashboardAdminHome />} />
-                  <Route path="admin/campaigns" element={<DashboardAdminCampaigns />} />
+                  <Route path="admin/campaigns" element={<DashboardCampaigns />} />
                   <Route path="admin/users" element={<DashboardAdminUsers />} />
                   <Route path="admin/placements" element={<DashboardAdminPlacements />} />
                   <Route path="admin/stats" element={<DashboardAdminStats />} />

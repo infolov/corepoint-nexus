@@ -1,14 +1,10 @@
+// ZASTĄPIONE PRZEZ DashboardPublisher.tsx
+// Cała logika biznesowa została zakomentowana - komponent zwraca null
+// aby wyeliminować duplikację kodu i konflikty routingu.
+
+/*
 import { Link } from "react-router-dom";
-import { 
-  BarChart3, 
-  Megaphone, 
-  Calendar, 
-  CreditCard,
-  Target,
-  Eye,
-  Plus,
-  ChevronRight
-} from "lucide-react";
+import { BarChart3, Megaphone, Calendar, CreditCard, Target, Eye, Plus, ChevronRight } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
@@ -67,7 +63,7 @@ export default function DashboardPartner() {
 
   return (
     <div className="space-y-6">
-      {/* Welcome section */}
+      {/* Welcome section *}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">
@@ -85,7 +81,7 @@ export default function DashboardPartner() {
         </Link>
       </div>
 
-      {/* Quick actions */}
+      {/* Quick actions *}
       <div>
         <h2 className="text-lg font-semibold mb-4">Szybkie akcje</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -108,7 +104,7 @@ export default function DashboardPartner() {
         </div>
       </div>
 
-      {/* Resources */}
+      {/* Resources *}
       <div>
         <h2 className="text-lg font-semibold mb-4">Zasoby</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -135,4 +131,9 @@ export default function DashboardPartner() {
       </div>
     </div>
   );
+}
+*/
+
+export default function DashboardPartner() {
+  return null;
 }

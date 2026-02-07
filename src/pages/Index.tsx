@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
+// ZAKOMENTOWANE: Header i Footer są renderowane globalnie - duplikacja powodowała mruganie
+// import { Header } from "@/components/layout/Header";
+// import { Footer } from "@/components/layout/Footer";
 import { CategoryBar } from "@/components/navigation/CategoryBar";
 import { NewsCard } from "@/components/news/NewsCard";
 import { AuctionAdSlot } from "@/components/widgets/AuctionAdSlot";
@@ -14,12 +15,14 @@ import { useDisplayMode } from "@/hooks/use-display-mode";
 import { useAuth } from "@/hooks/use-auth";
 import { useCarouselBanners } from "@/hooks/use-carousel-banners";
 import { useFeedTileAds } from "@/hooks/use-feed-tile-ads";
-import { useLocalNews, formatLocalArticleForCard } from "@/hooks/use-local-news";
+// ZAKOMENTOWANE: useLocalNews powodowało race condition z useArticles - nadpisywanie stanu
+// import { useLocalNews, formatLocalArticleForCard } from "@/hooks/use-local-news";
 import { useContentRatio, interleaveArticlesByRatio } from "@/hooks/use-content-ratio";
 import { useUserSettings } from "@/hooks/use-user-settings";
 import { Loader2 } from "lucide-react";
 import { useArticles, formatArticleForCard } from "@/hooks/use-articles";
-import { useRSSArticles, formatRSSArticleForCard } from "@/hooks/use-rss-articles";
+// ZAKOMENTOWANE: useRSSArticles powodowało race condition z useArticles - nadpisywanie stanu
+// import { useRSSArticles, formatRSSArticleForCard } from "@/hooks/use-rss-articles";
 
 import { supabase } from "@/integrations/supabase/client";
 
@@ -57,12 +60,13 @@ const Index = () => {
   } = useArticles({
     limit: 100
   });
-  const {
-    articles: rssArticles,
-    loading: rssLoading,
-    refetch: refetchRSS,
-    lastUpdated: rssLastUpdated
-  } = useRSSArticles();
+  // ZAKOMENTOWANE: useRSSArticles powodowało race condition - trzy źródła danych jednocześnie
+  // const {
+  //   articles: rssArticles,
+  //   loading: rssLoading,
+  //   refetch: refetchRSS,
+  //   lastUpdated: rssLastUpdated
+  // } = useRSSArticles();
   const { user } = useAuth();
   const { getCarouselForPosition } = useCarouselBanners();
   const { getAdForPosition, trackImpression, trackClick } = useFeedTileAds();
@@ -71,22 +75,22 @@ const Index = () => {
   const { preferences: contentRatioPrefs } = useContentRatio();
   const { settings: userSettings } = useUserSettings();
   
-  // Local news for personalized feed
-  const { 
-    articles: localNewsArticles, 
-    loading: localNewsLoading,
-    hasLocation 
-  } = useLocalNews({ limit: 100 });
+  // ZAKOMENTOWANE: useLocalNews powodowało race condition - trzy źródła danych jednocześnie
+  // const { 
+  //   articles: localNewsArticles, 
+  //   loading: localNewsLoading,
+  //   hasLocation 
+  // } = useLocalNews({ limit: 100 });
   
   const [userPreferences, setUserPreferences] = useState<string[]>([]);
   const [recentCategories, setRecentCategories] = useState<string[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Auto-refresh every 5 minutes
+  // Auto-refresh every 5 minutes - only useArticles (DB) active
   useEffect(() => {
     refreshIntervalRef.current = setInterval(() => {
-      refetchRSS();
+      // refetchRSS(); // ZAKOMENTOWANE: RSS wyłączony
       refetchDB();
     }, 5 * 60 * 1000);
 
@@ -95,17 +99,17 @@ const Index = () => {
         clearInterval(refreshIntervalRef.current);
       }
     };
-  }, [refetchRSS, refetchDB]);
+  }, [refetchDB]);
 
-  // Manual refresh handler
+  // Manual refresh handler - only DB active
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     try {
-      await Promise.all([refetchRSS(), refetchDB()]);
+      await Promise.all([refetchDB()]);
     } finally {
       setIsRefreshing(false);
     }
-  }, [refetchRSS, refetchDB]);
+  }, [refetchDB]);
 
   // Load user preferences for personalization
   useEffect(() => {
@@ -151,15 +155,14 @@ const Index = () => {
     isLoading
   } = useInfiniteScroll(loadMore, hasMore);
 
-  // Combine RSS articles with DB articles, preferring RSS
+  // UPROSZCZONE: Tylko artykuły z bazy danych (useArticles) - RSS i LocalNews wyłączone
   const allArticles = useMemo(() => {
-    // Format RSS articles with viewCount and pubDateMs for sorting
-    // Give RSS articles priority since they have real sources
-    const formattedRSSArticles = rssArticles.map(article => ({
-      ...formatRSSArticleForCard(article),
-      viewCount: 100, // Give RSS articles priority over DB articles
-      pubDateMs: article.pubDateMs || Date.now(),
-    }));
+    // ZAKOMENTOWANE: RSS wyłączony - race condition
+    // const formattedRSSArticles = rssArticles.map(article => ({
+    //   ...formatRSSArticleForCard(article),
+    //   viewCount: 100,
+    //   pubDateMs: article.pubDateMs || Date.now(),
+    // }));
 
     // Format DB articles with viewCount and createdAt for sorting
     const formattedDbArticles = dbArticles.map(article => ({
@@ -168,14 +171,9 @@ const Index = () => {
       createdAt: article.created_at,
     }));
 
-    // Prioritize RSS articles, then add DB articles
+    // Only DB articles - single source of truth
     let articles = [];
-    if (formattedRSSArticles.length > 0) {
-      // RSS has priority - sort by date, add DB articles at end
-      const sortedRSS = sortByPopularityAndDate(formattedRSSArticles);
-      const sortedDB = sortByPopularityAndDate(formattedDbArticles);
-      articles = [...sortedRSS, ...sortedDB];
-    } else if (formattedDbArticles.length > 0) {
+    if (formattedDbArticles.length > 0) {
       articles = sortByPopularityAndDate(formattedDbArticles);
     }
 
@@ -273,7 +271,7 @@ const Index = () => {
       }
     }
     return articles;
-  }, [rssArticles, dbArticles, activeCategory]);
+  }, [dbArticles, activeCategory]);
 
   // Personalize articles for logged-in users - FILTER by selected categories
   const personalizedArticles = useMemo(() => {
@@ -355,57 +353,31 @@ const Index = () => {
     });
   }, [allArticles]);
 
-  // Format local articles for display
-  const formattedLocalArticles = useMemo(() => {
-    return localNewsArticles.map(article => ({
-      ...formatLocalArticleForCard(article),
-      viewCount: 50,
-      pubDateMs: article.pubDateMs,
-    }));
-  }, [localNewsArticles]);
+  // ZAKOMENTOWANE: Local news wyłączony - race condition
+  // const formattedLocalArticles = useMemo(() => {
+  //   return localNewsArticles.map(article => ({
+  //     ...formatLocalArticleForCard(article),
+  //     viewCount: 50,
+  //     pubDateMs: article.pubDateMs,
+  //   }));
+  // }, [localNewsArticles]);
 
-  // Determine if we should use the interleaved feed (when "all" is selected and user is logged in)
-  // Falls back to national news (all articles) if no location is detected
-  const interleavedFeed = useMemo(() => {
-    // Only interleave when viewing "all" category
-    if (activeCategory !== "all") {
-      return null;
-    }
-
-    // Get local articles - fallback to national (wiadomosci) if no location
-    let localPool = formattedLocalArticles;
-    if (!hasLocation || localPool.length === 0) {
-      // Fallback: use national news (wiadomosci category) as "local"
-      localPool = allArticles.filter(article => {
-        const category = article.category?.toLowerCase() || "";
-        return category.includes("wiadomości") || category.includes("wiadomosci");
-      });
-    }
-
-    // Get sport articles
-    const sportPool = sportArticles;
-
-    if (localPool.length === 0 && sportPool.length === 0) {
-      return null;
-    }
-
-    // Interleave based on user's ratio preference
-    const totalNeeded = visibleGrids * ARTICLES_PER_GRID;
-    return interleaveArticlesByRatio(
-      localPool,
-      sportPool,
-      totalNeeded,
-      contentRatioPrefs.localRatio
-    );
-  }, [
-    activeCategory, 
-    formattedLocalArticles, 
-    sportArticles, 
-    allArticles, 
-    visibleGrids, 
-    contentRatioPrefs.localRatio,
-    hasLocation
-  ]);
+  // ZAKOMENTOWANE: Interleaved feed wyłączony - zależał od useLocalNews (race condition)
+  // const interleavedFeed = useMemo(() => {
+  //   if (activeCategory !== "all") return null;
+  //   let localPool = formattedLocalArticles;
+  //   if (!hasLocation || localPool.length === 0) {
+  //     localPool = allArticles.filter(article => {
+  //       const category = article.category?.toLowerCase() || "";
+  //       return category.includes("wiadomości") || category.includes("wiadomosci");
+  //     });
+  //   }
+  //   const sportPool = sportArticles;
+  //   if (localPool.length === 0 && sportPool.length === 0) return null;
+  //   const totalNeeded = visibleGrids * ARTICLES_PER_GRID;
+  //   return interleaveArticlesByRatio(localPool, sportPool, totalNeeded, contentRatioPrefs.localRatio);
+  // }, [activeCategory, formattedLocalArticles, sportArticles, allArticles, visibleGrids, contentRatioPrefs.localRatio, hasLocation]);
+  const interleavedFeed = null;
 
   // Generate enough articles for infinite scroll by cycling
   const getArticlesForDisplay = useMemo(() => {
@@ -441,7 +413,8 @@ const Index = () => {
     }
   }
   return <div className="min-h-screen bg-background w-full overflow-x-clip">
-      <Header />
+      {/* ZAKOMENTOWANE: Header renderowany globalnie - duplikacja powodowała mruganie */}
+      {/* <Header /> */}
       
       {/* Floating Category Bar */}
       <CategoryBar activeCategory={activeCategory} onCategoryChange={setActiveCategory} />
@@ -542,7 +515,8 @@ const Index = () => {
 
       </main>
 
-      <Footer />
+      {/* ZAKOMENTOWANE: Footer renderowany globalnie - duplikacja powodowała mruganie */}
+      {/* <Footer /> */}
       
       {/* Floating Daily Summary Button */}
       <DailySummaryFloatingButton />
