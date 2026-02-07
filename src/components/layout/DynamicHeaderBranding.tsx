@@ -95,9 +95,16 @@ export function DynamicHeaderBranding({
   // Determine which partner to display
   const displayPartner = shouldRotate && showCategoryPartner ? categoryPartner : sitePartner;
   const displayLabel = shouldRotate && showCategoryPartner ? `Partner ${getCategoryDisplayName(currentCategory)}:` : "Partner Serwisu:";
+  // Hide entirely if no partners available (similar to ad auto-hide)
   if (loading) {
-    return <PartnerPlaceholder />;
+    return null;
   }
+
+  // If no site partner and no category partner, hide the element completely
+  if (!sitePartner && !categoryPartner) {
+    return null;
+  }
+
   return <div className={cn("flex items-center gap-2 md:gap-3 px-2 md:px-4 py-1 md:py-2 border-l border-nav-foreground/20 transition-opacity duration-300", isTransitioning && "opacity-0", className)}>
       <span className="text-[10px] md:text-sm text-nav-foreground/60 whitespace-nowrap">
         {shouldRotate && showCategoryPartner ? <><span className="hidden md:inline">{`Partner ${getCategoryDisplayName(currentCategory)}:`}</span><span className="md:hidden">Partner:</span></> : <><span className="hidden md:inline">Partner Serwisu:</span><span className="md:hidden">Partner:</span></>}
