@@ -23,6 +23,7 @@ import AutoNews from "./pages/AutoNews";
 import LocalNews from "./pages/LocalNews";
 import DailySummary from "./pages/DailySummary";
 import Dashboard from "./pages/dashboard/Dashboard";
+import { MainLayout } from "./components/layout/MainLayout";
 
 // Role-specific dashboard home pages
 import DashboardUser from "./pages/dashboard/DashboardUser";
@@ -71,20 +72,26 @@ const App = () => (
               <CookieConsentBanner />
             <BrowserRouter>
               <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/artykul/:id" element={<Article />} />
-                <Route path="/notifications/settings" element={<NotificationSettings />} />
-                <Route path="/interests" element={<Interests />} />
-                <Route path="/szukaj" element={<Search />} />
-                <Route path="/zapisane" element={<SavedArticles />} />
-                <Route path="/pogoda-szczegoly" element={<WeatherDetails />} />
-                <Route path="/auto-news" element={<AutoNews />} />
-                <Route path="/lokalne" element={<LocalNews />} />
-                <Route path="/skrot-dnia" element={<DailySummary />} />
+                {/* Public routes with global Header/Footer layout */}
+                <Route element={<MainLayout />}>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/artykul/:id" element={<Article />} />
+                  <Route path="/notifications/settings" element={<NotificationSettings />} />
+                  <Route path="/interests" element={<Interests />} />
+                  <Route path="/szukaj" element={<Search />} />
+                  <Route path="/zapisane" element={<SavedArticles />} />
+                  <Route path="/pogoda-szczegoly" element={<WeatherDetails />} />
+                  <Route path="/auto-news" element={<AutoNews />} />
+                  <Route path="/lokalne" element={<LocalNews />} />
+                  <Route path="/skrot-dnia" element={<DailySummary />} />
+                  <Route path="/sport/:subcategory/:subsubcategory" element={<Category />} />
+                  <Route path="/sport/:subcategory" element={<Category />} />
+                  <Route path="/:category" element={<Category />} />
+                </Route>
                 
-                {/* Dashboard with nested routes */}
+                {/* Dashboard with nested routes - own layout */}
                 <Route path="/dashboard" element={<Dashboard />}>
                   {/* Base dashboard redirects to role-specific dashboard */}
                   <Route index element={<DashboardHome />} />
@@ -140,9 +147,6 @@ const App = () => (
                   <Route path="partner-application" element={<Navigate to="/dashboard/user/partner-application" replace />} />
                 </Route>
                 
-                <Route path="/sport/:subcategory/:subsubcategory" element={<Category />} />
-                <Route path="/sport/:subcategory" element={<Category />} />
-                <Route path="/:category" element={<Category />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
               </BrowserRouter>

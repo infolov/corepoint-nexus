@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
+// Header i Footer renderowane globalnie przez MainLayout
+// import { Header } from "@/components/layout/Header";
+// import { Footer } from "@/components/layout/Footer";
 import { NewsCard } from "@/components/news/NewsCard";
 import { useArticles, formatArticleForCard } from "@/hooks/use-articles";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
@@ -147,8 +148,7 @@ export default function Search() {
   const hasActiveFilters = categoryFilter !== "all" || dateFilter !== "all" || sortBy !== "newest";
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Header />
+    <div className="flex flex-col">
       
       <main className="flex-1 container py-8">
         {/* Search Header */}
@@ -369,8 +369,6 @@ export default function Search() {
           </div>
         )}
       </main>
-
-      <Footer />
     </div>
   );
 }

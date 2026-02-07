@@ -24,8 +24,9 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useWeather, STATIONS } from "@/hooks/use-weather";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
+// Header i Footer renderowane globalnie przez MainLayout
+// import { Header } from "@/components/layout/Header";
+// import { Footer } from "@/components/layout/Footer";
 import { useLocationContext } from "@/components/geolocation/LocationProvider";
 import {
   Select,
@@ -259,23 +260,20 @@ export default function WeatherDetails() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header />
+      <div>
         <main className="container py-12">
           <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
             <p className="text-muted-foreground">Ładowanie danych pogodowych...</p>
           </div>
         </main>
-        <Footer />
       </div>
     );
   }
 
   if (error || !data) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header />
+      <div>
         <main className="container py-12">
           <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
             <Cloud className="h-16 w-16 text-muted-foreground" />
@@ -287,7 +285,6 @@ export default function WeatherDetails() {
             </Button>
           </div>
         </main>
-        <Footer />
       </div>
     );
   }
@@ -297,8 +294,7 @@ export default function WeatherDetails() {
   const windDirName = getWindDirectionName(data.kierunek_wiatru);
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
+    <div>
       
       <main className="container py-8">
         {/* Back button and station selector */}
@@ -583,8 +579,6 @@ export default function WeatherDetails() {
           </p>
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }

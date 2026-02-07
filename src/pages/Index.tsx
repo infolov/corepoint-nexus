@@ -412,9 +412,7 @@ const Index = () => {
       articleGrids.push(gridArticles);
     }
   }
-  return <div className="min-h-screen bg-background w-full overflow-x-clip">
-      {/* ZAKOMENTOWANE: Header renderowany globalnie - duplikacja powodowała mruganie */}
-      {/* <Header /> */}
+  return <div className="w-full">
       
       {/* Floating Category Bar */}
       <CategoryBar activeCategory={activeCategory} onCategoryChange={setActiveCategory} />
@@ -515,9 +513,6 @@ const Index = () => {
 
       </main>
 
-      {/* ZAKOMENTOWANE: Footer renderowany globalnie - duplikacja powodowała mruganie */}
-      {/* <Footer /> */}
-      
       {/* Floating Daily Summary Button */}
       <DailySummaryFloatingButton />
     </div>;

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
+// Header i Footer renderowane globalnie przez MainLayout
+// import { Header } from "@/components/layout/Header";
+// import { Footer } from "@/components/layout/Footer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -126,20 +127,17 @@ const Article = () => {
   
   if (isStillLoading && !cachedArticle) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header />
+      <div className="min-h-[50vh]">
         <main className="container py-12 flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </main>
-        <Footer />
       </div>
     );
   }
   
   if (!article) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header />
+      <div className="min-h-[50vh]">
         <main className="container py-12 text-center">
           <h1 className="text-2xl font-bold mb-4">Artykuł nie znaleziony</h1>
           <Link to="/">
@@ -149,14 +147,12 @@ const Article = () => {
             </Button>
           </Link>
         </main>
-        <Footer />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
+    <div>
       
       <main className="container py-4 md:py-6">
         {/* Top Ad Banner */}
@@ -347,8 +343,6 @@ const Article = () => {
           />
         </div>
       </main>
-      
-      <Footer />
     </div>
   );
 };
