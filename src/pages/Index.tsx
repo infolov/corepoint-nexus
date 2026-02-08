@@ -21,8 +21,7 @@ import { useContentRatio, interleaveArticlesByRatio } from "@/hooks/use-content-
 import { useUserSettings } from "@/hooks/use-user-settings";
 import { Loader2 } from "lucide-react";
 import { useArticles, formatArticleForCard } from "@/hooks/use-articles";
-// ZAKOMENTOWANE: useRSSArticles powodowało race condition z useArticles - nadpisywanie stanu
-// import { useRSSArticles, formatRSSArticleForCard } from "@/hooks/use-rss-articles";
+import { useRSSArticles, formatRSSArticleForCard } from "@/hooks/use-rss-articles";
 
 import { supabase } from "@/integrations/supabase/client";
 
@@ -60,13 +59,12 @@ const Index = () => {
   } = useArticles({
     limit: 100
   });
-  // ZAKOMENTOWANE: useRSSArticles powodowało race condition - trzy źródła danych jednocześnie
-  // const {
-  //   articles: rssArticles,
-  //   loading: rssLoading,
-  //   refetch: refetchRSS,
-  //   lastUpdated: rssLastUpdated
-  // } = useRSSArticles();
+  const {
+    articles: rssArticles,
+    loading: rssLoading,
+    refetch: refetchRSS,
+    lastUpdated: rssLastUpdated
+  } = useRSSArticles();
   const { user } = useAuth();
   const { getCarouselForPosition } = useCarouselBanners();
   const { getAdForPosition, trackImpression, trackClick } = useFeedTileAds();
@@ -87,10 +85,10 @@ const Index = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Auto-refresh every 5 minutes - only useArticles (DB) active
+  // Auto-refresh every 5 minutes
   useEffect(() => {
     refreshIntervalRef.current = setInterval(() => {
-      // refetchRSS(); // ZAKOMENTOWANE: RSS wyłączony
+      refetchRSS();
       refetchDB();
     }, 5 * 60 * 1000);
 
@@ -99,17 +97,17 @@ const Index = () => {
         clearInterval(refreshIntervalRef.current);
       }
     };
-  }, [refetchDB]);
+  }, [refetchDB, refetchRSS]);
 
-  // Manual refresh handler - only DB active
+  // Manual refresh handler
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     try {
-      await Promise.all([refetchDB()]);
+      await Promise.all([refetchDB(), refetchRSS()]);
     } finally {
       setIsRefreshing(false);
     }
-  }, [refetchDB]);
+  }, [refetchDB, refetchRSS]);
 
   // Load user preferences for personalization
   useEffect(() => {
@@ -155,34 +153,39 @@ const Index = () => {
     isLoading
   } = useInfiniteScroll(loadMore, hasMore);
 
-  // UPROSZCZONE: Tylko artykuły z bazy danych (useArticles) - RSS i LocalNews wyłączone
+  // Merge RSS + DB articles, deduplicate, and sort
   const allArticles = useMemo(() => {
-    // ZAKOMENTOWANE: RSS wyłączony - race condition
-    // const formattedRSSArticles = rssArticles.map(article => ({
-    //   ...formatRSSArticleForCard(article),
-    //   viewCount: 100,
-    //   pubDateMs: article.pubDateMs || Date.now(),
-    // }));
+    // Format RSS articles
+    const formattedRSSArticles = rssArticles.map(article => ({
+      ...formatRSSArticleForCard(article),
+      viewCount: 0,
+      pubDateMs: article.pubDateMs || Date.now(),
+      createdAt: article.timestamp,
+    }));
 
-    // Format DB articles with viewCount and createdAt for sorting
+    // Format DB articles
     const formattedDbArticles = dbArticles.map(article => ({
       ...formatArticleForCard(article),
       viewCount: article.view_count || 0,
       createdAt: article.created_at,
     }));
 
-    // Only DB articles - single source of truth
-    let articles = [];
-    if (formattedDbArticles.length > 0) {
-      articles = sortByPopularityAndDate(formattedDbArticles);
-    }
+    // Merge and deduplicate by title similarity
+    const seenTitles = new Set<string>();
+    const merged = [...formattedRSSArticles, ...formattedDbArticles].filter(article => {
+      const normalizedTitle = article.title?.toLowerCase().trim().slice(0, 60) || "";
+      if (seenTitles.has(normalizedTitle)) return false;
+      seenTitles.add(normalizedTitle);
+      return true;
+    });
+
+    // Sort by date (newest first)
+    let articles = sortByPopularityAndDate(merged);
 
     // Filter by category if not "all"
     if (activeCategory !== "all") {
-      // Check if it's a subcategory (format: category/subcategory)
       const [mainCategory, subCategory] = activeCategory.split("/");
       
-      // Map slugs to exact category names from RSS feeds
       const categoryMap: Record<string, string[]> = {
         wiadomosci: ["Wiadomości"],
         biznes: ["Biznes"],
@@ -196,14 +199,11 @@ const Index = () => {
         kultura: ["Kultura"]
       };
       
-      // Subcategory keywords for title search (only for subcategories)
       const subcategoryKeywords: Record<string, string[]> = {
-        // Wiadomości
         "wiadomosci/polska": ["Polska", "Polski", "Polskie"],
         "wiadomosci/swiat": ["Świat", "USA", "Europa", "Chiny", "Rosja", "Ukraina"],
         "wiadomosci/polityka": ["Polityka", "Sejm", "Rząd", "Minister", "Premier", "Prezydent"],
         "wiadomosci/spoleczenstwo": ["Społeczeństwo", "Społeczny"],
-        // Sport
         "sport/pilka-nozna": ["Piłka nożna", "Ekstraklasa", "Liga", "UEFA", "Lech", "Legia", "Real", "Barcelona", "Messi", "Ronaldo"],
         "sport/koszykowka": ["Koszykówka", "NBA", "Euroliga"],
         "sport/siatkowka": ["Siatkówka", "PlusLiga"],
@@ -211,48 +211,38 @@ const Index = () => {
         "sport/sporty-motorowe": ["F1", "MotoGP", "Rajdy", "Żużel", "Formuła"],
         "sport/sporty-walki": ["MMA", "UFC", "KSW", "Boks"],
         "sport/e-sport": ["E-sport", "CS2", "League of Legends", "Valorant"],
-        // Biznes
         "biznes/finanse-osobiste": ["Finanse osobiste", "Oszczędności", "Kredyt"],
         "biznes/gielda": ["Giełda", "GPW", "Akcje", "Inwestycje"],
         "biznes/nieruchomosci": ["Nieruchomości", "Mieszkania", "Dom"],
         "biznes/gospodarka": ["Gospodarka", "PKB", "Inflacja"],
         "biznes/kryptowaluty": ["Kryptowaluty", "Bitcoin", "Crypto", "Ethereum"],
-        // Technologia
         "technologia/smartfony": ["Smartfon", "iPhone", "Samsung", "Telefon", "Android"],
         "technologia/gaming": ["Gaming", "Gry", "PlayStation", "Xbox", "PC"],
         "technologia/ai": ["AI", "Sztuczna inteligencja", "ChatGPT", "GPT", "OpenAI"],
         "technologia/cyberbezpieczenstwo": ["Cyberbezpieczeństwo", "Haker", "Bezpieczeństwo"],
-        // Lifestyle
         "lifestyle/moda": ["Moda", "Fashion"],
         "lifestyle/podroze": ["Podróże", "Turystyka", "Wakacje"],
         "lifestyle/gotowanie": ["Gotowanie", "Przepisy", "Kuchnia"],
-        // Rozrywka
         "rozrywka/film": ["Film", "Kino", "Netflix", "Marvel"],
         "rozrywka/muzyka": ["Muzyka", "Koncert", "Album"],
         "rozrywka/seriale": ["Serial", "HBO", "Netflix"],
         "rozrywka/gwiazdy": ["Gwiazdy", "Celebryci"],
-        // Zdrowie
         "zdrowie/dieta": ["Dieta", "Odżywianie", "Odchudzanie"],
         "zdrowie/fitness": ["Fitness", "Trening", "Ćwiczenia"],
-        // Nauka
         "nauka/kosmos": ["Kosmos", "Astronomia", "NASA", "Kometa", "Gwiazda", "Mars"],
         "nauka/historia": ["Historia", "Historyczne"],
         "nauka/ekologia": ["Ekologia", "Klimat", "Środowisko"]
       };
       
       if (subCategory) {
-        // For subcategories: first filter by main category, then by title keywords
         const mainCategoryNames = categoryMap[mainCategory] || [];
         const keywords = subcategoryKeywords[activeCategory] || [];
         
         articles = articles.filter(a => {
-          // Must match main category
           const matchesCategory = mainCategoryNames.some(cat => 
             a.category?.toLowerCase() === cat.toLowerCase()
           );
           if (!matchesCategory) return false;
-          
-          // Then check title for subcategory keywords
           if (keywords.length > 0) {
             return keywords.some(keyword => 
               a.title?.toLowerCase().includes(keyword.toLowerCase())
@@ -261,7 +251,6 @@ const Index = () => {
           return true;
         });
       } else {
-        // For main categories: exact category match only
         const categoryNames = categoryMap[mainCategory] || [];
         if (categoryNames.length > 0) {
           articles = articles.filter(a => 
@@ -271,7 +260,7 @@ const Index = () => {
       }
     }
     return articles;
-  }, [dbArticles, activeCategory]);
+  }, [dbArticles, rssArticles, activeCategory]);
 
   // Personalize articles for logged-in users - FILTER by selected categories
   const personalizedArticles = useMemo(() => {
