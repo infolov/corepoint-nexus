@@ -20,7 +20,7 @@ import { useRSSArticles } from "@/hooks/use-rss-articles";
 import { AuctionAdSlot } from "@/components/widgets/AuctionAdSlot";
 import { toast } from "sonner";
 import { useRelatedArticles } from "@/hooks/use-related-articles";
-import { RecommendedArticles } from "@/components/article/RecommendedArticles";
+
 import { NextArticlePreview } from "@/components/article/NextArticlePreview";
 const Article = () => {
   const { id } = useParams<{ id: string }>();
@@ -308,17 +308,6 @@ const Article = () => {
             slotIndex={3} 
           />
         </div>
-
-        {/* Recommended Articles Section */}
-        {relatedArticles.length > 0 && (
-          <RecommendedArticles 
-            articles={relatedArticles.map(a => ({
-              ...a,
-              timestamp: (a as any).timestamp,
-              source: (a as any).source
-            }))} 
-          />
-        )}
 
         {/* Next Article Preview - Engagement Loop */}
         {relatedArticles.length > 0 && (
