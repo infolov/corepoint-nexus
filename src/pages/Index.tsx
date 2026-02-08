@@ -181,13 +181,21 @@ const Index = () => {
 
       // Filter out articles from hidden categories
       if (activeCategoryNames) {
-        const articleCat = article.category?.toLowerCase() || "";
-        // Check if article's category matches any active category (by name or slug)
-        const isActiveCategory = activeCategoryNames.has(articleCat) ||
-          // Also check partial matches for categories like "Nauka i Technologia" vs "tech-nauka"
-          [...activeCategoryNames].some(name => articleCat.includes(name) || name.includes(articleCat));
-        if (!isActiveCategory && articleCat !== "" && articleCat !== "all") {
-          return false;
+        const articleCat = article.category?.toLowerCase().trim() || "";
+        // Skip filtering for empty or "all" categories
+        if (articleCat && articleCat !== "all") {
+          // Direct match first (fast path)
+          let isActiveCategory = activeCategoryNames.has(articleCat);
+          
+          // Partial match for compound names (e.g., "Nauka i Technologia" ↔ "Technologia")
+          if (!isActiveCategory) {
+            isActiveCategory = [...activeCategoryNames].some(name =>
+              (articleCat.length >= 3 && name.length >= 3) &&
+              (articleCat.includes(name) || name.includes(articleCat))
+            );
+          }
+          
+          if (!isActiveCategory) return false;
         }
       }
 

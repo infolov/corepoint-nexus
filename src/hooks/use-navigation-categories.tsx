@@ -178,13 +178,45 @@ export function useNavigationCategories() {
     return new Set(dbCategories.map(c => c.slug));
   }, [dbCategories, loading, error]);
 
+  // Build a comprehensive set of active category names/slugs for article filtering.
+  // Key logic: subcategories whose parent is hidden are also treated as hidden.
   const activeCategoryNames = useMemo(() => {
     if (dbCategories.length === 0 && (loading || error)) return null;
+
+    const activeSlugs = new Set(dbCategories.map(c => c.slug));
     const names = new Set<string>();
+
+    // Common name variations for RSS feeds that use different names than DB
+    const categoryVariations: Record<string, string[]> = {
+      "wiadomości": ["wiadomosci", "news", "polska"],
+      "sport": ["sports"],
+      "biznes": ["business", "ekonomia"],
+      "nauka i technologia": ["technologia", "nauka", "tech", "technology", "science"],
+      "lifestyle": ["styl życia", "styl zycia"],
+      "rozrywka": ["entertainment"],
+      "kultura": ["culture"],
+      "motoryzacja": ["auto", "automotive", "samochody"],
+      "zdrowie": ["health"],
+      "świat": ["world", "swiat"],
+      "finanse": ["finance"],
+      "prawo": ["law", "prawo"],
+    };
+
     dbCategories.forEach(c => {
+      // Skip subcategories whose parent is NOT in the active set
+      // (parent is hidden → subcategory should also be treated as hidden)
+      if (c.parent_slug && !activeSlugs.has(c.parent_slug)) return;
+
       names.add(c.name.toLowerCase());
       names.add(c.slug.toLowerCase());
+
+      // Add known variations so RSS articles with alternate names get matched
+      const nameKey = c.name.toLowerCase();
+      if (categoryVariations[nameKey]) {
+        categoryVariations[nameKey].forEach(v => names.add(v));
+      }
     });
+
     return names;
   }, [dbCategories, loading, error]);
 
