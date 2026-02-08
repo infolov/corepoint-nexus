@@ -64,11 +64,12 @@ export function useNavigationCategories() {
       }
 
       try {
-        // RLS policy "Anyone can view active categories" will automatically
-        // filter to only is_active = true for non-admin users
+        // Fetch only active categories - ensures hidden categories
+        // don't appear for ANY user type (admin, logged-in, anonymous)
         const { data, error: fetchError } = await supabase
           .from("categories")
           .select("id, name, slug, parent_slug, display_order, is_active")
+          .eq("is_active", true)
           .order("display_order", { ascending: true });
 
         if (fetchError) throw fetchError;
@@ -171,12 +172,30 @@ export function useNavigationCategories() {
     cacheTimestamp = 0;
   };
 
+  // Set of active category slugs AND names for filtering articles
+  const activeCategorySlugs = useMemo(() => {
+    if (dbCategories.length === 0 && (loading || error)) return null; // Not yet loaded
+    return new Set(dbCategories.map(c => c.slug));
+  }, [dbCategories, loading, error]);
+
+  const activeCategoryNames = useMemo(() => {
+    if (dbCategories.length === 0 && (loading || error)) return null;
+    const names = new Set<string>();
+    dbCategories.forEach(c => {
+      names.add(c.name.toLowerCase());
+      names.add(c.slug.toLowerCase());
+    });
+    return names;
+  }, [dbCategories, loading, error]);
+
   return {
     categories,
     loading,
     error,
     isCategoryActive,
     clearCache,
-    dbCategories, // Expose raw DB categories for advanced use cases
+    dbCategories,
+    activeCategorySlugs,
+    activeCategoryNames,
   };
 }

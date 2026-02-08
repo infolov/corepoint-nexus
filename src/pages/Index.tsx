@@ -4,6 +4,7 @@ import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 // import { Footer } from "@/components/layout/Footer";
 import { CategoryBar } from "@/components/navigation/CategoryBar";
 import { NewsCard } from "@/components/news/NewsCard";
+import { useNavigationCategories } from "@/hooks/use-navigation-categories";
 import { AuctionAdSlot } from "@/components/widgets/AuctionAdSlot";
 import { FeedBannerCarousel, formatBannersForCarousel } from "@/components/widgets/FeedBannerCarousel";
 import { FeedTileAdCard } from "@/components/widgets/FeedTileAdCard";
@@ -68,6 +69,7 @@ const Index = () => {
   const { user } = useAuth();
   const { getCarouselForPosition } = useCarouselBanners();
   const { getAdForPosition, trackImpression, trackClick } = useFeedTileAds();
+  const { activeCategoryNames } = useNavigationCategories();
   
   // Content ratio preferences (Local/Sport)
   const { preferences: contentRatioPrefs } = useContentRatio();
@@ -176,6 +178,19 @@ const Index = () => {
       const normalizedTitle = article.title?.toLowerCase().trim().slice(0, 60) || "";
       if (seenTitles.has(normalizedTitle)) return false;
       seenTitles.add(normalizedTitle);
+
+      // Filter out articles from hidden categories
+      if (activeCategoryNames) {
+        const articleCat = article.category?.toLowerCase() || "";
+        // Check if article's category matches any active category (by name or slug)
+        const isActiveCategory = activeCategoryNames.has(articleCat) ||
+          // Also check partial matches for categories like "Nauka i Technologia" vs "tech-nauka"
+          [...activeCategoryNames].some(name => articleCat.includes(name) || name.includes(articleCat));
+        if (!isActiveCategory && articleCat !== "" && articleCat !== "all") {
+          return false;
+        }
+      }
+
       return true;
     });
 
@@ -260,7 +275,7 @@ const Index = () => {
       }
     }
     return articles;
-  }, [dbArticles, rssArticles, activeCategory]);
+  }, [dbArticles, rssArticles, activeCategory, activeCategoryNames]);
 
   // Personalize articles for logged-in users - FILTER by selected categories
   const personalizedArticles = useMemo(() => {
