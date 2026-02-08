@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { 
   Users, 
@@ -7,14 +8,47 @@ import {
   Activity,
   BarChart3,
   Shield,
-  ChevronRight
+  ChevronRight,
+  RefreshCw,
+  Globe,
+  Loader2
 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export default function DashboardAdminHome() {
   const { user } = useAuth();
+  const [isRssLoading, setIsRssLoading] = useState(false);
+  const [isScrapingLoading, setIsScrapingLoading] = useState(false);
 
+  const handleForceRss = async () => {
+    setIsRssLoading(true);
+    try {
+      const { error } = await supabase.functions.invoke('fetch-rss', { body: {} });
+      if (error) throw error;
+      toast.success("Pobieranie RSS uruchomione. Sprawdź bazę danych za kilka chwil.");
+    } catch (err: any) {
+      toast.error(err.message || "Błąd podczas wywoływania fetch-rss");
+    } finally {
+      setIsRssLoading(false);
+    }
+  };
+
+  const handleForceScraping = async () => {
+    setIsScrapingLoading(true);
+    try {
+      const { error } = await supabase.functions.invoke('scrape-news', { body: {} });
+      if (error) throw error;
+      toast.success("Scrapowanie uruchomione. Sprawdź bazę danych za kilka chwil.");
+    } catch (err: any) {
+      toast.error(err.message || "Błąd podczas wywoływania scrape-news");
+    } finally {
+      setIsScrapingLoading(false);
+    }
+  };
   const adminSections = [
     {
       title: "Użytkownicy i Partnerzy",
@@ -52,6 +86,34 @@ export default function DashboardAdminHome() {
           Witaj, {user?.user_metadata?.full_name || "Administratorze"}! Zarządzaj platformą.
         </p>
       </div>
+
+      {/* Content Ingestion Diagnostics */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Diagnostyka pobierania treści</CardTitle>
+          <CardDescription>
+            Ręczne wyzwalanie pipeline'u ingestion w celu debugowania brakujących artykułów.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-3">
+          <Button
+            onClick={handleForceRss}
+            disabled={isRssLoading}
+            variant="outline"
+          >
+            {isRssLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+            Force RSS Fetch
+          </Button>
+          <Button
+            onClick={handleForceScraping}
+            disabled={isScrapingLoading}
+            variant="outline"
+          >
+            {isScrapingLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Globe className="h-4 w-4" />}
+            Force Web Scraping
+          </Button>
+        </CardContent>
+      </Card>
 
       {/* Admin sections */}
       {adminSections.map((section) => (
