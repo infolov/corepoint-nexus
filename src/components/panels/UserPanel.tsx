@@ -1,10 +1,11 @@
 import { Link } from "react-router-dom";
-import { User, LayoutDashboard, LogOut, Settings, Bookmark, History, ChevronRight, Heart, KeyRound, SlidersHorizontal } from "lucide-react";
+import { User, LayoutDashboard, LogOut, Settings, Bookmark, History, ChevronRight, Heart, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useUserRole } from "@/hooks/use-user-role";
 import { cn } from "@/lib/utils";
 import { ContentRatioSlider } from "@/components/settings/ContentRatioSlider";
+import { InlineAuthForm } from "@/components/panels/InlineAuthForm";
 
 interface UserPanelProps {
   onSignOut: () => void;
@@ -113,43 +114,10 @@ export function UserPanel({ onSignOut, onSettingsClick, className }: UserPanelPr
     );
   }
 
-  // Unauthenticated user panel
+  // Unauthenticated user panel — inline auth form
   return (
     <div className={cn("space-y-4", className)}>
-      {/* Welcome message */}
-      <div className="text-center p-4 rounded-xl bg-muted/30">
-        <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-muted flex items-center justify-center">
-          <User className="h-8 w-8 text-muted-foreground" />
-        </div>
-        <h3 className="font-semibold text-foreground text-senior mb-1">Witaj!</h3>
-        <p className="text-sm text-muted-foreground">
-          Zaloguj się, aby personalizować treści
-        </p>
-      </div>
-
-      {/* Auth buttons */}
-      <div className="space-y-2">
-        <Link to="/login" className="block">
-          <Button variant="gradient" className="w-full h-12 text-senior text-white [&_svg]:text-white">
-            <User className="h-5 w-5 mr-2" />
-            Zaloguj się
-          </Button>
-        </Link>
-        <Link to="/login?register=true" className="block">
-          <Button variant="outline" className="w-full h-12 text-senior">
-            Zarejestruj się
-          </Button>
-        </Link>
-      </div>
-
-      {/* Password recovery link */}
-      <Link 
-        to="/reset-password" 
-        className="flex items-center justify-center gap-2 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors group text-center"
-      >
-        <KeyRound className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
-        <span className="text-sm text-muted-foreground group-hover:text-foreground">Odzyskaj hasło</span>
-      </Link>
+      <InlineAuthForm />
 
       {/* Benefits */}
       <div className="p-3 rounded-lg bg-primary/5 border border-primary/10">
