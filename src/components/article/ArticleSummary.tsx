@@ -171,50 +171,11 @@ export const ArticleSummary = ({ title, content, category, sourceUrl, onTitleGen
 
   return (
     <div className="mb-6">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
-            <Sparkles className="h-4 w-4 text-primary" />
-          </div>
-          <span className="font-semibold text-foreground">Podsumowanie AI</span>
+      <div className="flex items-center gap-2 mb-3">
+        <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
+          <Sparkles className="h-4 w-4 text-primary" />
         </div>
-        
-        {/* Audio Controls */}
-        {summary && !loading && !error && (
-          <div className="flex items-center gap-2">
-            <Select value={voiceGender} onValueChange={(v: VoiceGender) => setVoiceGender(v)}>
-              <SelectTrigger className="w-[120px] h-8 text-xs">
-                <User className="h-3 w-3 mr-1" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="female">Żeński</SelectItem>
-                <SelectItem value="male">Męski</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button 
-              variant="outline" 
-              size="icon" 
-              onClick={handlePlayAudio}
-              className="h-8 w-8"
-            >
-              {isPlaying ? (
-                <Pause className="h-4 w-4" />
-              ) : (
-                <Play className="h-4 w-4" />
-              )}
-            </Button>
-            {isPlaying && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={handleStopAudio}
-              >
-                <Square className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-        )}
+        <span className="font-semibold text-foreground">Podsumowanie AI</span>
       </div>
 
       {loading ? (
@@ -228,12 +189,49 @@ export const ArticleSummary = ({ title, content, category, sourceUrl, onTitleGen
           <span className="text-sm">{error}</span>
         </div>
       ) : (
-        <p 
-          className="text-foreground/90 leading-relaxed"
-          dangerouslySetInnerHTML={{
-            __html: summary?.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') || ''
-          }}
-        />
+        <>
+          <p 
+            className="text-foreground/90 leading-relaxed"
+            dangerouslySetInnerHTML={{
+              __html: summary?.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') || ''
+            }}
+          />
+          {summary && (
+            <div className="flex items-center gap-2 mt-3">
+              <Select value={voiceGender} onValueChange={(v: VoiceGender) => setVoiceGender(v)}>
+                <SelectTrigger className="w-[110px] h-8 text-xs">
+                  <User className="h-3 w-3 mr-1" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="female">Żeński</SelectItem>
+                  <SelectItem value="male">Męski</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={handlePlayAudio}
+                className="h-8 w-8"
+              >
+                {isPlaying ? (
+                  <Pause className="h-4 w-4" />
+                ) : (
+                  <Play className="h-4 w-4" />
+                )}
+              </Button>
+              {isPlaying && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={handleStopAudio}
+                >
+                  <Square className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          )}
+        </>
       )}
     </div>
   );
