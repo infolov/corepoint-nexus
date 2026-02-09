@@ -5,29 +5,30 @@ import { Button } from "@/components/ui/button";
 // Header i Footer renderowane globalnie przez MainLayout
 // import { Header } from "@/components/layout/Header";
 // import { Footer } from "@/components/layout/Footer";
-import { InterestsSelector } from "@/components/auth/InterestsSelector";
+// import { InterestsSelector } from "@/components/auth/InterestsSelector"; // HIDDEN: interests feature disabled
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 
 type AuthMode = "login" | "register";
-type RegistrationStep = "form" | "interests";
+// HIDDEN: interests feature disabled - registration goes directly to dashboard
+// type RegistrationStep = "form" | "interests";
 
 export default function Login() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const [mode, setMode] = useState<AuthMode>("login");
-  const [registrationStep, setRegistrationStep] = useState<RegistrationStep>("form");
+  // const [registrationStep, setRegistrationStep] = useState<RegistrationStep>("form"); // HIDDEN
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   
-  // Interests state
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [newUserId, setNewUserId] = useState<string | null>(null);
+  // HIDDEN: interests feature disabled
+  // const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  // const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  // const [newUserId, setNewUserId] = useState<string | null>(null);
 
   // Redirect if already logged in - will be handled by Dashboard's useEffect
   useEffect(() => {
@@ -93,11 +94,10 @@ export default function Login() {
           return;
         }
 
-        // Move to interests step
+        // HIDDEN: interests step disabled - go directly to dashboard
         if (data.user) {
-          setNewUserId(data.user.id);
-          setRegistrationStep("interests");
-          toast.success("Konto utworzone! Wybierz swoje zainteresowania.");
+          toast.success("Konto utworzone! Sprawdź email, aby potwierdzić rejestrację.");
+          navigate("/dashboard");
         }
       }
     } catch (error) {
@@ -107,45 +107,11 @@ export default function Login() {
     }
   };
 
-  const handleSaveInterests = async () => {
-    if (!newUserId) {
-      navigate("/");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const { error } = await supabase
-        .from("user_notification_preferences")
-        .upsert({
-          user_id: newUserId,
-          categories: selectedCategories,
-          tags: selectedTags,
-          updated_at: new Date().toISOString(),
-        });
-
-      if (error) {
-        console.error("Error saving interests:", error);
-      }
-
-      toast.success("Świetnie! Twoje konto jest gotowe.");
-      navigate("/dashboard");
-    } catch (error) {
-      console.error("Error saving interests:", error);
-      navigate("/dashboard");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSkipInterests = () => {
-    toast.success("Konto utworzone! Możesz zmienić zainteresowania później.");
-    navigate("/dashboard");
-  };
-
-  const handleBackToForm = () => {
-    setRegistrationStep("form");
-  };
+  /* HIDDEN: interests feature disabled
+  const handleSaveInterests = async () => { ... };
+  const handleSkipInterests = () => { ... };
+  const handleBackToForm = () => { ... };
+  */
 
   const handleGoogleLogin = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
@@ -174,29 +140,8 @@ export default function Login() {
       <main className="flex-1 flex items-center justify-center py-12 px-4">
         <div className="w-full max-w-md">
           <div className="bg-card rounded-2xl shadow-lg p-8">
-            {/* Interests Step */}
-            {registrationStep === "interests" ? (
-              <div>
-                <button
-                  onClick={handleBackToForm}
-                  className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-4 transition-colors text-sm"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  <span>Wróć</span>
-                </button>
-                <InterestsSelector
-                  selectedCategories={selectedCategories}
-                  selectedTags={selectedTags}
-                  onCategoriesChange={setSelectedCategories}
-                  onTagsChange={setSelectedTags}
-                  onContinue={handleSaveInterests}
-                  onSkip={handleSkipInterests}
-                  isLoading={loading}
-                  showSkip={true}
-                  submitLabel="Zakończ rejestrację"
-                />
-              </div>
-            ) : (
+            {/* HIDDEN: interests step disabled - showing form directly */}
+            {(
               <>
                 {/* Logo */}
                 <div className="text-center mb-8">
