@@ -40,7 +40,12 @@ export function useUserRole(): UserRoleState {
         console.error("[useUserRole] Error fetching user roles:", error);
         setRoles([]);
       } else {
-        const fetchedRoles = (data || []).map(r => r.role as UserRole);
+        // Map database roles to app roles (advertiser -> partner for backward compatibility)
+        const fetchedRoles = (data || []).map(r => {
+          const dbRole = r.role as string;
+          if (dbRole === "advertiser") return "partner" as UserRole;
+          return dbRole as UserRole;
+        });
         setRoles(fetchedRoles);
       }
     } catch (err) {
