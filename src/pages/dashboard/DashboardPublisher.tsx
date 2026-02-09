@@ -44,6 +44,7 @@ import {
   Search,
   X
 } from "lucide-react";
+import { ArticleImageUploader } from "@/components/dashboard/ArticleImageUploader";
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
 
@@ -672,24 +673,10 @@ export default function DashboardPublisher() {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="article-image">URL obrazka głównego *</Label>
-                <Input
-                  id="article-image"
-                  value={articleFormData.image}
-                  onChange={(e) => setArticleFormData({ ...articleFormData, image: e.target.value })}
-                  placeholder="https://..."
-                />
-                {articleFormData.image && (
-                  <div className="mt-2 rounded-lg overflow-hidden border">
-                    <img
-                      src={articleFormData.image}
-                      alt="Podgląd"
-                      className="w-full h-32 object-cover bg-muted"
-                    />
-                  </div>
-                )}
-              </div>
+              <ArticleImageUploader
+                imageUrl={articleFormData.image}
+                onImageChange={(url) => setArticleFormData({ ...articleFormData, image: url })}
+              />
               <div className="space-y-2">
                 <Label htmlFor="article-target-url">Link do promowanej strony (opcjonalnie)</Label>
                 <Input
