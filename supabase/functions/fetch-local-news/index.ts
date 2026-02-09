@@ -134,11 +134,19 @@ function isArticleInVoivodeship(articleUrl: string, voivodeship: string): boolea
 
   // Look up the city in cityToVoivodeship map
   const articleVoivodeship = cityToVoivodeship[city];
-  if (!articleVoivodeship) return true; // unknown city — keep (benefit of the doubt)
+  
+  // If unknown city, keep it (benefit of the doubt — it came from a regional feed)
+  if (!articleVoivodeship) return true;
 
   // Normalize the requested voivodeship for comparison
   const normalizedRequested = voivodeshipNormalize[voivodeship] || voivodeship;
-  return articleVoivodeship === normalizedRequested;
+  
+  // Only reject if we KNOW it's from a different voivodeship
+  if (articleVoivodeship !== normalizedRequested) {
+    console.log(`Rejecting naszemiasto article from ${city} (${articleVoivodeship}) — expected ${normalizedRequested}`);
+    return false;
+  }
+  return true;
 }
 
 function parseRSSItem(item: string, source: string, voivodeship: string): LocalArticle | null {
@@ -248,7 +256,7 @@ async function fetchRSSFeed(feedUrl: string, source: string, voivodeship: string
     
     const articles: LocalArticle[] = [];
     let filtered = 0;
-    for (const item of items.slice(0, 20)) {
+    for (const item of items.slice(0, 50)) {
       const article = parseRSSItem(item, source, voivodeship);
       if (article) {
         // Filter out naszemiasto.pl articles from cities outside the requested voivodeship
@@ -428,7 +436,7 @@ const cityToVoivodeship: Record<string, string> = {
   // Małopolskie
   'krakow': 'malopolskie', 'kraków': 'malopolskie', 'cracow': 'malopolskie',
   'tarnów': 'malopolskie', 'tarnow': 'malopolskie', 'nowy sącz': 'malopolskie',
-  'nowy sacz': 'malopolskie', 'oświęcim': 'malopolskie', 'oswiecim': 'malopolskie',
+  'nowy sacz': 'malopolskie', 'nowysacz': 'malopolskie', 'oświęcim': 'malopolskie', 'oswiecim': 'malopolskie',
   
   // Pomorskie
   'gdansk': 'pomorskie', 'gdańsk': 'pomorskie', 'gdynia': 'pomorskie', 
@@ -438,10 +446,11 @@ const cityToVoivodeship: Record<string, string> = {
   // Śląskie
   'katowice': 'slaskie', 'gliwice': 'slaskie', 'sosnowiec': 'slaskie',
   'zabrze': 'slaskie', 'bytom': 'slaskie', 'ruda śląska': 'slaskie',
-  'ruda slaska': 'slaskie', 'tychy': 'slaskie', 'dąbrowa górnicza': 'slaskie',
-  'dabrowa gornicza': 'slaskie', 'chorzów': 'slaskie', 'chorzow': 'slaskie',
-  'bielsko-biała': 'slaskie', 'bielsko-biala': 'slaskie', 'częstochowa': 'slaskie',
-  'czestochowa': 'slaskie',
+  'ruda slaska': 'slaskie', 'rudaslaska': 'slaskie', 'tychy': 'slaskie',
+  'dąbrowa górnicza': 'slaskie', 'dabrowa gornicza': 'slaskie', 'dabrowagórnicza': 'slaskie',
+  'dabrowagornicza': 'slaskie', 'chorzów': 'slaskie', 'chorzow': 'slaskie',
+  'bielsko-biała': 'slaskie', 'bielsko-biala': 'slaskie', 'bielskobiala': 'slaskie',
+  'częstochowa': 'slaskie', 'czestochowa': 'slaskie',
   
   // Wielkopolskie
   'poznan': 'wielkopolskie', 'poznań': 'wielkopolskie', 'kalisz': 'wielkopolskie',
@@ -451,12 +460,13 @@ const cityToVoivodeship: Record<string, string> = {
   // Dolnośląskie
   'wroclaw': 'dolnoslaskie', 'wrocław': 'dolnoslaskie', 'legnica': 'dolnoslaskie',
   'wałbrzych': 'dolnoslaskie', 'walbrzych': 'dolnoslaskie', 'jelenia góra': 'dolnoslaskie',
-  'jelenia gora': 'dolnoslaskie',
+  'jelenia gora': 'dolnoslaskie', 'jeleniagora': 'dolnoslaskie',
   
   // Łódzkie
   'lodz': 'lodzkie', 'łódź': 'lodzkie', 'piotrków trybunalski': 'lodzkie',
-  'piotrkow trybunalski': 'lodzkie', 'pabianice': 'lodzkie', 'tomaszów mazowiecki': 'lodzkie',
-  'tomaszow mazowiecki': 'lodzkie', 'zgierz': 'lodzkie',
+  'piotrkow trybunalski': 'lodzkie', 'piotrkowtrybunalski': 'lodzkie',
+  'pabianice': 'lodzkie', 'tomaszów mazowiecki': 'lodzkie',
+  'tomaszow mazowiecki': 'lodzkie', 'tomaszowmazowiecki': 'lodzkie', 'zgierz': 'lodzkie',
   
   // Zachodniopomorskie
   'szczecin': 'zachodniopomorskie', 'koszalin': 'zachodniopomorskie',
@@ -472,12 +482,13 @@ const cityToVoivodeship: Record<string, string> = {
   // Lubelskie
   'lublin': 'lubelskie', 'zamość': 'lubelskie', 'zamosc': 'lubelskie',
   'chełm': 'lubelskie', 'chelm': 'lubelskie', 'biała podlaska': 'lubelskie',
-  'biala podlaska': 'lubelskie', 'puławy': 'lubelskie', 'pulawy': 'lubelskie',
+  'biala podlaska': 'lubelskie', 'bialapodlaska': 'lubelskie',
+  'puławy': 'lubelskie', 'pulawy': 'lubelskie',
   
   // Podkarpackie
   'rzeszow': 'podkarpackie', 'rzeszów': 'podkarpackie', 'przemyśl': 'podkarpackie',
-  'przemysl': 'podkarpackie', 'stalowa wola': 'podkarpackie', 'mielec': 'podkarpackie',
-  'tarnobrzeg': 'podkarpackie', 'krosno': 'podkarpackie',
+  'przemysl': 'podkarpackie', 'stalowa wola': 'podkarpackie', 'stalowawola': 'podkarpackie',
+  'mielec': 'podkarpackie', 'tarnobrzeg': 'podkarpackie', 'krosno': 'podkarpackie',
   
   // Podlaskie
   'bialystok': 'podlaskie', 'białystok': 'podlaskie', 'suwałki': 'podlaskie',
@@ -496,8 +507,9 @@ const cityToVoivodeship: Record<string, string> = {
   'tolkmicko': 'warminsko-mazurskie', 'młynary': 'warminsko-mazurskie', 'mlynary': 'warminsko-mazurskie',
   
   // Lubuskie
-  'zielona gora': 'lubuskie', 'zielona góra': 'lubuskie', 'gorzow': 'lubuskie',
-  'gorzów wielkopolski': 'lubuskie', 'gorzow wielkopolski': 'lubuskie',
+  'zielona gora': 'lubuskie', 'zielona góra': 'lubuskie', 'zielonagora': 'lubuskie',
+  'gorzow': 'lubuskie', 'gorzów wielkopolski': 'lubuskie', 'gorzow wielkopolski': 'lubuskie',
+  'gorzowwielkopolski': 'lubuskie',
   'nowa sól': 'lubuskie', 'nowa sol': 'lubuskie',
   
   // Świętokrzyskie
