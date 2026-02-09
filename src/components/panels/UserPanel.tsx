@@ -69,6 +69,7 @@ export function UserPanel({ onSignOut, onSettingsClick, className }: UserPanelPr
 
         {/* User links */}
         <div className="space-y-1">
+          {/* HIDDEN: interests feature disabled
           <Link 
             to="/interests" 
             className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors group"
@@ -79,6 +80,7 @@ export function UserPanel({ onSignOut, onSettingsClick, className }: UserPanelPr
             </div>
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
           </Link>
+          */}
           <Link 
             to="/zapisane" 
             className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors group"

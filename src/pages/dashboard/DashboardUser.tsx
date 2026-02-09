@@ -16,13 +16,14 @@ export default function DashboardUser() {
   const { user } = useAuth();
 
   const quickLinks = [
-    {
-      title: "Zainteresowania",
-      description: "Personalizuj wiadomości według kategorii",
-      icon: Heart,
-      href: "/interests",
-      color: "text-rose-500"
-    },
+    // HIDDEN: interests feature disabled
+    // {
+    //   title: "Zainteresowania",
+    //   description: "Personalizuj wiadomości według kategorii",
+    //   icon: Heart,
+    //   href: "/interests",
+    //   color: "text-rose-500"
+    // },
     {
       title: "Zapisane artykuły",
       description: "Przeglądaj zapisane materiały",

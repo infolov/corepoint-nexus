@@ -15,7 +15,7 @@ import Category from "./pages/Category";
 import Article from "./pages/Article";
 import Search from "./pages/Search";
 import NotificationSettings from "./pages/NotificationSettings";
-import Interests from "./pages/Interests";
+// import Interests from "./pages/Interests"; // HIDDEN: interests feature disabled
 import NotFound from "./pages/NotFound";
 import SavedArticles from "./pages/SavedArticles";
 import WeatherDetails from "./pages/WeatherDetails";
@@ -80,7 +80,7 @@ const App = () => (
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/artykul/:id" element={<Article />} />
                   <Route path="/notifications/settings" element={<NotificationSettings />} />
-                  <Route path="/interests" element={<Interests />} />
+                  {/* <Route path="/interests" element={<Interests />} /> */} {/* HIDDEN: interests feature disabled */}
                   <Route path="/szukaj" element={<Search />} />
                   <Route path="/zapisane" element={<SavedArticles />} />
                   <Route path="/pogoda-szczegoly" element={<WeatherDetails />} />

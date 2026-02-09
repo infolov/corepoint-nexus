@@ -45,7 +45,7 @@ const userSidebarConfig: NavSection[] = [
   {
     items: [
       { title: "Panel główny", href: "/dashboard/user", icon: LayoutDashboard },
-      { title: "Zainteresowania", href: "/interests", icon: Heart },
+      // { title: "Zainteresowania", href: "/interests", icon: Heart }, // HIDDEN: interests feature disabled
       { title: "Zapisane", href: "/zapisane", icon: Bookmark },
       { title: "Historia", href: "/historia", icon: History },
       { title: "Powiadomienia", href: "/notifications/settings", icon: Bell },
