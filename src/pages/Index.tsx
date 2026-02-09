@@ -18,7 +18,7 @@ import { useCarouselBanners } from "@/hooks/use-carousel-banners";
 import { useFeedTileAds } from "@/hooks/use-feed-tile-ads";
 // ZAKOMENTOWANE: useLocalNews powodowało race condition z useArticles - nadpisywanie stanu
 // import { useLocalNews, formatLocalArticleForCard } from "@/hooks/use-local-news";
-import { useContentRatio, interleaveArticlesByRatio } from "@/hooks/use-content-ratio";
+import { useContentRatio, interleaveArticlesByThreeRatios } from "@/hooks/use-content-ratio";
 import { useUserSettings } from "@/hooks/use-user-settings";
 import { Loader2 } from "lucide-react";
 import { useArticles, formatArticleForCard } from "@/hooks/use-articles";
@@ -357,7 +357,7 @@ const Index = () => {
     return scoredArticles.map(s => s.article);
   }, [allArticles, user, userPreferences, recentCategories]);
 
-  // Filter sport articles from all articles
+  // Split articles into 3 pools for interleaving
   const sportArticles = useMemo(() => {
     return allArticles.filter(article => {
       const category = article.category?.toLowerCase() || "";
@@ -365,31 +365,32 @@ const Index = () => {
     });
   }, [allArticles]);
 
-  // ZAKOMENTOWANE: Local news wyłączony - race condition
-  // const formattedLocalArticles = useMemo(() => {
-  //   return localNewsArticles.map(article => ({
-  //     ...formatLocalArticleForCard(article),
-  //     viewCount: 50,
-  //     pubDateMs: article.pubDateMs,
-  //   }));
-  // }, [localNewsArticles]);
+  const localArticles = useMemo(() => {
+    return allArticles.filter(article => {
+      const category = article.category?.toLowerCase() || "";
+      return category.includes("wiadomości") || category.includes("wiadomosci") || category.includes("lokalne");
+    });
+  }, [allArticles]);
 
-  // ZAKOMENTOWANE: Interleaved feed wyłączony - zależał od useLocalNews (race condition)
-  // const interleavedFeed = useMemo(() => {
-  //   if (activeCategory !== "all") return null;
-  //   let localPool = formattedLocalArticles;
-  //   if (!hasLocation || localPool.length === 0) {
-  //     localPool = allArticles.filter(article => {
-  //       const category = article.category?.toLowerCase() || "";
-  //       return category.includes("wiadomości") || category.includes("wiadomosci");
-  //     });
-  //   }
-  //   const sportPool = sportArticles;
-  //   if (localPool.length === 0 && sportPool.length === 0) return null;
-  //   const totalNeeded = visibleGrids * ARTICLES_PER_GRID;
-  //   return interleaveArticlesByRatio(localPool, sportPool, totalNeeded, contentRatioPrefs.localRatio);
-  // }, [activeCategory, formattedLocalArticles, sportArticles, allArticles, visibleGrids, contentRatioPrefs.localRatio, hasLocation]);
-  const interleavedFeed = null;
+  const generalArticles = useMemo(() => {
+    const sportSet = new Set(sportArticles);
+    const localSet = new Set(localArticles);
+    return allArticles.filter(a => !sportSet.has(a) && !localSet.has(a));
+  }, [allArticles, sportArticles, localArticles]);
+
+  // 3-way interleaved feed
+  const interleavedFeed = useMemo(() => {
+    if (activeCategory !== "all") return null;
+    if (generalArticles.length === 0 && localArticles.length === 0 && sportArticles.length === 0) return null;
+    const totalNeeded = visibleGrids * ARTICLES_PER_GRID;
+    return interleaveArticlesByThreeRatios(
+      generalArticles,
+      localArticles,
+      sportArticles,
+      totalNeeded,
+      contentRatioPrefs
+    );
+  }, [activeCategory, generalArticles, localArticles, sportArticles, visibleGrids, contentRatioPrefs]);
 
   // Generate enough articles for infinite scroll by cycling
   const getArticlesForDisplay = useMemo(() => {

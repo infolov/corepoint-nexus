@@ -3,13 +3,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 
 export interface ContentRatioPreferences {
+  generalRatio: number;
   localRatio: number;
   sportRatio: number;
 }
 
 const DEFAULT_PREFERENCES: ContentRatioPreferences = {
-  localRatio: 60,
-  sportRatio: 40,
+  generalRatio: 40,
+  localRatio: 35,
+  sportRatio: 25,
 };
 
 const LOCAL_STORAGE_KEY = "contentRatioPreferences";
@@ -20,16 +22,15 @@ export function useContentRatio() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Load preferences from localStorage first, then from database
   const loadPreferences = useCallback(async () => {
     setLoading(true);
 
-    // First try localStorage for quick initial load
     const localData = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (localData) {
       try {
         const parsed = JSON.parse(localData);
         setPreferences({
+          generalRatio: parsed.generalRatio ?? DEFAULT_PREFERENCES.generalRatio,
           localRatio: parsed.localRatio ?? DEFAULT_PREFERENCES.localRatio,
           sportRatio: parsed.sportRatio ?? DEFAULT_PREFERENCES.sportRatio,
         });
@@ -38,17 +39,17 @@ export function useContentRatio() {
       }
     }
 
-    // If logged in, fetch from database (overrides localStorage)
     if (user) {
       try {
         const { data, error } = await supabase
           .from("user_notification_preferences")
-          .select("local_ratio, sport_ratio")
+          .select("general_ratio, local_ratio, sport_ratio")
           .eq("user_id", user.id)
           .maybeSingle();
 
         if (!error && data) {
           const dbPreferences = {
+            generalRatio: (data as any).general_ratio ?? DEFAULT_PREFERENCES.generalRatio,
             localRatio: data.local_ratio ?? DEFAULT_PREFERENCES.localRatio,
             sportRatio: data.sport_ratio ?? DEFAULT_PREFERENCES.sportRatio,
           };
@@ -67,19 +68,16 @@ export function useContentRatio() {
     loadPreferences();
   }, [loadPreferences]);
 
-  // Save preferences to database and localStorage
   const savePreferences = useCallback(async (newPreferences: ContentRatioPreferences) => {
-    // Ensure ratios sum to 100
-    const normalizedPreferences = {
-      localRatio: Math.max(0, Math.min(100, newPreferences.localRatio)),
-      sportRatio: 100 - Math.max(0, Math.min(100, newPreferences.localRatio)),
-    };
+    const sum = newPreferences.generalRatio + newPreferences.localRatio + newPreferences.sportRatio;
+    if (sum !== 100) {
+      console.error("Content ratios must sum to 100, got:", sum);
+      return;
+    }
 
-    // Update local state immediately
-    setPreferences(normalizedPreferences);
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(normalizedPreferences));
+    setPreferences(newPreferences);
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newPreferences));
 
-    // If logged in, save to database
     if (user) {
       setSaving(true);
       try {
@@ -87,10 +85,11 @@ export function useContentRatio() {
           .from("user_notification_preferences")
           .upsert({
             user_id: user.id,
-            local_ratio: normalizedPreferences.localRatio,
-            sport_ratio: normalizedPreferences.sportRatio,
+            general_ratio: newPreferences.generalRatio,
+            local_ratio: newPreferences.localRatio,
+            sport_ratio: newPreferences.sportRatio,
             updated_at: new Date().toISOString(),
-          }, {
+          } as any, {
             onConflict: "user_id",
           });
 
@@ -105,12 +104,11 @@ export function useContentRatio() {
     }
   }, [user]);
 
-  // Update local ratio (sport ratio adjusts automatically)
-  const setLocalRatio = useCallback((ratio: number) => {
-    const clampedRatio = Math.max(0, Math.min(100, ratio));
+  const setRatios = useCallback((general: number, local: number, sport: number) => {
     savePreferences({
-      localRatio: clampedRatio,
-      sportRatio: 100 - clampedRatio,
+      generalRatio: Math.max(0, Math.min(100, general)),
+      localRatio: Math.max(0, Math.min(100, local)),
+      sportRatio: Math.max(0, Math.min(100, sport)),
     });
   }, [savePreferences]);
 
@@ -118,13 +116,86 @@ export function useContentRatio() {
     preferences,
     loading,
     saving,
-    setLocalRatio,
+    setRatios,
     savePreferences,
     refetch: loadPreferences,
   };
 }
 
-// Helper function to interleave articles based on ratio
+/**
+ * Balances two other ratios when one changes, keeping their mutual proportion.
+ */
+export function balanceRatios(
+  changedValue: number,
+  otherA: number,
+  otherB: number
+): [number, number] {
+  const remaining = 100 - changedValue;
+  const otherSum = otherA + otherB;
+
+  if (otherSum === 0) {
+    const half = Math.round(remaining / 2);
+    return [half, remaining - half];
+  }
+
+  const newA = Math.round((otherA / otherSum) * remaining);
+  const newB = remaining - newA;
+  return [Math.max(0, newA), Math.max(0, newB)];
+}
+
+/**
+ * Interleave articles from three pools based on ratios.
+ */
+export function interleaveArticlesByThreeRatios<T>(
+  generalArticles: T[],
+  localArticles: T[],
+  sportArticles: T[],
+  targetCount: number,
+  ratios: ContentRatioPreferences
+): T[] {
+  const { generalRatio, localRatio, sportRatio } = ratios;
+
+  const generalCount = Math.round((generalRatio / 100) * targetCount);
+  const localCount = Math.round((localRatio / 100) * targetCount);
+  const sportCount = targetCount - generalCount - localCount;
+
+  const selectedGeneral = generalArticles.slice(0, generalCount);
+  const selectedLocal = localArticles.slice(0, localCount);
+  const selectedSport = sportArticles.slice(0, sportCount);
+
+  // Interleave evenly
+  const result: T[] = [];
+  const pools = [
+    { items: selectedGeneral, ratio: generalRatio, index: 0 },
+    { items: selectedLocal, ratio: localRatio, index: 0 },
+    { items: selectedSport, ratio: sportRatio, index: 0 },
+  ];
+
+  for (let i = 0; i < targetCount; i++) {
+    // Pick the pool that is most "behind" based on its expected vs actual ratio
+    let bestPool = -1;
+    let bestScore = -Infinity;
+
+    for (let p = 0; p < pools.length; p++) {
+      if (pools[p].index >= pools[p].items.length) continue;
+      const expected = (pools[p].ratio / 100) * (i + 1);
+      const actual = pools[p].index;
+      const score = expected - actual;
+      if (score > bestScore) {
+        bestScore = score;
+        bestPool = p;
+      }
+    }
+
+    if (bestPool === -1) break;
+    result.push(pools[bestPool].items[pools[bestPool].index]);
+    pools[bestPool].index++;
+  }
+
+  return result.slice(0, targetCount);
+}
+
+// Legacy compat
 export function interleaveArticlesByRatio<T>(
   localArticles: T[],
   sportArticles: T[],
@@ -132,48 +203,11 @@ export function interleaveArticlesByRatio<T>(
   localRatio: number = 60
 ): T[] {
   const sportRatio = 100 - localRatio;
-  const localCount = Math.round((localRatio / 100) * targetCount);
-  const sportCount = targetCount - localCount;
-
-  // Take required articles from each pool
-  const selectedLocal = localArticles.slice(0, localCount);
-  const selectedSport = sportArticles.slice(0, sportCount);
-
-  // Interleave the articles
-  const result: T[] = [];
-  let localIndex = 0;
-  let sportIndex = 0;
-
-  // Calculate interleaving pattern based on ratio
-  // e.g., 60/40 means roughly 3 local for every 2 sport
-  const localStep = localRatio > 0 ? 100 / localRatio : Infinity;
-  const sportStep = sportRatio > 0 ? 100 / sportRatio : Infinity;
-
-  let localAccum = 0;
-  let sportAccum = 0;
-
-  for (let i = 0; i < targetCount; i++) {
-    localAccum += localStep;
-    sportAccum += sportStep;
-
-    if (localAccum >= sportAccum && localIndex < selectedLocal.length) {
-      result.push(selectedLocal[localIndex++]);
-      localAccum -= 100;
-    } else if (sportIndex < selectedSport.length) {
-      result.push(selectedSport[sportIndex++]);
-      sportAccum -= 100;
-    } else if (localIndex < selectedLocal.length) {
-      result.push(selectedLocal[localIndex++]);
-    }
-  }
-
-  // Add any remaining articles
-  while (localIndex < selectedLocal.length) {
-    result.push(selectedLocal[localIndex++]);
-  }
-  while (sportIndex < selectedSport.length) {
-    result.push(selectedSport[sportIndex++]);
-  }
-
-  return result.slice(0, targetCount);
+  return interleaveArticlesByThreeRatios(
+    [],
+    localArticles,
+    sportArticles,
+    targetCount,
+    { generalRatio: 0, localRatio, sportRatio }
+  );
 }

@@ -1,29 +1,56 @@
 import { useState } from "react";
-import { MapPin, Trophy, Loader2 } from "lucide-react";
+import { Newspaper, MapPin, Trophy, Loader2 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
-import { useContentRatio } from "@/hooks/use-content-ratio";
+import { useContentRatio, balanceRatios } from "@/hooks/use-content-ratio";
 import { cn } from "@/lib/utils";
 
 interface ContentRatioSliderProps {
   className?: string;
 }
 
+type Category = "general" | "local" | "sport";
+
+const CATEGORIES: {
+  key: Category;
+  label: string;
+  icon: typeof Newspaper;
+  colorClass: string;
+  bgClass: string;
+}[] = [
+  { key: "general", label: "Wszystkie", icon: Newspaper, colorClass: "text-orange-500", bgClass: "bg-orange-500" },
+  { key: "local", label: "Lokalne", icon: MapPin, colorClass: "text-blue-500", bgClass: "bg-blue-500" },
+  { key: "sport", label: "Sport", icon: Trophy, colorClass: "text-green-500", bgClass: "bg-green-500" },
+];
+
 export function ContentRatioSlider({ className }: ContentRatioSliderProps) {
-  const { preferences, loading, saving, setLocalRatio } = useContentRatio();
-  const [localValue, setLocalValue] = useState<number | null>(null);
+  const { preferences, loading, saving, setRatios } = useContentRatio();
+  const [localValues, setLocalValues] = useState<Record<Category, number> | null>(null);
 
-  // Use local value during drag, otherwise use saved value
-  const displayValue = localValue ?? preferences.localRatio;
-  const sportValue = 100 - displayValue;
-
-  const handleValueChange = (values: number[]) => {
-    setLocalValue(values[0]);
+  const values = localValues ?? {
+    general: preferences.generalRatio,
+    local: preferences.localRatio,
+    sport: preferences.sportRatio,
   };
 
-  const handleValueCommit = (values: number[]) => {
-    setLocalRatio(values[0]);
-    setLocalValue(null);
+  const handleSliderChange = (category: Category, newValue: number) => {
+    const clamped = Math.max(0, Math.min(100, newValue));
+    const others = CATEGORIES.filter(c => c.key !== category).map(c => c.key);
+    const [balA, balB] = balanceRatios(clamped, values[others[0]], values[others[1]]);
+
+    setLocalValues({
+      ...values,
+      [category]: clamped,
+      [others[0]]: balA,
+      [others[1]]: balB,
+    });
+  };
+
+  const handleSliderCommit = () => {
+    if (localValues) {
+      setRatios(localValues.general, localValues.local, localValues.sport);
+      setLocalValues(null);
+    }
   };
 
   if (loading) {
@@ -45,55 +72,47 @@ export function ContentRatioSlider({ className }: ContentRatioSliderProps) {
           </span>
         )}
       </div>
-      
-      {/* Ratio display */}
-      <div className="flex items-center justify-between text-sm">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-md bg-blue-500/10">
-            <MapPin className="h-4 w-4 text-blue-500" />
+
+      {/* Three category sliders */}
+      <div className="space-y-3">
+        {CATEGORIES.map(({ key, label, icon: Icon, colorClass }) => (
+          <div key={key} className="space-y-1.5">
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-2">
+                <Icon className={cn("h-4 w-4", colorClass)} />
+                <span className="text-muted-foreground">{label}</span>
+              </div>
+              <span className="font-semibold text-foreground tabular-nums w-10 text-right">
+                {values[key]}%
+              </span>
+            </div>
+            <Slider
+              value={[values[key]]}
+              onValueChange={(v) => handleSliderChange(key, v[0])}
+              onValueCommit={handleSliderCommit}
+              min={0}
+              max={100}
+              step={5}
+              className="relative"
+            />
           </div>
-          <span className="text-muted-foreground">Lokalne</span>
-          <span className="font-semibold text-foreground">{displayValue}%</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="font-semibold text-foreground">{sportValue}%</span>
-          <span className="text-muted-foreground">Sport</span>
-          <div className="p-1.5 rounded-md bg-green-500/10">
-            <Trophy className="h-4 w-4 text-green-500" />
-          </div>
-        </div>
+        ))}
       </div>
 
-      {/* Slider with gradient track */}
-      <div className="relative">
-        <div className="absolute inset-0 h-2 top-1/2 -translate-y-1/2 rounded-full bg-gradient-to-r from-blue-500 to-green-500 opacity-20" />
-        <Slider
-          value={[displayValue]}
-          onValueChange={handleValueChange}
-          onValueCommit={handleValueCommit}
-          min={0}
-          max={100}
-          step={10}
-          className="relative"
-        />
+      {/* Visual preview bar */}
+      <div className="flex gap-0.5 h-2.5 rounded-full overflow-hidden">
+        {CATEGORIES.map(({ key, bgClass }) => (
+          <div
+            key={key}
+            className={cn(bgClass, "transition-all duration-300")}
+            style={{ width: `${values[key]}%` }}
+          />
+        ))}
       </div>
 
-      {/* Helper text */}
       <p className="text-xs text-muted-foreground text-center">
-        Przesuń suwak, aby dostosować proporcje lokalnych i sportowych wiadomości w Twoim feedzie.
+        Dostosuj proporcje wiadomości w Twoim feedzie. Suma zawsze wynosi 100%.
       </p>
-
-      {/* Visual preview */}
-      <div className="flex gap-1 h-2 rounded-full overflow-hidden">
-        <div 
-          className="bg-blue-500 transition-all duration-300"
-          style={{ width: `${displayValue}%` }}
-        />
-        <div 
-          className="bg-green-500 transition-all duration-300"
-          style={{ width: `${sportValue}%` }}
-        />
-      </div>
     </div>
   );
 }

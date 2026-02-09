@@ -1369,6 +1369,7 @@ export type Database = {
           created_at: string
           daily_digest: boolean
           font_size: string | null
+          general_ratio: number
           id: string
           local_ratio: number
           personalized: boolean
@@ -1384,6 +1385,7 @@ export type Database = {
           created_at?: string
           daily_digest?: boolean
           font_size?: string | null
+          general_ratio?: number
           id?: string
           local_ratio?: number
           personalized?: boolean
@@ -1399,6 +1401,7 @@ export type Database = {
           created_at?: string
           daily_digest?: boolean
           font_size?: string | null
+          general_ratio?: number
           id?: string
           local_ratio?: number
           personalized?: boolean
