@@ -74,6 +74,7 @@ const partnerSidebarConfig: NavSection[] = [
   {
     heading: "Zasoby",
     items: [
+      { title: "Artykuł sponsorowany", href: "/dashboard/partner/sponsored-article", icon: FileEdit },
       { title: "Miejsca reklamowe", href: "/dashboard/partner/placements", icon: Target },
       { title: "Kredyty i Płatności", href: "/dashboard/partner/credits", icon: CreditCard },
     ]
