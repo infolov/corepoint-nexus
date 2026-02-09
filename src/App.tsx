@@ -27,7 +27,7 @@ import { MainLayout } from "./components/layout/MainLayout";
 
 // Role-specific dashboard home pages
 import DashboardUser from "./pages/dashboard/DashboardUser";
-import DashboardPartner from "./pages/dashboard/DashboardPartner";
+import DashboardPartnerHome from "./pages/dashboard/DashboardPartnerHome";
 import DashboardPublisherHome from "./pages/dashboard/DashboardPublisherHome";
 import DashboardAdminHome from "./pages/dashboard/DashboardAdminHome";
 
@@ -103,7 +103,7 @@ const App = () => (
                   <Route path="user/partner-application" element={<DashboardPartnerApplication />} />
                   
                   {/* Partner dashboard routes */}
-                  <Route path="partner" element={<DashboardPublisher />} />
+                  <Route path="partner" element={<DashboardPartnerHome />} />
                   <Route path="partner/stats" element={<DashboardStats />} />
                   <Route path="partner/campaigns" element={<DashboardCampaigns />} />
                   <Route path="partner/campaigns/new" element={<DashboardCampaignCreator />} />
