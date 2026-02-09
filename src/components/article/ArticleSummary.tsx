@@ -74,7 +74,23 @@ export const ArticleSummary = ({ title, content, category, sourceUrl, onTitleGen
           throw new Error(data.error);
         }
 
-        setSummary(data?.summary || null);
+        // Safety: if summary looks like raw JSON/markdown, try to extract clean text
+        let cleanSummary = data?.summary || null;
+        if (cleanSummary && (cleanSummary.startsWith('```') || cleanSummary.startsWith('{'))) {
+          try {
+            const jsonStr = cleanSummary.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+            const parsed = JSON.parse(jsonStr);
+            if (parsed.summary) {
+              cleanSummary = parsed.summary;
+              if (parsed.title && parsed.title !== title && onTitleGenerated) {
+                onTitleGenerated(parsed.title);
+              }
+            }
+          } catch {
+            // Not valid JSON, use as-is
+          }
+        }
+        setSummary(cleanSummary);
         
         // If AI generated a new title, notify parent
         if (data?.title && data.title !== title) {
