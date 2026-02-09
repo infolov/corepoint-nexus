@@ -95,6 +95,35 @@ interface SourceFromDB {
   is_active: boolean;
 }
 
+function deriveSourceFromUrl(url: string, fallbackSource: string): string {
+  try {
+    const hostname = new URL(url).hostname;
+    // naszemiasto.pl: extract city from subdomain (e.g. opole.naszemiasto.pl -> Nasze Miasto Opole)
+    const nmMatch = hostname.match(/^([a-z]+)\.naszemiasto\.pl$/i);
+    if (nmMatch) {
+      const city = nmMatch[1];
+      // Capitalize first letter
+      const cityName = city.charAt(0).toUpperCase() + city.slice(1);
+      // Map common city slugs to proper Polish names
+      const cityNameMap: Record<string, string> = {
+        'warszawa': 'Warszawa', 'krakow': 'Kraków', 'wroclaw': 'Wrocław',
+        'gdansk': 'Gdańsk', 'poznan': 'Poznań', 'lodz': 'Łódź',
+        'katowice': 'Katowice', 'szczecin': 'Szczecin', 'lublin': 'Lublin',
+        'bialystok': 'Białystok', 'olsztyn': 'Olsztyn', 'opole': 'Opole',
+        'rzeszow': 'Rzeszów', 'kielce': 'Kielce', 'zielonagora': 'Zielona Góra',
+        'gorzowwielkopolski': 'Gorzów Wlkp.', 'bydgoszcz': 'Bydgoszcz',
+        'torun': 'Toruń', 'radom': 'Radom', 'czestochowa': 'Częstochowa',
+      };
+      return `Nasze Miasto ${cityNameMap[city.toLowerCase()] || cityName}`;
+    }
+    // tvn24.pl or tvnwarszawa: keep fallback
+    // Other domains: try to use hostname
+  } catch {
+    // ignore URL parse errors
+  }
+  return fallbackSource;
+}
+
 function parseRSSItem(item: string, source: string, voivodeship: string): LocalArticle | null {
   try {
     const titleMatch = item.match(/<title>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/title>/s);
@@ -126,6 +155,9 @@ function parseRSSItem(item: string, source: string, voivodeship: string): LocalA
     const pubDateStr = pubDateMatch?.[1] || '';
 
     if (!title || !link) return null;
+
+    // Derive actual source name from the article's URL instead of using the feed name
+    const actualSource = deriveSourceFromUrl(link, source);
 
     const id = simpleHash(link) + simpleHash(title.substring(0, 20));
 
@@ -167,7 +199,7 @@ function parseRSSItem(item: string, source: string, voivodeship: string): LocalA
       category: 'Lokalne',
       region: voivodeship,
       image,
-      source,
+      source: actualSource,
       sourceUrl: link,
       timestamp,
       content,
