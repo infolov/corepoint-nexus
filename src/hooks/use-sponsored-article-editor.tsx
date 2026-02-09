@@ -68,7 +68,6 @@ export function useSponsoredArticleEditor() {
           sponsor_user_id: user.id,
           sponsor_status: "pending",
           is_published: false,
-          badge: "Sponsorowane",
         })
         .select()
         .single();
