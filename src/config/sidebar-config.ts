@@ -130,6 +130,7 @@ const adminSidebarConfig: NavSection[] = [
   {
     heading: "Zarządzanie treścią",
     items: [
+      { title: "Weryfikacja artykułów", href: "/dashboard/admin/article-review", icon: FileText },
       { title: "Kategorie", href: "/dashboard/admin/categories", icon: FolderTree },
       { title: "Fact Check", href: "/dashboard/admin/factcheck", icon: Shield },
       { title: "Karuzele", href: "/dashboard/admin/carousels", icon: LayoutGrid },

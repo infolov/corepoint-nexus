@@ -61,6 +61,7 @@ export default function DashboardAdminHome() {
     {
       title: "Zarządzanie treścią",
       items: [
+        { title: "Weryfikacja artykułów", href: "/dashboard/admin/article-review", icon: Shield },
         { title: "Kategorie", href: "/dashboard/admin/categories", icon: FolderTree },
         { title: "Karuzele", href: "/dashboard/admin/carousels", icon: FolderTree },
       ]

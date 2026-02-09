@@ -57,6 +57,7 @@ import DashboardAdminLogs from "./pages/dashboard/DashboardAdminLogs";
 import DashboardAdminApplications from "./pages/dashboard/DashboardAdminApplications";
 import DashboardAdminJournalists from "./pages/dashboard/DashboardAdminJournalists";
 import DashboardAdminCategories from "./pages/dashboard/DashboardAdminCategories";
+import DashboardAdminArticleReview from "./pages/dashboard/DashboardAdminArticleReview";
 
 const queryClient = new QueryClient();
 
@@ -134,6 +135,7 @@ const App = () => (
                   <Route path="admin/applications" element={<DashboardAdminApplications />} />
                   <Route path="admin/journalists" element={<DashboardAdminJournalists />} />
                   <Route path="admin/categories" element={<DashboardAdminCategories />} />
+                  <Route path="admin/article-review" element={<DashboardAdminArticleReview />} />
                   
                   {/* Legacy routes - redirect to new structure */}
                   <Route path="calendar" element={<Navigate to="/dashboard/partner/calendar" replace />} />
