@@ -51,7 +51,7 @@ export default function DashboardUser() {
       {/* Welcome section */}
       <div>
         <h1 className="text-2xl font-bold">
-          Witaj, {user?.user_metadata?.full_name || "Użytkowniku"}!
+          {user?.user_metadata?.full_name ? `Witaj, ${user.user_metadata.full_name}!` : "Witaj!"}
         </h1>
         <p className="text-muted-foreground mt-1">
           Zarządzaj swoimi preferencjami i śledź ulubione tematy.
