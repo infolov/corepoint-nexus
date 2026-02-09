@@ -111,6 +111,7 @@ const App = () => (
                   <Route path="partner/preview" element={<DashboardPreview />} />
                   <Route path="partner/placements" element={<DashboardPlacements />} />
                   <Route path="partner/credits" element={<DashboardCredits />} />
+                  <Route path="partner/sponsored-article" element={<DashboardPublisher />} />
                   <Route path="partner/settings" element={<DashboardSettings />} />
                   
                   {/* Publisher dashboard routes */}
