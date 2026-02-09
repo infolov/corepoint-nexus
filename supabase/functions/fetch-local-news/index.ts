@@ -95,33 +95,50 @@ interface SourceFromDB {
   is_active: boolean;
 }
 
-function deriveSourceFromUrl(url: string, fallbackSource: string): string {
+// Map of naszemiasto.pl city subdomains to proper Polish names
+const naszeMiastoCityNameMap: Record<string, string> = {
+  'warszawa': 'Warszawa', 'krakow': 'Kraków', 'wroclaw': 'Wrocław',
+  'gdansk': 'Gdańsk', 'poznan': 'Poznań', 'lodz': 'Łódź',
+  'katowice': 'Katowice', 'szczecin': 'Szczecin', 'lublin': 'Lublin',
+  'bialystok': 'Białystok', 'olsztyn': 'Olsztyn', 'opole': 'Opole',
+  'rzeszow': 'Rzeszów', 'kielce': 'Kielce', 'zielonagora': 'Zielona Góra',
+  'gorzowwielkopolski': 'Gorzów Wlkp.', 'bydgoszcz': 'Bydgoszcz',
+  'torun': 'Toruń', 'radom': 'Radom', 'czestochowa': 'Częstochowa',
+};
+
+function getNaszeMiastoCity(url: string): string | null {
   try {
     const hostname = new URL(url).hostname;
-    // naszemiasto.pl: extract city from subdomain (e.g. opole.naszemiasto.pl -> Nasze Miasto Opole)
     const nmMatch = hostname.match(/^([a-z]+)\.naszemiasto\.pl$/i);
-    if (nmMatch) {
-      const city = nmMatch[1];
-      // Capitalize first letter
-      const cityName = city.charAt(0).toUpperCase() + city.slice(1);
-      // Map common city slugs to proper Polish names
-      const cityNameMap: Record<string, string> = {
-        'warszawa': 'Warszawa', 'krakow': 'Kraków', 'wroclaw': 'Wrocław',
-        'gdansk': 'Gdańsk', 'poznan': 'Poznań', 'lodz': 'Łódź',
-        'katowice': 'Katowice', 'szczecin': 'Szczecin', 'lublin': 'Lublin',
-        'bialystok': 'Białystok', 'olsztyn': 'Olsztyn', 'opole': 'Opole',
-        'rzeszow': 'Rzeszów', 'kielce': 'Kielce', 'zielonagora': 'Zielona Góra',
-        'gorzowwielkopolski': 'Gorzów Wlkp.', 'bydgoszcz': 'Bydgoszcz',
-        'torun': 'Toruń', 'radom': 'Radom', 'czestochowa': 'Częstochowa',
-      };
-      return `Nasze Miasto ${cityNameMap[city.toLowerCase()] || cityName}`;
-    }
-    // tvn24.pl or tvnwarszawa: keep fallback
-    // Other domains: try to use hostname
-  } catch {
-    // ignore URL parse errors
+    if (nmMatch) return nmMatch[1].toLowerCase();
+  } catch { /* ignore */ }
+  return null;
+}
+
+function deriveSourceFromUrl(url: string, fallbackSource: string): string {
+  const city = getNaszeMiastoCity(url);
+  if (city) {
+    const cityName = naszeMiastoCityNameMap[city] || city.charAt(0).toUpperCase() + city.slice(1);
+    return `Nasze Miasto ${cityName}`;
   }
   return fallbackSource;
+}
+
+/**
+ * Checks if a naszemiasto.pl article belongs to the given voivodeship.
+ * Returns true if article should be KEPT (non-naszemiasto articles always pass).
+ */
+function isArticleInVoivodeship(articleUrl: string, voivodeship: string): boolean {
+  const city = getNaszeMiastoCity(articleUrl);
+  if (!city) return true; // not naszemiasto.pl — keep
+
+  // Look up the city in cityToVoivodeship map
+  const articleVoivodeship = cityToVoivodeship[city];
+  if (!articleVoivodeship) return true; // unknown city — keep (benefit of the doubt)
+
+  // Normalize the requested voivodeship for comparison
+  const normalizedRequested = voivodeshipNormalize[voivodeship] || voivodeship;
+  return articleVoivodeship === normalizedRequested;
 }
 
 function parseRSSItem(item: string, source: string, voivodeship: string): LocalArticle | null {
@@ -230,13 +247,22 @@ async function fetchRSSFeed(feedUrl: string, source: string, voivodeship: string
     const items = xml.match(/<item>([\s\S]*?)<\/item>/g) || [];
     
     const articles: LocalArticle[] = [];
-    for (const item of items.slice(0, 15)) {
+    let filtered = 0;
+    for (const item of items.slice(0, 20)) {
       const article = parseRSSItem(item, source, voivodeship);
       if (article) {
+        // Filter out naszemiasto.pl articles from cities outside the requested voivodeship
+        if (!isArticleInVoivodeship(article.sourceUrl, voivodeship)) {
+          filtered++;
+          continue;
+        }
         articles.push(article);
       }
     }
 
+    if (filtered > 0) {
+      console.log(`Filtered out ${filtered} out-of-region articles from ${source}`);
+    }
     console.log(`Fetched ${articles.length} local articles from ${source}`);
     return articles;
   } catch (error) {
