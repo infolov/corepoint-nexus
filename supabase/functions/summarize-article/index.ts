@@ -233,9 +233,10 @@ ${fullContent}`
             ]
           }
         ],
-        generationConfig: {
-          maxOutputTokens: 1200,
+      generationConfig: {
+          maxOutputTokens: 4096,
           temperature: 0,
+          thinkingConfig: { thinkingBudget: 0 },
         }
       }),
     });
@@ -261,28 +262,49 @@ ${fullContent}`
     const data = await response.json();
     const rawContent = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
     
+    console.log("Raw AI response (first 500 chars):", rawContent.substring(0, 500));
+    
     // Parse JSON response
     let generatedTitle = title;
     let summary = "Nie udało się wygenerować podsumowania.";
     
     try {
-      // Clean up the response - use regex to extract JSON object robustly
-      const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        throw new Error("No JSON object found in AI response");
-      }
+      // Clean up the response - strip markdown code fences first
+      const cleaned = rawContent.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
       
-      const parsed = JSON.parse(jsonMatch[0]);
-      if (parsed.title) {
-        generatedTitle = parsed.title;
-      }
-      if (parsed.summary) {
-        summary = parsed.summary;
+      // Try to extract JSON object
+      const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        // Attempt to repair truncated JSON by appending closing chars
+        const partialMatch = cleaned.match(/\{[\s\S]*/);
+        if (partialMatch) {
+          let repaired = partialMatch[0];
+          // Close any open string
+          const quoteCount = (repaired.match(/"/g) || []).length;
+          if (quoteCount % 2 !== 0) repaired += '"';
+          // Close the JSON object
+          if (!repaired.endsWith('}')) repaired += '}';
+          
+          try {
+            const parsed = JSON.parse(repaired);
+            if (parsed.title) generatedTitle = parsed.title;
+            if (parsed.summary) summary = parsed.summary;
+            console.log("Repaired truncated JSON successfully");
+          } catch {
+            throw new Error("Could not repair truncated JSON");
+          }
+        } else {
+          throw new Error("No JSON object found in AI response");
+        }
+      } else {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (parsed.title) generatedTitle = parsed.title;
+        if (parsed.summary) summary = parsed.summary;
       }
     } catch (parseError) {
-      console.error("Failed to parse AI response as JSON:", parseError, "Raw:", rawContent.substring(0, 200));
-      // Fallback: strip markdown and use as plain text
-      summary = rawContent.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+      console.error("Failed to parse AI response as JSON:", parseError, "Raw:", rawContent.substring(0, 300));
+      // Fallback: use raw content as summary
+      summary = rawContent.replace(/```json\s*/g, '').replace(/```\s*/g, '').replace(/[{}]/g, '').trim();
     }
 
     // Save to cache with both title and summary
