@@ -103,10 +103,24 @@ serve(async (req) => {
       try {
         const parsed = JSON.parse(cachedSummary.summary);
         if (parsed.title && parsed.summary) {
+          // Check if summary itself contains raw JSON/markdown (corrupted cache)
+          let cleanSummary = parsed.summary;
+          if (typeof cleanSummary === 'string' && (cleanSummary.startsWith('```') || cleanSummary.startsWith('{'))) {
+            try {
+              const innerJson = cleanSummary.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+              const innerParsed = JSON.parse(innerJson);
+              if (innerParsed.summary) {
+                cleanSummary = innerParsed.summary;
+              }
+            } catch {
+              // Not nested JSON, use as-is but strip markdown
+              cleanSummary = cleanSummary.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+            }
+          }
           return new Response(
             JSON.stringify({ 
               title: parsed.title, 
-              summary: parsed.summary, 
+              summary: cleanSummary, 
               fromCache: true 
             }),
             { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -252,19 +266,13 @@ ${fullContent}`
     let summary = "Nie udało się wygenerować podsumowania.";
     
     try {
-      // Clean up the response - remove markdown code blocks if present
-      let jsonContent = rawContent.trim();
-      if (jsonContent.startsWith('```json')) {
-        jsonContent = jsonContent.slice(7);
-      } else if (jsonContent.startsWith('```')) {
-        jsonContent = jsonContent.slice(3);
+      // Clean up the response - use regex to extract JSON object robustly
+      const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error("No JSON object found in AI response");
       }
-      if (jsonContent.endsWith('```')) {
-        jsonContent = jsonContent.slice(0, -3);
-      }
-      jsonContent = jsonContent.trim();
       
-      const parsed = JSON.parse(jsonContent);
+      const parsed = JSON.parse(jsonMatch[0]);
       if (parsed.title) {
         generatedTitle = parsed.title;
       }
@@ -272,9 +280,9 @@ ${fullContent}`
         summary = parsed.summary;
       }
     } catch (parseError) {
-      console.error("Failed to parse AI response as JSON:", parseError);
-      // Fallback: use raw content as summary if JSON parsing fails
-      summary = rawContent;
+      console.error("Failed to parse AI response as JSON:", parseError, "Raw:", rawContent.substring(0, 200));
+      // Fallback: strip markdown and use as plain text
+      summary = rawContent.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
     }
 
     // Save to cache with both title and summary
