@@ -25,6 +25,7 @@ interface NewsCardProps {
   sourceUrl?: string;
   badge?: "hot" | "trending" | "new" | "pilne";
   hasVideo?: boolean;
+  isSponsored?: boolean;
   variant?: "default" | "horizontal" | "compact" | "hero" | "msn-slot";
   className?: string;
 }
@@ -136,6 +137,7 @@ export function NewsCard({
   sourceUrl,
   badge,
   hasVideo,
+  isSponsored,
   variant = "default",
   className,
 }: NewsCardProps) {
@@ -156,6 +158,7 @@ export function NewsCard({
         source,
         sourceUrl,
         badge,
+        isSponsored: isSponsored || false,
       };
       localStorage.setItem(`article_${id}`, JSON.stringify(articleData));
     }

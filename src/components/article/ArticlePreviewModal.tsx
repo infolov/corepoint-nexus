@@ -25,6 +25,7 @@ interface ArticlePreviewModalProps {
     sourceUrl?: string;
     excerpt?: string;
     content?: string;
+    isSponsored?: boolean;
   } | null;
 }
 
@@ -41,7 +42,7 @@ export function ArticlePreviewModal({ isOpen, onClose, article }: ArticlePreview
 
   useEffect(() => {
     const fetchSummary = async () => {
-      if (!article || !isOpen) return;
+      if (!article || !isOpen || article.isSponsored) return;
       
       setLoading(true);
       setError(null);
@@ -169,59 +170,73 @@ export function ArticlePreviewModal({ isOpen, onClose, article }: ArticlePreview
           </div>
         </div>
 
-        {/* AI Summary Section */}
+        {/* AI Summary or Full Sponsored Content */}
         <div className="space-y-3">
-          <h4 className="font-semibold text-sm text-muted-foreground flex items-center gap-2">
-            <span className="w-5 h-5 rounded bg-primary/10 flex items-center justify-center text-xs">✨</span>
-            Podsumowanie AI
-          </h4>
-          
-          {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
-              <span className="text-muted-foreground">Generowanie podsumowania...</span>
-            </div>
-          ) : error ? (
-            <div className="text-center py-6 text-muted-foreground">
-              <p>{error}</p>
-            </div>
-          ) : summary ? (
+          {article.isSponsored ? (
             <>
+              <h4 className="font-semibold text-sm text-muted-foreground flex items-center gap-2">
+                <span className="w-5 h-5 rounded bg-primary/10 flex items-center justify-center text-xs">📄</span>
+                Treść artykułu sponsorowanego
+              </h4>
               <div className="prose prose-sm max-w-none dark:prose-invert bg-muted/30 rounded-lg p-4">
-                <p className="text-foreground/90 leading-relaxed m-0">{summary}</p>
-              </div>
-              <div className="flex gap-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handlePlayAudio}
-                  className="h-8 px-3 text-xs"
-                >
-                  {isPlaying ? (
-                    <>
-                      <VolumeX className="h-4 w-4 mr-1" />
-                      Pauza
-                    </>
-                  ) : (
-                    <>
-                      <Volume2 className="h-4 w-4 mr-1" />
-                      Odsłuchaj
-                    </>
-                  )}
-                </Button>
-                {isPlaying && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleStopAudio}
-                    className="h-8 px-2"
-                  >
-                    <Square className="h-3 w-3" />
-                  </Button>
-                )}
+                <div dangerouslySetInnerHTML={{ __html: article.content || article.excerpt || '' }} />
               </div>
             </>
-          ) : null}
+          ) : (
+            <>
+              <h4 className="font-semibold text-sm text-muted-foreground flex items-center gap-2">
+                <span className="w-5 h-5 rounded bg-primary/10 flex items-center justify-center text-xs">✨</span>
+                Podsumowanie AI
+              </h4>
+              
+              {loading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
+                  <span className="text-muted-foreground">Generowanie podsumowania...</span>
+                </div>
+              ) : error ? (
+                <div className="text-center py-6 text-muted-foreground">
+                  <p>{error}</p>
+                </div>
+              ) : summary ? (
+                <>
+                  <div className="prose prose-sm max-w-none dark:prose-invert bg-muted/30 rounded-lg p-4">
+                    <p className="text-foreground/90 leading-relaxed m-0">{summary}</p>
+                  </div>
+                  <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handlePlayAudio}
+                      className="h-8 px-3 text-xs"
+                    >
+                      {isPlaying ? (
+                        <>
+                          <VolumeX className="h-4 w-4 mr-1" />
+                          Pauza
+                        </>
+                      ) : (
+                        <>
+                          <Volume2 className="h-4 w-4 mr-1" />
+                          Odsłuchaj
+                        </>
+                      )}
+                    </Button>
+                    {isPlaying && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleStopAudio}
+                        className="h-8 px-2"
+                      >
+                        <Square className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
+                </>
+              ) : null}
+            </>
+          )}
         </div>
 
         {/* Related Articles Section */}
