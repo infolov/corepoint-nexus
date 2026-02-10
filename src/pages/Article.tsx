@@ -90,6 +90,7 @@ const Article = () => {
   const content = article?.content || article?.fullContent || article?.description || article?.excerpt || article?.title || "";
   const sourceUrl = article?.sourceUrl || article?.url || article?.link;
   const source = article?.source || "Informacje.pl";
+  const isSponsored = article?.isSponsored || article?.is_sponsored || false;
 
   // Get related articles using intelligent matching (category + keywords + named entities)
   // MUST be called before any early returns to follow Rules of Hooks
@@ -219,14 +220,20 @@ const Article = () => {
               <AuctionAdSlot variant="horizontal" placementSlug="article-middle" className="w-full" slotIndex={2} />
             </div>
 
-            {/* AI Summary */}
-            <ArticleSummary 
-              title={article.title}
-              content={content}
-              category={article.category}
-              sourceUrl={sourceUrl}
-              onTitleGenerated={(newTitle) => setAiGeneratedTitle(newTitle)}
-            />
+            {/* AI Summary or Full Sponsored Content */}
+            {isSponsored ? (
+              <div className="prose prose-sm max-w-none dark:prose-invert mb-6">
+                <div dangerouslySetInnerHTML={{ __html: content }} />
+              </div>
+            ) : (
+              <ArticleSummary 
+                title={article.title}
+                content={content}
+                category={article.category}
+                sourceUrl={sourceUrl}
+                onTitleGenerated={(newTitle) => setAiGeneratedTitle(newTitle)}
+              />
+            )}
 
             {/* Action Buttons - Thumbs up/down, Save & Share */}
             <div className="flex items-center justify-between border-t border-b border-border py-4 my-6">

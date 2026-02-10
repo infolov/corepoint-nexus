@@ -170,6 +170,7 @@ const Index = () => {
       ...formatArticleForCard(article),
       viewCount: article.view_count || 0,
       createdAt: article.created_at,
+      isSponsored: article.is_sponsored || false,
     }));
 
     // Merge and deduplicate by title similarity
@@ -395,23 +396,41 @@ const Index = () => {
   // Generate enough articles for infinite scroll by cycling
   const getArticlesForDisplay = useMemo(() => {
     // Use interleaved feed if available (only for "all" category)
-    if (interleavedFeed && interleavedFeed.length > 0) {
-      const totalNeeded = visibleGrids * ARTICLES_PER_GRID;
-      const result = [];
-      for (let i = 0; i < totalNeeded; i++) {
-        result.push(interleavedFeed[i % interleavedFeed.length]);
-      }
-      return result;
-    }
+    const sourceArticles = (interleavedFeed && interleavedFeed.length > 0)
+      ? interleavedFeed
+      : (user ? personalizedArticles : allArticles);
 
-    // Otherwise use personalized or all articles
-    const articlesToUse = user ? personalizedArticles : allArticles;
-    if (articlesToUse.length === 0) return [];
-    
+    if (sourceArticles.length === 0) return [];
+
+    // Separate sponsored and non-sponsored articles
+    const nonSponsored = sourceArticles.filter((a: any) => !a.isSponsored);
+    const sponsored = sourceArticles.filter((a: any) => a.isSponsored);
+
+    // Build final list: positions 1-3 (indices 0-2) are non-sponsored only,
+    // from position 4+ sponsored articles can be mixed in
     const totalNeeded = visibleGrids * ARTICLES_PER_GRID;
-    const result = [];
+    const result: typeof sourceArticles = [];
+    let nonSponsoredIdx = 0;
+    let sponsoredIdx = 0;
+
     for (let i = 0; i < totalNeeded; i++) {
-      result.push(articlesToUse[i % articlesToUse.length]);
+      if (i < 3) {
+        // Positions 1-3: only non-sponsored
+        if (nonSponsored.length > 0) {
+          result.push(nonSponsored[nonSponsoredIdx % nonSponsored.length]);
+          nonSponsoredIdx++;
+        }
+      } else if (sponsoredIdx < sponsored.length) {
+        // From position 4+: insert sponsored articles first
+        result.push(sponsored[sponsoredIdx]);
+        sponsoredIdx++;
+      } else {
+        // Fill remaining with non-sponsored (cycling)
+        if (nonSponsored.length > 0) {
+          result.push(nonSponsored[nonSponsoredIdx % nonSponsored.length]);
+          nonSponsoredIdx++;
+        }
+      }
     }
     return result;
   }, [allArticles, personalizedArticles, interleavedFeed, visibleGrids, user]);
@@ -476,7 +495,8 @@ const Index = () => {
                       timestamp={article.timestamp} 
                       badge={article.badge} 
                       source={article.source} 
-                      sourceUrl={article.sourceUrl} 
+                      sourceUrl={article.sourceUrl}
+                      isSponsored={(article as any).isSponsored}
                       variant="default" 
                     />
                   );

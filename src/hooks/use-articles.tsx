@@ -13,6 +13,7 @@ export interface Article {
   created_at: string;
   region: string | null;
   view_count: number;
+  is_sponsored: boolean;
 }
 
 interface UseArticlesOptions {
@@ -38,7 +39,7 @@ export function useArticles(options: UseArticlesOptions = {}) {
     try {
       let query = supabase
         .from("articles")
-        .select("id, title, excerpt, content, category, image, badge, created_at, region, view_count")
+        .select("id, title, excerpt, content, category, image, badge, created_at, region, view_count, is_sponsored")
         .eq("is_published", true)
         .order("created_at", { ascending: false })
         .limit(limit);
@@ -114,6 +115,7 @@ export function formatArticleForCard(article: Article) {
     timestamp: formatTimestamp(article.created_at),
     badge,
     source: "INFORMACJE.PL",
+    isSponsored: article.is_sponsored || false,
   };
 }
 
