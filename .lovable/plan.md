@@ -1,77 +1,50 @@
 
+# Artykuly sponsorowane: pelna tresc + pozycjonowanie w feedzie
 
-# Naprawa podsumowań AI + zmiana klucza Firecrawl
+## Co sie zmieni
 
-## Zdiagnozowane problemy
+### 1. Artykuly sponsorowane pokazuja pelna tresc zamiast podsumowania AI
+Na stronie artykulu (`/artykul/:id`), jesli artykul ma flage `is_sponsored = true`, zamiast komponentu `ArticleSummary` (podsumowanie AI) wyswietlona zostanie pelna tresc artykulu (`content`). Dotyczy to rowniez modalu podgladu (`ArticlePreviewModal`).
 
-### 1. Obcięte podsumowania (KRYTYCZNY BUG)
-Logi edge function potwierdzają przyczynę:
-- Gemini 2.5 Flash zużywa tokeny na "myślenie" (thinking), które liczą się do limitu `maxOutputTokens: 1200`
-- Po "myśleniu" zostaje za mało tokenów na odpowiedź -- JSON jest obcinany w połowie
-- Regex `/\{[\s\S]*\}/` nie znajduje zamykającego `}`, parsing się wysypuje
-- Do bazy trafia surowy, obcięty tekst zamiast czystego podsumowania
-- Wszystkie ostatnie wpisy w `article_summaries` zawierają uszkodzone dane (podwójnie zagnieżdżony, obcięty JSON)
-
-### 2. Klucz Firecrawl
-Użytkownik chce zmienić klucz API. Obecny sekret nosi nazwę `Firecrawl_API_KEY`.
-
----
-
-## Plan naprawy
-
-### Krok 1: Zmiana klucza Firecrawl
-Użycie narzędzia do aktualizacji sekretu `Firecrawl_API_KEY` -- użytkownik zostanie poproszony o podanie nowej wartości.
-
-### Krok 2: Naprawa edge function `summarize-article`
-Zmiany w `supabase/functions/summarize-article/index.ts`:
-
-**a) Zwiększenie limitu tokenów i wyłączenie "thinking":**
-- Zwiększenie `maxOutputTokens` z 1200 na 4096
-- Dodanie `thinkingConfig: { thinkingBudget: 0 }` aby Gemini nie zużywał tokenów na wewnętrzne rozumowanie (to prosta generacja JSON, thinking nie jest potrzebny)
-
-**b) Wzmocnienie parsowania odpowiedzi AI:**
-- Dodanie fallbacku: jeśli regex nie znajdzie kompletnego JSON, próba naprawy przez dołączenie brakujących znaków `"}`
-- Lepsze logowanie surowej odpowiedzi do debugowania
-
-### Krok 3: Czyszczenie uszkodzonego cache
-Uruchomienie migracji SQL, która usunie wszystkie uszkodzone wpisy z tabeli `article_summaries` (te zawierające zagnieżdżony JSON w polu `summary`). Dzięki temu podsumowania zostaną wygenerowane od nowa w poprawnym formacie.
-
-```sql
-DELETE FROM article_summaries 
-WHERE summary LIKE '%"summary": "{%'
-   OR summary LIKE '%\"summary\": \"{%';
-```
-
-### Krok 4: Test end-to-end
-Wywołanie edge function z artykułem testowym i weryfikacja, że:
-- JSON jest kompletny (nie obcięty)
-- Podsumowanie jest czytelnym tekstem, a nie surowym JSON
-- Cache zapisuje poprawne dane
+### 2. Pozycjonowanie sponsorowanych artykulow w feedzie
+Artykuly sponsorowane moga pojawiac sie **od pozycji 4 wzwyz** w siatce na stronie glownej. Pozycje 1, 2 i 3 sa zarezerwowane wylacznie dla administratora (artykuly dodane recznie przez admina).
 
 ---
 
 ## Sekcja techniczna
 
-### Zmiana w konfiguracji Gemini (kluczowa poprawka)
-```typescript
-// PRZED (bug):
-generationConfig: {
-  maxOutputTokens: 1200,
-  temperature: 0,
-}
+### Krok 1: Rozszerzenie interfejsu Article o flage `is_sponsored`
 
-// PO (poprawka):
-generationConfig: {
-  maxOutputTokens: 4096,
-  temperature: 0,
-  thinkingConfig: { thinkingBudget: 0 },
-}
-```
+**Plik: `src/hooks/use-articles.tsx`**
+- Dodanie `is_sponsored` do interfejsu `Article` i zapytania SELECT
+- Przekazanie flagi w `formatArticleForCard`
+
+### Krok 2: Warunkowe wyswietlanie tresci na stronie artykulu
+
+**Plik: `src/pages/Article.tsx`**
+- Pobieranie flagi `is_sponsored` z danych artykulu (cache lub RSS)
+- Jesli `is_sponsored === true`: wyswietlenie pelnej tresci (`content`) w formacie HTML/tekst zamiast komponentu `ArticleSummary`
+- Jesli nie sponsorowany: zachowanie obecnego zachowania (podsumowanie AI)
+
+### Krok 3: Warunkowe wyswietlanie w modalu podgladu
+
+**Plik: `src/components/article/ArticlePreviewModal.tsx`**
+- Dodanie propa `isSponsored` do interfejsu
+- Jesli sponsorowany: wyswietlenie pelnej tresci zamiast generowania podsumowania AI
+
+### Krok 4: Pozycjonowanie w feedzie
+
+**Plik: `src/pages/Index.tsx`**
+- Przy budowaniu siatki artykulow: artykuly z `is_sponsored = true` nie moga zajmowac pozycji 1-3 (indeksy 0-2)
+- Logika: rozdzielenie artykulow na sponsorowane i regularne, wstawienie sponsorowanych dopiero od pozycji 4
+- Pozycje 1-3 wypelniane wylacznie artykulami nie-sponsorowanymi (te sa kontrolowane przez admina)
 
 ### Pliki do zmiany
+
 | Plik | Zmiana |
 |------|--------|
-| `supabase/functions/summarize-article/index.ts` | Zwiększenie tokenów, wyłączenie thinking, lepszy parsing |
-| Migracja SQL | Usunięcie uszkodzonych wpisów cache |
-| Sekret `Firecrawl_API_KEY` | Aktualizacja wartości klucza |
-
+| `src/hooks/use-articles.tsx` | Dodanie `is_sponsored` do interfejsu i query |
+| `src/pages/Article.tsx` | Warunkowe: tresc sponsorowana vs AI summary |
+| `src/components/article/ArticlePreviewModal.tsx` | Prop `isSponsored` + warunkowa tresc |
+| `src/pages/Index.tsx` | Rezerwacja pozycji 1-3 dla admina, sponsorowane od 4+ |
+| `src/components/news/NewsCard.tsx` | Przekazanie flagi `isSponsored` do localStorage cache |
