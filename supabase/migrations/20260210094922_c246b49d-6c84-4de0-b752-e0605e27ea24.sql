@@ -1,0 +1,1 @@
+UPDATE rss_sources SET is_active = false, updated_at = now() WHERE id = 'e4bc1bc8-28ba-49ae-9d30-fbce41953a96';
