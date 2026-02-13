@@ -253,35 +253,36 @@ export function AuctionAdSlot({
   }
 
   // CRITICAL: If we've attempted to load but have no valid ad result,
-  // or if the ad has no content (no image/text), hide completely
+  // or if the ad has no content (no image/text), show placeholder
   if (hasAttemptedLoad && !loading) {
     const hasValidAd = auctionResult && 
       (auctionResult.ad.contentUrl || auctionResult.ad.contentText);
     
     if (!hasValidAd) {
-      // In dev mode, show a minimal debug indicator (collapsed)
-      if (showDev) {
-        return (
-          <div ref={lazyRef} className="relative">
-            <div 
-              className="h-6 bg-black/80 text-white text-[9px] px-2 font-mono flex items-center gap-2 rounded opacity-50 hover:opacity-100 transition-opacity cursor-help"
-              title="Ad slot hidden - no valid ad available"
-            >
-              <Bug className="h-3 w-3 text-yellow-400" />
-              <span>Empty slot: {placementSlug}</span>
-              <span className={cn(
-                "px-1 rounded",
-                cacheHit ? "bg-emerald-600" : "bg-orange-600"
-              )}>
-                {cacheHit ? "📦" : "🌐"}
-              </span>
-            </div>
-          </div>
-        );
-      }
+      // Show a visible placeholder indicating the ad placement
+      const placementLabels: Record<string, string> = {
+        "top-banner": "Baner Górny",
+        "article-top": "Baner Górny (Artykuł)",
+        "article-middle": "Baner Środkowy (Artykuł)",
+        "article-bottom": "Baner Dolny (Artykuł)",
+        "feed-tile": "Kafelek reklamowy",
+        "feed-carousel": "Karuzela reklamowa",
+        "footer": "Baner Stopka",
+        "sponsored-article": "Artykuł Sponsorowany",
+      };
+      const label = placementLabels[placementSlug] || placementSlug;
       
-      // Production: completely hidden, no space taken
-      return null;
+      return (
+        <div ref={lazyRef} className={cn("relative", className)}>
+          <div 
+            className="w-full border-2 border-dashed border-muted-foreground/20 rounded-lg bg-muted/30 flex flex-col items-center justify-center gap-1 py-6 px-4"
+          >
+            <config.icon className="h-5 w-5 text-muted-foreground/40" />
+            <span className="text-xs text-muted-foreground/50 font-medium">{label}</span>
+            <span className="text-[10px] text-muted-foreground/30">Miejsce reklamowe</span>
+          </div>
+        </div>
+      );
     }
   }
 
